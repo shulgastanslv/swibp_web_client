@@ -45,7 +45,7 @@ export function Toolbar({
   };
 
   return (
-    <div className="flex flex-col gap-1 bg-muted/50 backdrop-blur-md h-min p-1.5 rounded-4xl shadow-sm my-4">
+    <div className="flex flex-col gap-2 bg-muted/50 backdrop-blur-md h-min p-1.5 rounded-4xl shadow-sm my-4">
       {/* Основные инструменты */}
       {tools.map((tool) => {
         const isActive = activeTool === tool.id;

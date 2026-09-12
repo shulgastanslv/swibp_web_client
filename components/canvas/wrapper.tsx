@@ -26,7 +26,6 @@ export default function CanvasWrapper({
       const availableWidth = wrapper.clientWidth - 80; // отступы
       const availableHeight = wrapper.clientHeight - 80;
 
-      // Масштаб = минимум из соотношений ширины и высоты
       const scaleX = availableWidth / canvasWidth;
       const scaleY = availableHeight / canvasHeight;
       const newScale = Math.min(scaleX, scaleY, 1); // не увеличиваем больше 1
@@ -58,7 +57,7 @@ export default function CanvasWrapper({
           transform: `scale(${scale})`,
           transformOrigin: "center center",
         }}
-        className="shadow-2xl shadow-black/10 rounded-lg overflow-hidden bg-white flex-shrink-0"
+        className="shadow-2xl shadow-black/10 rounded-none overflow-hidden bg-white flex-shrink-0"
       >
         <canvas
           ref={canvasRef}

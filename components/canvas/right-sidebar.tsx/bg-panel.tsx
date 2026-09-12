@@ -24,13 +24,13 @@ export function BackgroundPanel({ onBackgroundChange }: BackgroundPanelProps) {
   return (
     <div className="w-full overflow-y-auto font-sans">
       {/* Переключатель вкладок (Tabs) */}
-      <div className="flex bg-muted/50 p-1 rounded-xl mb-4 gap-1 border border-border">
+      <div className="flex p-1 rounded-xl mb-4 gap-1">
         <button
           onClick={() => setActiveTab("solid")}
           className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
             activeTab === "solid"
-              ? "bg-background text-primary shadow-sm"
-              : "text-muted-foreground hover:text-primary"
+              ? "bg-muted/50 text-white shadow-sm"
+              : "bg-muted text-white/50 hover:text-primary"
           }`}
         >
           Color
@@ -39,8 +39,8 @@ export function BackgroundPanel({ onBackgroundChange }: BackgroundPanelProps) {
           onClick={() => setActiveTab("gradient")}
           className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
             activeTab === "gradient"
-              ? "bg-background text-primary shadow-sm"
-              : "text-muted-foreground hover:text-primary"
+            ? "bg-muted/50 text-white shadow-sm"
+            : "bg-muted text-white/50 hover:text-primary"
           }`}
         >
           Gradient
@@ -49,8 +49,8 @@ export function BackgroundPanel({ onBackgroundChange }: BackgroundPanelProps) {
           onClick={() => setActiveTab("image")}
           className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
             activeTab === "image"
-              ? "bg-background text-primary shadow-sm"
-              : "text-muted-foreground hover:text-primary"
+            ? "bg-muted/50 text-white shadow-sm"
+            : "bg-muted text-white/50 hover:text-primary"
           }`}
         >
           Image

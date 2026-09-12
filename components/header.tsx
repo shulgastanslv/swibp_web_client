@@ -26,6 +26,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MenuNav } from "./menu";
+import { Separator } from "./ui/separator";
 
 export function Header() {
   const [isMenuOpen, setMenuIsOpen] = useState(false);
@@ -40,18 +41,19 @@ export function Header() {
       </div>
 
       <div className="hidden items-center gap-2 px-4 py-1.5 lg:flex text-muted-foreground">
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 bg-muted/50 rounded-4xl">
           <Button variant="ghost" size="icon" disabled title="Отменить" className="h-8 w-8 rounded-xl hover:text-foreground hover:bg-muted/60">
             <Undo2 className="h-4 w-4" />
           </Button>
+          <Separator orientation="vertical" />
           <Button variant="ghost" size="icon" disabled title="Повторить" className="h-8 w-8 rounded-xl hover:text-foreground hover:bg-muted/60">
             <Redo2 className="h-4 w-4" />
           </Button>
+        </div>
+        <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon" title="Команды" className="h-8 w-8 rounded-xl hover:text-foreground hover:bg-muted/60">
             <Command className="h-4 w-4" />
           </Button>
-        </div>
-        <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon" title="На весь экран" className="h-8 w-8 rounded-xl hover:text-foreground hover:bg-muted/60">
             <Maximize2 className="h-4 w-4" />
           </Button>

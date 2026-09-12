@@ -8,9 +8,11 @@ import {
   Image as FabricImage,
   PencilBrush,
   Gradient,
+  loadSVGFromString,
 } from "fabric";
-import type { Object as FabricObject } from "fabric";
+
 import type { BackgroundConfig, CanvasState, ExportOptions } from "./types";
+import { Group, Object as FabricObject } from "fabric";
 
 export class CanvasManager {
   private canvas: Canvas;
@@ -34,6 +36,100 @@ export class CanvasManager {
     this.setupSmartGuides();
   }
 
+  async addImageFromUrl(url: string): Promise<void> {
+     try {
+       // Используем прокси или прямой URL если разрешен CORS
+        const img = await FabricImage.fromURL(url);
+
+       const width = this.canvas.width || 1080;
+       const height = this.canvas.height || 1080;
+
+       // Центрируем и масштабируем под холст
+       const scale = Math.min(
+         (width * 0.8) / (img.width || 1),
+         (height * 0.8) / (img.height || 1),
+         1
+       );
+
+       img.set({
+         left: width / 2,
+         top: height / 2,
+         originX: "center",
+         originY: "center",
+         scaleX: scale,
+         scaleY: scale,
+       });
+
+       this.canvas.add(img);
+       this.canvas.setActiveObject(img);
+       this.canvas.renderAll();
+     } catch (error) {
+       console.error("Failed to load image:", error);
+     }
+  }
+
+  async addSVGFromContent(svgContent: string): Promise<void> {
+    return new Promise((resolve) => {
+      const width = this.canvas.width || 1080;
+      const height = this.canvas.height || 1080;
+
+      const objects: FabricObject[] = [];
+
+      // ✅ Правильная сигнатура reviver для v6
+      const myReviver = (element: Element, fabricObject: FabricObject) => {
+        if (fabricObject) {
+          objects.push(fabricObject);
+        }
+      };
+
+      loadSVGFromString(svgContent, myReviver).then(() => {
+        if (objects.length === 0) {
+          resolve();
+          return;
+        }
+
+        let target: FabricObject;
+
+        if (objects.length > 1) {
+          target = new Group(objects, {
+            originX: "center",
+            originY: "center",
+          });
+        } else {
+          target = objects[0];
+        }
+
+        target.set({
+          left: width / 2,
+          top: height / 2,
+          originX: "center",
+          originY: "center",
+        });
+
+        const targetSize = 200;
+        const currentWidth = (target.width || 0) * (target.scaleX || 1);
+        const currentHeight = (target.height || 0) * (target.scaleY || 1);
+        const safeWidth = currentWidth > 0 ? currentWidth : 1;
+        const safeHeight = currentHeight > 0 ? currentHeight : 1;
+
+        const scale = Math.min(
+          targetSize / safeWidth,
+          targetSize / safeHeight,
+          1
+        );
+
+        target.set({
+          scaleX: (target.scaleX || 1) * scale,
+          scaleY: (target.scaleY || 1) * scale,
+        });
+
+        this.canvas.add(target);
+        this.canvas.setActiveObject(target);
+        this.canvas.renderAll();
+        resolve();
+      });
+    });
+  }
 
   private snapToEdges(obj: FabricObject): void {
     const objLeft = obj.left || 0;
@@ -43,9 +139,11 @@ export class CanvasManager {
     const objRight = objLeft + objWidth;
     const objBottom = objTop + objHeight;
 
-    const allObjects = this.canvas.getObjects().filter(o => o !== obj && o.selectable !== false);
+    const allObjects = this.canvas
+      .getObjects()
+      .filter((o) => o !== obj && o.selectable !== false);
 
-    allObjects.forEach(other => {
+    allObjects.forEach((other) => {
       const otherLeft = other.left || 0;
       const otherTop = other.top || 0;
       const otherWidth = (other.width || 0) * (other.scaleX || 1);
@@ -78,8 +176,6 @@ export class CanvasManager {
       }
     });
   }
-
-
 
   private setupSmartGuides(): void {
     // Рисуем направляющие во время движения

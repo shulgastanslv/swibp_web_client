@@ -21,6 +21,7 @@ export function useCanvas() {
     width: 1080,
     height: 1080,
   });
+  const [isPixabayOpen, setIsPixabayOpen] = useState(false);
 
   useEffect(() => {
     if (!canvasRef.current || managerRef.current) return;
@@ -103,6 +104,14 @@ export function useCanvas() {
     setCurrentRatio(ratio);
   };
 
+  const handlePixabaySelect = async (imageUrl: string) => {
+    const manager = managerRef.current;
+    if (!manager) return;
+
+    await manager.addImageFromUrl(imageUrl);
+    setIsPixabayOpen(false); // Закрываем модалку после добавления
+  };
+
   const handleBackgroundChange = (config: BackgroundConfig) => {
     const manager = managerRef.current;
     if (!manager) return;
@@ -141,6 +150,9 @@ export function useCanvas() {
     handleImageUpload,
     currentRatio,
     canvasDimensions,
+    isPixabayOpen, // ✅ Экспортируем состояние
+    setIsPixabayOpen, // ✅ Экспортируем сеттер
+    handlePixabaySelect, // ✅ Экспортируем обработчик
     handleRatioChange,
     handleBackgroundChange,
   };
