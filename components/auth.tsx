@@ -78,7 +78,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-full max-w-md p-0 overflow-hidden gap-0 border-none">
+      <DialogContent className="w-full max-w-md rounded-4xl p-0 gap-0">
         <div className="p-8 flex flex-col justify-center">
 
           {view === "login" && (

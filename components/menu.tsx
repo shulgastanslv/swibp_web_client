@@ -22,7 +22,6 @@ import Link from "next/link";
 import { AuthModal } from "@/components/auth";
 import { MoonIcon, SlideshowIcon, UserIcon } from "@phosphor-icons/react";
 import { useSession, signOut } from "next-auth/react";
-import { ProjectsDialog } from "./projects/projects-dialog";
 import AccountDialog from "./account/account_modal";
 
 interface MenuNavProps {
@@ -34,7 +33,6 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isProjectsOpen, setIsProjectsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
 
   return (
@@ -58,7 +56,7 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
         <DropdownMenuContent
           align="start"
           sideOffset={4}
-          className="w-64 p-1 bg-background/80 backdrop-blur-md text-popover-foreground rounded-4xl shadow-lg"
+          className="w-64 p-3 bg-background/80 backdrop-blur-md text-popover-foreground rounded-4xl shadow-lg"
         >
           {!isAuthenticated ? (
             <div className="space-y-1">
@@ -80,23 +78,17 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
             </div>
           ) : (
             <>
-              <DropdownMenuGroup className="space-y-0.5">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setIsAccountOpen(true);
-                      onOpenChange?.(false); // Закрываем дропдаун при открытии шита
-                    }}
-                    className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground">
-                  <UserIcon className="h-3.5 w-3.5" />
-                  <span>My Account</span>
-                </DropdownMenuItem>
+              <DropdownMenuGroup>
                 <DropdownMenuItem
                   onClick={() => {
-                    setIsProjectsOpen(true);
-                    onOpenChange?.(false); // Закрываем дропдаун при открытии шита
+                    setIsAccountOpen(true);
                   }}
                   className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground"
                 >
+                  <UserIcon className="h-3.5 w-3.5" />
+                  <span>My Account</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground">
                   <SlideshowIcon className="h-3.5 w-3.5" />
                   <span>My Projects</span>
                 </DropdownMenuItem>
@@ -118,7 +110,6 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
             </>
           )}
 
-          {/* ==================== FOOTER ==================== */}
           <div className="mt-1 pt-1 border-t border-border/50">
             <div className="grid grid-cols-2 gap-0.5 px-0.5">
               <FooterLink href="#">Feedback</FooterLink>
@@ -148,8 +139,7 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
       </DropdownMenu>
 
       <AuthModal isOpen={isLoginModalOpen} onOpenChange={setIsLoginModalOpen} />
-      <ProjectsDialog isOpen={isProjectsOpen} onOpenChange={setIsProjectsOpen} /> {/* <-- Рендерим Sheet */}
-      <AccountDialog isOpen={isAccountOpen} onOpenChange={setIsAccountOpen}/>
+      <AccountDialog isOpen={isAccountOpen} onOpenChange={setIsAccountOpen} />
     </>
   );
 }

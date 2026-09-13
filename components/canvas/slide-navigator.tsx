@@ -1,74 +1,120 @@
+// src/components/canvas/slide-navigator.tsx
 "use client";
 
 import * as React from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+interface SlideData {
+  id: number;
+  thumbnail?: string;
+}
 
 interface SliderNavigatorProps {
   currentSlide: number;
-  totalSlides: number;
+  slides: SlideData[];
   onSelect: (index: number) => void;
-  onAdd?: () => void;
-  onRemove?: (index: number) => void;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
   className?: string;
 }
 
 export function SliderNavigator({
   currentSlide,
-  totalSlides,
+  slides,
   onSelect,
   onAdd,
   onRemove,
+  onPrev,
+  onNext,
   className = "",
 }: SliderNavigatorProps) {
   return (
-    <div className={`flex items-center gap-2 overflow-x-auto bg-muted/50 backdrop-blur-md p-2 rounded-4xl shadow-xl shadow-black/5 select-none scrollbar-thin ${className}`}>
+    <div className={cn("flex flex-col items-center gap-2", className)}>
+      {/* Стрелки навигации */}
+      <div className="flex items-center gap-1.5 overflow-x-auto max-w-[600px] p-1.5 rounded-xl bg-muted/30 backdrop-blur-sm">
+        {slides.map((slide, i) => {
+          const slideNumber = i + 1;
+          const isActive = slideNumber === currentSlide;
 
-      {Array.from({ length: totalSlides }).map((_, i) => {
-        const slideNumber = i + 1;
-        const isActive = slideNumber === currentSlide;
-
-        return (
-          <div
-            key={i}
-            onClick={() => onSelect(slideNumber)}
-            className={`group relative flex flex-col justify-between w-14 h-12 p-2 rounded-2xl border transition-all cursor-pointer shrink-0 ${
-              isActive
-                ? "border-primary bg-muted text-primary shadow-sm ring-1 ring-primary/30"
-                  : "border-border/60 bg-muted/50 hover:border-muted-foreground/40 text-muted-foreground hover:text-foreground"
-            }`}
-            title={`Перейти к слайду ${slideNumber}`}
-          >
-            {/* Номер слайда */}
-            <span className="text-xs font-mono font-medium">{slideNumber}</span>
-
-            {/* Кнопка удаления (появляется при наведении) */}
-            {onRemove && totalSlides > 1 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove(slideNumber);
-                }}
-                className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:scale-110"
-                title="Удалить слайд"
+          return (
+            <div
+              key={slide.id}
+              onClick={() => onSelect(slideNumber)}
+              className={cn(
+                "group relative flex flex-col items-center gap-1 cursor-pointer shrink-0 transition-all",
+                isActive ? "scale-105" : "hover:scale-105 opacity-70 hover:opacity-100"
+              )}
+            >
+              {/* Превью слайда */}
+              <div
+                className={cn(
+                  "relative w-14 h-16 rounded-md border-2 overflow-hidden bg-background transition-all",
+                  isActive
+                    ? "border-primary shadow-md shadow-primary/20"
+                    : "border-border/50 hover:border-muted-foreground/50"
+                )}
               >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        );
-      })}
+                {slide.thumbnail ? (
+                  <img
+                    src={slide.thumbnail}
+                    alt={`Slide ${slideNumber}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                    <span className="text-[8px] text-muted-foreground">
+                      {slideNumber}
+                    </span>
+                  </div>
+                )}
 
-      {/* Кнопка добавления */}
+                {isActive && (
+                  <div className="absolute inset-0 bg-primary/10" />
+                )}
+              </div>
 
+              {/* Номер и кнопка удаления */}
+              <div className="flex items-center gap-0.5">
+                <span className={cn(
+                  "text-[9px] font-medium leading-none",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {slideNumber}
+                </span>
+
+                {slides.length > 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(slideNumber);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-0 hover:bg-destructive/10 rounded"
+                  >
+                    <X className="w-2.5 h-2.5 text-destructive" />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Кнопка добавления */}
         <button
           onClick={onAdd}
-          className="flex flex-col items-center justify-center gap-1 w-16 h-12 rounded-xl border border-dashed border-border/80 hover:border-primary hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all cursor-pointer shrink-0 text-[10px] font-medium"
-          title="Добавить слайд"
+          className="flex flex-col items-center gap-1 shrink-0"
         >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Add Slide</span>
+          <div className="w-14 h-16 rounded-md border-2 border-dashed border-border/50 hover:border-primary/50 bg-transparent hover:bg-primary/5 flex items-center justify-center transition-all">
+            <Plus className="w-4 h-4 text-muted-foreground hover:text-primary" />
+          </div>
+          <span className="text-[9px] font-medium text-muted-foreground leading-none">
+            Add
+          </span>
         </button>
-
+      </div>
     </div>
   );
 }

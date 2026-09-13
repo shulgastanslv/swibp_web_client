@@ -1,3 +1,4 @@
+// src/app/page.tsx
 "use client";
 
 import { Header } from "@/components/header";
@@ -10,12 +11,9 @@ import { useCanvas } from "@/hooks/useCanvas";
 import CanvasWrapper from "@/components/canvas/wrapper";
 import { Button } from "@/components/ui/button";
 import { PanelLeftOpen } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { ScaleToolbar } from "@/components/canvas/scale-toolbar";
 
 export default function Home() {
-  const [currentSlide, setCurrentSlide] = useState(1);
-  const totalSlides = 5;
-
   const {
     canvasRef,
     containerRef,
@@ -36,32 +34,23 @@ export default function Home() {
     isGridVisible,
     handleBackgroundChange,
     handleImageUpload,
+    slides,
+    currentSlide,
+    switchToSlide,
+    handleAddSlide,
+    handleRemoveSlide,
+    handlePrev,
+    exportAllSlides,
+    handleNext,
   } = useCanvas();
-
-  const handlePrev = () => setCurrentSlide((prev) => Math.max(1, prev - 1));
-  const handleNext = () =>
-    setCurrentSlide((prev) => Math.min(totalSlides, prev + 1));
-
-  const handleExportPNG = async () => {
-    const manager = managerRef.current;
-    if (!manager) return;
-
-    const dataURL = await manager.exportAsImage({
-      format: "png",
-      multiplier: 2,
-    });
-    const a = document.createElement("a");
-    a.href = dataURL;
-    a.download = "carousel.png";
-    a.click();
-  };
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden ">
-      <Header onExportPNG={handleExportPNG} clearCanvas={clearCanvas} />
-      <div className="flex min-h-0 flex-1 relative mt-4">
+    <div className="flex h-screen flex-col overflow-hidden">
+      <Header onExportPNG={exportAllSlides} clearCanvas={clearCanvas} />
+
+      <div className="flex min-h-0 flex-1 relative m-4">
         {!isSidebarOpen && (
           <Button
             variant="outline"
@@ -73,32 +62,41 @@ export default function Home() {
             <PanelLeftOpen className="h-4 w-4" />
           </Button>
         )}
+
         <LeftSidebar
           isOpen={isSidebarOpen}
           onToggle={() => setIsSidebarOpen(false)}
         />
-        <main className="relative flex-1 flex items-center justify-center overflow-hidden ">
+
+        <main className="relative flex-1 flex items-center justify-center overflow-hidden">
           <CanvasWrapper
             canvasRef={canvasRef}
             containerRef={containerRef}
             canvasWidth={canvasDimensions.width}
             canvasHeight={canvasDimensions.height}
           />
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
             <SliderNavigator
               currentSlide={currentSlide}
-              totalSlides={totalSlides}
-              onRemove={handlePrev}
-              onAdd={handleNext}
-              onSelect={(index) => setCurrentSlide(index)}
+              slides={slides}
+              onSelect={switchToSlide}
+              onAdd={handleAddSlide}
+              onRemove={handleRemoveSlide}
+              onPrev={handlePrev}
+              onNext={handleNext}
             />
           </div>
         </main>
-        <Toolbar
-          activeTool={activeTool}
-          onToolChange={setActiveTool}
-          onImageUpload={handleImageUpload}
-        />
+
+        <div className="flex flex-col justify-between">
+          <Toolbar
+            activeTool={activeTool}
+            onToolChange={setActiveTool}
+            onImageUpload={handleImageUpload}
+          />
+          <ScaleToolbar scale={10} onZoomIn={() => {}} onZoomOut={() => {}}/>
+        </div>
+
         <RightToolbar
           selectedObject={selectedObject}
           handlePixabaySelect={handlePixabaySelect}

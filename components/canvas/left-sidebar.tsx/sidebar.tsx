@@ -60,11 +60,10 @@ export function LeftSidebar({ isOpen = true, onToggle }: LeftSidebarProps) {
 
   return (
     <aside
-      className={`flex shrink-0 flex-col mx-4 h-min rounded-3xl overflow-hidden backdrop-blur bg-muted/50 text-sm transition-all duration-300 ease-in-out ${
+      className={`flex shrink-0 flex-col mx-4 h-full rounded-4xl overflow-y-auto backdrop-blur bg-muted/50 text-sm transition-all duration-300 ease-in-out ${
         isOpen ? "w-72 opacity-100" : "w-0 opacity-0 m-0 border-0 pointer-events-none"
       }`}
     >
-      {/* Шапка сайдбара */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50">
         <Button
           variant="ghost"

@@ -44,7 +44,7 @@ export function CommandsKbd() {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-64 p-1.5 bg-background/50 backdrop-blur-3xl  text-zinc-200 rounded-4xl shadow-2xl">
+      <DropdownMenuContent align="end" className="w-64 p-1.5 bg-background/80 backdrop-blur-md   text-zinc-200 rounded-4xl shadow-2xl">
         <DropdownMenuLabel>Команды</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

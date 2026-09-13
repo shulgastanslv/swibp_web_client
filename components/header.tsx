@@ -14,7 +14,6 @@ import {
 import { MenuNav } from "./menu";
 import { Separator } from "./ui/separator";
 import { CommandsKbd } from "./commands_kbd";
-import { PublishTemplateDialog } from "./publish";
 
 interface HeaderProps {
   onExportPNG: () => void;
@@ -28,7 +27,7 @@ export function Header({
   const [isMenuOpen, setMenuIsOpen] = useState(false);
 
   return (
-    <header className="flex h-16 w-full shrink-0 items-center justify-between px-6">
+    <header className="flex h-16 w-full items-center justify-between px-8">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <MenuNav isOpen={isMenuOpen} onOpenChange={setMenuIsOpen} />
         <ChevronRight className="h-4 w-4 opacity-40" />
@@ -57,17 +56,8 @@ export function Header({
         </div>
 
         <CommandsKbd />
-        <PublishTemplateDialog onPublish={() => {}} />
 
         <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            title="На весь экран"
-            className="h-8 w-8 rounded-xl text-primary hover:text-muted-foreground"
-          >
-            <Maximize2 className="h-5 w-5" />
-          </Button>
           <Button
             variant="ghost"
             size="icon"

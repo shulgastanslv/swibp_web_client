@@ -51,10 +51,10 @@ export default function AccountDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 rounded-3xl p-0 sm:max-w-lg border-none">
+      <DialogContent className="gap-0 rounded-3xl bg-background/80 backdrop-blur-md p-0 sm:max-w-lg border-none">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle className="text-balance font-medium">
-            Add a writer
+            Account
           </DialogTitle>
         </DialogHeader>
 
@@ -72,7 +72,7 @@ export default function AccountDialog({
                 </AvatarFallback>
               </Avatar>
               <Button
-                className="-top-0.5 -right-0.5 absolute rounded-full border-[3px] border-background bg-accent hover:bg-accent"
+                className="-top-0.5 -right-0.5 absolute rounded-full border-primary/20 bg-accent hover:bg-accent"
                 onClick={() => {
                   if (image) {
                     setImage(null);
@@ -109,10 +109,10 @@ export default function AccountDialog({
               type="file"
             />
             <Button
-              className="mt-2"
+              className="mt-2 rounded-full"
               onClick={triggerFileInput}
               size="sm"
-              variant="outline"
+              variant="secondary"
             >
               Add Image
             </Button>
@@ -122,7 +122,7 @@ export default function AccountDialog({
             <div className="space-y-4">
               <div className="space-y-1">
                 <Label className="flex items-center" htmlFor="author-name">
-                  Author name <span className="text-primary">*</span>
+                  Name <span className="text-primary">*</span>
                 </Label>
                 <Input
                   id="author-name"
@@ -134,7 +134,7 @@ export default function AccountDialog({
 
               <div className="space-y-1">
                 <div className="flex items-center">
-                  <Label htmlFor="title">Title</Label>
+                  <Label htmlFor="title">Biography</Label>
                 </div>
                 <Input
                   id="title"
@@ -145,11 +145,11 @@ export default function AccountDialog({
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button onClick={() => setOpen(false)} variant="outline">
+              <Button variant="outline" className='rounded-full'>
                 Cancel
               </Button>
-              <Button className="bg-foreground text-background hover:bg-foreground/90">
-                Save Changes
+              <Button className="bg-foreground rounded-full text-background hover:bg-foreground/90">
+                Save
               </Button>
             </div>
           </div>
