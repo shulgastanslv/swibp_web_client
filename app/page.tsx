@@ -10,6 +10,7 @@ import { useCanvas } from "@/hooks/useCanvas";
 import CanvasWrapper from "@/components/canvas/wrapper";
 import { Button } from "@/components/ui/button";
 import { PanelLeftOpen } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(1);
@@ -59,10 +60,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden ">
-      <Header
-        onExportPNG={handleExportPNG}
-        clearCanvas={clearCanvas}
-      />
+      <Header onExportPNG={handleExportPNG} clearCanvas={clearCanvas} />
       <div className="flex min-h-0 flex-1 relative mt-4">
         {!isSidebarOpen && (
           <Button

@@ -43,7 +43,7 @@ export function RightToolbar({
   };
 
   return (
-    <aside className="w-72 shrink-0 mx-4 h-full rounded-4xl overflow-y-auto bg-muted/50 backdrop-blur flex flex-col">
+    <aside className="w-72 shrink-0 mx-4 h-full rounded-4xl overflow-y-auto bg-muted/50 backdrop-blur-3xl flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 shrink-0 bg-muted/50">
         <span className="text-xs font-semibold text-foreground tracking-wide">
           CANVAS

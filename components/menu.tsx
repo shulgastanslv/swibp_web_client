@@ -4,12 +4,9 @@ import React, { useState } from "react";
 import {
   User,
   Palette,
-  FolderKanban,
   ArrowUpRight,
-  Sparkles,
-  MessageCircle,
-  Heart,
-  Boxes,
+  LogOut,
+  ChevronRight,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -18,109 +15,162 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import Image from "next/image";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { LoginModal } from "@/components/login_modal";
-import { HeartIcon, SlideshowIcon } from "@phosphor-icons/react";
+import { AuthModal } from "@/components/auth";
+import { MoonIcon, SlideshowIcon, UserIcon } from "@phosphor-icons/react";
+import { useSession, signOut } from "next-auth/react";
+import { ProjectsDialog } from "./projects/projects-dialog";
+import AccountDialog from "./account/account_modal";
 
-interface MenuProps {
+interface MenuNavProps {
   isOpen?: boolean;
   onOpenChange?: (flag: boolean) => void;
 }
 
-export function MenuNav({ isOpen, onOpenChange }: MenuProps) {
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
+export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated";
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
 
   return (
     <>
       <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 hover:bg-accent cursor-pointer rounded-xl"
-          >
-            <Image height={26} width={26} src={"/Logo.svg"} alt={"Logo"} />
+          <Button variant="ghost" size="icon">
+            {isAuthenticated && session?.user?.image ? (
+              <Image
+                src={session.user.image}
+                alt={session.user.name || "User"}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <Image height={25} width={25} src="/Logo.svg" alt="Logo" />
+            )}
           </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent
           align="start"
-          sideOffset={8}
-          className="w-64 p-1.5 bg-background/50 backdrop-blur-3xl  text-zinc-200 rounded-4xl shadow-2xl"
+          sideOffset={4}
+          className="w-64 p-1 bg-background/80 backdrop-blur-md text-popover-foreground rounded-4xl shadow-lg"
         >
-          <DropdownMenuGroup className="space-y-0.5">
-            <DropdownMenuItem
-              onClick={() => setIsLoginOpen(true)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-zinc-900 cursor-pointer"
-            >
-              <User className="h-4 w-4 text-zinc-400" />
-              <span>Login</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-zinc-900 cursor-pointer">
-              <SlideshowIcon className="h-4 w-4 text-zinc-400" />
-              <span>My Projects</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-zinc-900 cursor-pointer">
-              <Palette className="h-4 w-4 text-zinc-400" />
-              <span>
-                Appearance{" "}
-                <span className="ml-auto text-[10px] text-zinc-500">
-                  System
+          {!isAuthenticated ? (
+            <div className="space-y-1">
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                onClick={() => setIsLoginModalOpen(true)}
+                className="flex items-center justify-between px-2 py-1.5 rounded-4xl text-sm font-medium cursor-pointer focus:bg-accent focus:text-accent-foreground"
+              >
+                <span className="flex items-center gap-2">
+                  <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                  Log in
                 </span>
-              </span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+                <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
+              </DropdownMenuItem>
 
-          <DropdownMenuSeparator className="my-1.5 bg-zinc-900" />
+              <div className="px-2 py-1.5 text-xs text-muted-foreground leading-snug">
+                Join to save projects & sync settings.
+              </div>
+            </div>
+          ) : (
+            <>
+              <DropdownMenuGroup className="space-y-0.5">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setIsAccountOpen(true);
+                      onOpenChange?.(false); // Закрываем дропдаун при открытии шита
+                    }}
+                    className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground">
+                  <UserIcon className="h-3.5 w-3.5" />
+                  <span>My Account</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setIsProjectsOpen(true);
+                    onOpenChange?.(false); // Закрываем дропдаун при открытии шита
+                  }}
+                  className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                >
+                  <SlideshowIcon className="h-3.5 w-3.5" />
+                  <span>My Projects</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground">
+                  <MoonIcon className="h-3.5 w-3.5" />
+                  <span>Appearance</span>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
 
-          <div className="grid grid-cols-2 gap-1 px-0.5">
-            <DropdownMenuItem
-              asChild
-              className="p-2 rounded-xl hover:bg-zinc-900 cursor-pointer focus:bg-zinc-900"
-            >
-              <Link
-                href="#"
-                className="flex items-center justify-between text-zinc-400 hover:text-white w-full"
+              <DropdownMenuSeparator className="bg-border/50 my-1" />
+
+              <DropdownMenuItem
+                onClick={() => signOut()}
+                className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-destructive hover:text-destructive/90 hover:bg-destructive/10 cursor-pointer focus:bg-destructive/10 focus:text-destructive"
               >
-                <span className="text-[11px]">Feedback</span>
-                <ArrowUpRight className="h-3 w-3 text-zinc-600" />
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              asChild
-              className="p-2 rounded-xl hover:bg-zinc-900 cursor-pointer focus:bg-zinc-900"
-            >
-              <Link
-                href="#"
-                className="flex items-center justify-between text-zinc-400 hover:text-white w-full"
-              >
-                <span className="text-[11px]">What`s new</span>
-                <ArrowUpRight className="h-3 w-3 text-zinc-600" />
-              </Link>
-            </DropdownMenuItem>
-          </div>
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Sign out</span>
+              </DropdownMenuItem>
+            </>
+          )}
 
-          {/* Минималистичный футер */}
-          <DropdownMenuSeparator className="my-1.5 bg-zinc-900" />
-          <div className="px-3 py-1 flex items-center justify-between text-[10px] text-zinc-500">
-            <span>v1.5.93</span>
-            <div className="flex items-center gap-2">
-              <Link href="#" className="hover:text-zinc-300 transition-colors">
-                Terms
-              </Link>
-              <span>•</span>
-              <Link href="#" className="hover:text-zinc-300 transition-colors">
-                Privacy
-              </Link>
+          {/* ==================== FOOTER ==================== */}
+          <div className="mt-1 pt-1 border-t border-border/50">
+            <div className="grid grid-cols-2 gap-0.5 px-0.5">
+              <FooterLink href="#">Feedback</FooterLink>
+              <FooterLink href="#">What`s new</FooterLink>
+            </div>
+
+            <div className="px-2 py-1.5 flex items-center justify-between text-xs text-muted-foreground/60 tracking-wide">
+              <span>v1.5.93</span>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href="#"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Terms
+                </Link>
+                <span>•</span>
+                <Link
+                  href="#"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Privacy
+                </Link>
+              </div>
             </div>
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <LoginModal isOpen={isLoginOpen} onOpenChange={setIsLoginOpen} />
+      <AuthModal isOpen={isLoginModalOpen} onOpenChange={setIsLoginModalOpen} />
+      <ProjectsDialog isOpen={isProjectsOpen} onOpenChange={setIsProjectsOpen} /> {/* <-- Рендерим Sheet */}
+      <AccountDialog isOpen={isAccountOpen} onOpenChange={setIsAccountOpen}/>
     </>
   );
 }
+
+const FooterLink = ({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) => (
+  <DropdownMenuItem
+    asChild
+    className="px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer focus:bg-accent"
+  >
+    <Link
+      href={href}
+      className="flex items-center justify-between text-xs text-muted-foreground hover:text-foreground w-full transition-colors"
+    >
+      <span>{children}</span>
+      <ArrowUpRight className="h-2.5 w-2.5 opacity-50" />
+    </Link>
+  </DropdownMenuItem>
+);

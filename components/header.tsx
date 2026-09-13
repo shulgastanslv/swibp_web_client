@@ -64,7 +64,7 @@ export function Header({
             variant="ghost"
             size="icon"
             title="На весь экран"
-            className="h-8 w-8 rounded-xl hover:text-foreground hover:bg-muted/60"
+            className="h-8 w-8 rounded-xl text-primary hover:text-muted-foreground"
           >
             <Maximize2 className="h-5 w-5" />
           </Button>
@@ -72,7 +72,7 @@ export function Header({
             variant="ghost"
             size="icon"
             title="Очистить холст"
-            className="h-8 w-8 rounded-xl hover:text-destructive hover:bg-destructive/10"
+            className="h-8 w-8 rounded-xl text-primary hover:text-muted-foreground"
             onClick={clearCanvas}
           >
             <Trash2 className="h-5 w-5" />

@@ -38,7 +38,7 @@ export function CommandsKbd() {
           variant="ghost"
           size="icon"
           title="Команды"
-          className="h-8 w-8 rounded-xl hover:text-foreground hover:bg-muted/60"
+          className="h-8 w-8 rounded-xl text-primary hover:text-muted-foreground"
         >
           <Command className="h-5 w-5" />
         </Button>

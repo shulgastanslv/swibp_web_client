@@ -68,7 +68,7 @@ export function PublishTemplateDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[480px] overflow-hidden rounded-3xl gap-0 bg-background/80 backdrop-blur-3xl border-border/50 p-0">
+      <DialogContent className="sm:max-w-[480px] overflow-hidden gap-0 rounded-4xl p-4">
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <DialogHeader className="px-6 pt-6 pb-2">
             <DialogTitle className="text-lg font-semibold">Publish Template</DialogTitle>
