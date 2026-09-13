@@ -3,7 +3,6 @@
 import { Header } from "@/components/header";
 import { RightToolbar } from "@/components/canvas/right-sidebar.tsx/sidebar";
 import { LeftSidebar } from "@/components/canvas/left-sidebar.tsx/sidebar";
-import Canvas from "@/components/canvas/canvas";
 import { useState } from "react";
 import { SliderNavigator } from "@/components/canvas/slide-navigator";
 import { Toolbar } from "@/components/canvas/toolbar";
@@ -15,6 +14,7 @@ import { PanelLeftOpen } from "lucide-react";
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(1);
   const totalSlides = 5;
+
   const {
     canvasRef,
     containerRef,
@@ -23,14 +23,20 @@ export default function Home() {
     currentRatio,
     handleRatioChange,
     setActiveTool,
-    canvasDimensions,
+    handleDelete,
+    handleDuplicate,
+    handleUpdateObject,
     selectedObject,
-    isPixabayOpen,
-    setIsPixabayOpen,
+    canvasDimensions,
+    clearCanvas,
+    exportToJSON,
     handlePixabaySelect,
+    handleToggleGrid,
+    isGridVisible,
     handleBackgroundChange,
     handleImageUpload,
   } = useCanvas();
+
   const handlePrev = () => setCurrentSlide((prev) => Math.max(1, prev - 1));
   const handleNext = () =>
     setCurrentSlide((prev) => Math.min(totalSlides, prev + 1));
@@ -48,11 +54,15 @@ export default function Home() {
     a.download = "carousel.png";
     a.click();
   };
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[linear-gradient(to_right,#1f293725_1px,transparent_1px),linear-gradient(to_bottom,#1f293725_1px,transparent_1px)] bg-[size:64px_64px] ">
-      <Header />
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden ">
+      <Header
+        onExportPNG={handleExportPNG}
+        clearCanvas={clearCanvas}
+      />
       <div className="flex min-h-0 flex-1 relative mt-4">
         {!isSidebarOpen && (
           <Button
@@ -69,7 +79,6 @@ export default function Home() {
           isOpen={isSidebarOpen}
           onToggle={() => setIsSidebarOpen(false)}
         />
-
         <main className="relative flex-1 flex items-center justify-center overflow-hidden ">
           <CanvasWrapper
             canvasRef={canvasRef}
@@ -91,15 +100,19 @@ export default function Home() {
           activeTool={activeTool}
           onToolChange={setActiveTool}
           onImageUpload={handleImageUpload}
-          onExportPNG={handleExportPNG}
         />
         <RightToolbar
-          isPixabayOpen={isPixabayOpen}
+          selectedObject={selectedObject}
           handlePixabaySelect={handlePixabaySelect}
-          setIsPixabayOpen={setIsPixabayOpen}
           currentRatio={currentRatio}
+          exportToJSON={exportToJSON}
           onRatioChange={handleRatioChange}
           onBackgroundChange={handleBackgroundChange}
+          onDeleteObject={handleDelete}
+          onDuplicateObject={handleDuplicate}
+          onUpdateObject={handleUpdateObject}
+          onToggleGrid={handleToggleGrid}
+          isGridVisible={isGridVisible}
         />
       </div>
     </div>

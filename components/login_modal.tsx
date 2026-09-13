@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
+import { CreateUser } from "@/actions/user";
 
 interface LoginModalProps {
   isOpen?: boolean;
@@ -22,15 +23,15 @@ export function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Логика авторизации
+    await CreateUser();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-sm p-0 overflow-hidden rounded-4xl gap-0">
-        <div className="p-8 flex flex-col justify-center bg-background">
+      <DialogContent className="w-xl p-0 overflow-hidden rounded-4xl gap-0 bg-background/50 backdrop-blur-3xl">
+        <div className="p-8 flex flex-col justify-center bg-background/50 backdrop-blur-3xl">
           <DialogHeader className="space-y-1 mb-6 text-left">
             <DialogTitle className="text-xl font-bold tracking-tight text-white text-center">
               Welcome back
@@ -39,8 +40,6 @@ export function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
               Sign in and pick up right where you left off.
             </DialogDescription>
           </DialogHeader>
-
-          {/* Кнопка Google */}
           <Button
             variant="outline"
             className="w-full h-10 rounded-xl  hover:text-white text-xs font-medium cursor-pointer transition-all mb-6 flex items-center justify-center gap-2"
@@ -66,8 +65,6 @@ export function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
             </svg>
             Continue with Google
           </Button>
-
-          {/* Разделитель "OR CONTINUE WITH EMAIL" */}
           <div className="relative flex items-center justify-center mb-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-zinc-800" />
@@ -76,8 +73,6 @@ export function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
               Or continue with email
             </span>
           </div>
-
-          {/* Форма логина */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-[11px] font-medium text-zinc-300 mb-1.5">
@@ -92,7 +87,6 @@ export function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
                 className="h-10 rounded-xl bg-zinc-900/50 border-zinc-800 text-xs text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-zinc-400"
               />
             </div>
-
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[11px] font-medium text-zinc-300">
@@ -122,16 +116,12 @@ export function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
               Sign in
             </Button>
           </form>
-
-          {/* Ссылка на регистрацию */}
           <div className="text-center mt-6 text-xs text-zinc-400">
             Don&apos;t have an account?{" "}
             <Link href="#" className="text-white font-medium hover:underline">
               Sign up
             </Link>
           </div>
-
-          {/* Условия использования в футере */}
           <div className="mt-6 pt-4 border-t border-zinc-900 text-center text-[10px] text-zinc-500">
             By continuing, you agree to the{" "}
             <Link href="#" className="underline hover:text-zinc-300">
@@ -144,7 +134,6 @@ export function LoginModal({ isOpen, onOpenChange }: LoginModalProps) {
             .
           </div>
         </div>
-
       </DialogContent>
     </Dialog>
   );

@@ -21,6 +21,7 @@ export function useCanvas() {
     width: 1080,
     height: 1080,
   });
+
   const [isPixabayOpen, setIsPixabayOpen] = useState(false);
 
   useEffect(() => {
@@ -33,6 +34,39 @@ export function useCanvas() {
 
     const handleSelection = (e: { selected?: FabricObject[] }) => {
       setSelectedObject(e.selected?.[0] || null);
+    };
+
+    const handlePaste = async (e: ClipboardEvent) => {
+      const activeElement = document.activeElement;
+      if (
+        activeElement?.tagName === "INPUT" ||
+        activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      // Ищем изображение в буфере
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        if (item.type.indexOf("image") !== -1) {
+          const blob = item.getAsFile();
+
+          if (blob) {
+            try {
+              await manager.addImageFromBlob(blob);
+            } catch (error) {
+              console.error("Failed to paste image:", error);
+            }
+          }
+          break;
+        }
+      }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -54,12 +88,13 @@ export function useCanvas() {
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-
+    window.addEventListener("paste", handlePaste);
     canvas.on("selection:created", handleSelection);
     canvas.on("selection:updated", handleSelection);
     canvas.on("selection:cleared", () => setSelectedObject(null));
 
     return () => {
+      window.removeEventListener("paste", handlePaste);
       window.removeEventListener("keydown", handleKeyDown);
       manager.dispose();
       managerRef.current = null;
@@ -88,11 +123,15 @@ export function useCanvas() {
       case "line":
         manager.addLine();
         break;
+      case "arrow":
+        manager.addArrow();
+        break;
       case "text":
         manager.addText("Новый текст");
         break;
     }
   }, [activeTool]);
+
 
   const handleRatioChange = (ratio: RatioKey) => {
     const manager = managerRef.current;
@@ -102,6 +141,29 @@ export function useCanvas() {
     manager.setRatio(width, height);
     setCanvasDimensions({ width, height });
     setCurrentRatio(ratio);
+  };
+
+  const [isGridVisible, setIsGridVisible] = useState(false);
+
+  const handleToggleGrid = () => {
+    const manager = managerRef.current;
+    if (!manager) return;
+
+    manager.toggleGrid();
+    setIsGridVisible(manager.isGridEnabled());
+  };
+
+  const handleUpdateObject = (updates: Partial<FabricObject>) => {
+    const manager = managerRef.current;
+    if (!manager) return;
+
+    const canvas = manager.getCanvas();
+    const activeObject = canvas.getActiveObject();
+
+    if (activeObject) {
+      activeObject.set(updates);
+      canvas.renderAll();
+    }
   };
 
   const handlePixabaySelect = async (imageUrl: string) => {
@@ -138,21 +200,45 @@ export function useCanvas() {
     await manager.duplicateSelected();
   };
 
+  const clearCanvas = () => {
+    const manager = managerRef.current;
+    if (!manager) return;
+    manager.clearCanvas();
+  };
+
+  const getCanvas = () => {
+    const manager = managerRef.current;
+    if (!manager) return;
+    manager.getCanvas();
+  };
+
+  const exportToJSON = (): string => {
+    const manager = managerRef.current;
+    if (!manager) return "";
+    return manager.exportAsJSON();
+  };
+
   return {
     canvasRef,
     containerRef,
     managerRef,
+    isGridVisible,
+    handleToggleGrid,
     activeTool,
+    getCanvas,
     setActiveTool,
     selectedObject,
     handleDelete,
     handleDuplicate,
     handleImageUpload,
     currentRatio,
+    handleUpdateObject,
     canvasDimensions,
-    isPixabayOpen, // ✅ Экспортируем состояние
-    setIsPixabayOpen, // ✅ Экспортируем сеттер
-    handlePixabaySelect, // ✅ Экспортируем обработчик
+    isPixabayOpen,
+    setIsPixabayOpen,
+    clearCanvas,
+    exportToJSON,
+    handlePixabaySelect,
     handleRatioChange,
     handleBackgroundChange,
   };

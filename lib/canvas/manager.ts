@@ -9,6 +9,7 @@ import {
   PencilBrush,
   Gradient,
   loadSVGFromString,
+  Polygon,
 } from "fabric";
 
 import type { BackgroundConfig, CanvasState, ExportOptions } from "./types";
@@ -23,6 +24,9 @@ export class CanvasManager {
   private currentHeight = 1080;
   private snapThreshold = 5;
   private guideLines: Line[] = [];
+  private isGridVisible = false;
+  private gridSize = 50;
+  private gridGroup: Group | null = null;
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.canvas = new Canvas(canvasElement, {
@@ -37,35 +41,205 @@ export class CanvasManager {
   }
 
   async addImageFromUrl(url: string): Promise<void> {
-     try {
-       // Используем прокси или прямой URL если разрешен CORS
-        const img = await FabricImage.fromURL(url);
+    try {
+      // Используем прокси или прямой URL если разрешен CORS
+      const img = await FabricImage.fromURL(url);
 
-       const width = this.canvas.width || 1080;
-       const height = this.canvas.height || 1080;
+      const width = this.canvas.width || 1080;
+      const height = this.canvas.height || 1080;
 
-       // Центрируем и масштабируем под холст
-       const scale = Math.min(
-         (width * 0.8) / (img.width || 1),
-         (height * 0.8) / (img.height || 1),
-         1
-       );
+      // Центрируем и масштабируем под холст
+      const scale = Math.min(
+        (width * 0.8) / (img.width || 1),
+        (height * 0.8) / (img.height || 1),
+        1,
+      );
 
-       img.set({
-         left: width / 2,
-         top: height / 2,
-         originX: "center",
-         originY: "center",
-         scaleX: scale,
-         scaleY: scale,
-       });
+      img.set({
+        left: width / 2,
+        top: height / 2,
+        originX: "center",
+        originY: "center",
+        scaleX: scale,
+        scaleY: scale,
+      });
 
-       this.canvas.add(img);
-       this.canvas.setActiveObject(img);
-       this.canvas.renderAll();
-     } catch (error) {
-       console.error("Failed to load image:", error);
-     }
+      this.canvas.add(img);
+      this.canvas.setActiveObject(img);
+      this.canvas.renderAll();
+    } catch (error) {
+      console.error("Failed to load image:", error);
+    }
+  }
+
+  toggleGrid(): void {
+    if (this.isGridVisible) {
+      this.hideGrid();
+    } else {
+      this.showGrid();
+    }
+  }
+
+  showGrid(): void {
+    if (this.gridGroup) {
+      this.canvas.add(this.gridGroup);
+      this.canvas.sendObjectToBack(this.gridGroup);
+      this.isGridVisible = true;
+      this.canvas.requestRenderAll();
+      return;
+    }
+
+    const width = this.canvas.width || 1080;
+    const height = this.canvas.height || 1080;
+    const lines: Line[] = [];
+
+    // Вертикальные линии
+    for (let x = 0; x <= width; x += this.gridSize) {
+      lines.push(
+        new Line([x, 0, x, height], {
+          stroke: "rgba(128, 128, 128, 0.15)",
+          strokeWidth: 1,
+          selectable: false,
+          evented: false,
+          hoverCursor: "default",
+        }),
+      );
+    }
+
+    // Горизонтальные линии
+    for (let y = 0; y <= height; y += this.gridSize) {
+      lines.push(
+        new Line([0, y, width, y], {
+          stroke: "rgba(128, 128, 128, 0.15)",
+          strokeWidth: 1,
+          selectable: false,
+          evented: false,
+          hoverCursor: "default",
+        }),
+      );
+    }
+
+    this.gridGroup = new Group(lines, {
+      selectable: false,
+      evented: false,
+      hoverCursor: "default",
+    });
+
+    this.canvas.add(this.gridGroup);
+    this.canvas.sendObjectToBack(this.gridGroup);
+    this.isGridVisible = true;
+    this.canvas.requestRenderAll();
+  }
+
+  hideGrid(): void {
+      if (this.gridGroup) {
+        this.canvas.remove(this.gridGroup);
+      }
+      this.isGridVisible = false;
+      this.canvas.requestRenderAll();
+    }
+
+    isGridEnabled(): boolean {
+      return this.isGridVisible;
+    }
+
+  addArrow(): void {
+    const width = this.canvas.width || 1080;
+    const height = this.canvas.height || 1080;
+
+    // Параметры стрелки
+    const startX = width / 2 - 100;
+    const startY = height / 2;
+    const endX = width / 2 + 100;
+    const endY = height / 2;
+    const strokeWidth = 4;
+    const headSize = 15; // Размер наконечника
+
+    // 1. Создаем линию (тело стрелки)
+    const line = new Line([startX, startY, endX, endY], {
+      stroke: "#000000",
+      strokeWidth,
+      strokeLineCap: "round",
+    });
+
+    // 2. Вычисляем координаты наконечника (треугольник)
+    const angle = Math.atan2(endY - startY, endX - startX);
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    // Три точки треугольника относительно конца линии
+    const tipX = endX;
+    const tipY = endY;
+    const leftX = endX - headSize * cos + headSize * sin;
+    const leftY = endY - headSize * sin - headSize * cos;
+    const rightX = endX - headSize * cos - headSize * sin;
+    const rightY = endY - headSize * sin + headSize * cos;
+
+    const arrowHead = new Polygon(
+      [
+        { x: tipX, y: tipY },
+        { x: leftX, y: leftY },
+        { x: rightX, y: rightY },
+      ],
+      {
+        fill: "#000000",
+        originX: "center",
+        originY: "center",
+      },
+    );
+
+    const arrow = new Group([line, arrowHead], {
+      left: width / 2,
+      top: height / 2,
+      originX: "center",
+      originY: "center",
+    });
+
+    this.canvas.add(arrow);
+    this.canvas.setActiveObject(arrow);
+    this.canvas.renderAll();
+  }
+
+  async addImageFromBlob(blob: Blob): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = async (event) => {
+        try {
+          const dataUrl = event.target?.result as string;
+          const img = await FabricImage.fromURL(dataUrl);
+
+          const width = this.canvas.width || 1080;
+          const height = this.canvas.height || 1080;
+
+          // Центрируем и масштабируем
+          const scale = Math.min(
+            (width * 0.8) / (img.width || 1),
+            (height * 0.8) / (img.height || 1),
+            1,
+          );
+
+          img.set({
+            left: width / 2,
+            top: height / 2,
+            originX: "center",
+            originY: "center",
+            scaleX: scale,
+            scaleY: scale,
+          });
+
+          this.canvas.add(img);
+          this.canvas.setActiveObject(img);
+          this.canvas.renderAll();
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   async addSVGFromContent(svgContent: string): Promise<void> {
@@ -115,7 +289,7 @@ export class CanvasManager {
         const scale = Math.min(
           targetSize / safeWidth,
           targetSize / safeHeight,
-          1
+          1,
         );
 
         target.set({
@@ -542,6 +716,18 @@ export class CanvasManager {
 
   getCanvas(): Canvas {
     return this.canvas;
+  }
+
+  getHistoryLength(): number {
+    return this.history.length;
+  }
+
+  getHistoryIndex(): number {
+    return this.historyIndex;
+  }
+
+  clearCanvas(): void {
+    this.canvas.clear();
   }
 
   dispose(): void {

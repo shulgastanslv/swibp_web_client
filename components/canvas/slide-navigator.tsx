@@ -21,9 +21,8 @@ export function SliderNavigator({
   className = "",
 }: SliderNavigatorProps) {
   return (
-    <div className={`flex items-center gap-2 overflow-x-auto bg-muted backdrop-blur-md p-2 rounded-2xl shadow-xl shadow-black/5 select-none scrollbar-thin ${className}`}>
+    <div className={`flex items-center gap-2 overflow-x-auto bg-muted/50 backdrop-blur-md p-2 rounded-4xl shadow-xl shadow-black/5 select-none scrollbar-thin ${className}`}>
 
-      {/* Список слайдов */}
       {Array.from({ length: totalSlides }).map((_, i) => {
         const slideNumber = i + 1;
         const isActive = slideNumber === currentSlide;
@@ -32,7 +31,7 @@ export function SliderNavigator({
           <div
             key={i}
             onClick={() => onSelect(slideNumber)}
-            className={`group relative flex flex-col justify-between w-14 h-12 p-2 rounded-xl border transition-all cursor-pointer shrink-0 ${
+            className={`group relative flex flex-col justify-between w-14 h-12 p-2 rounded-2xl border transition-all cursor-pointer shrink-0 ${
               isActive
                 ? "border-primary bg-muted text-primary shadow-sm ring-1 ring-primary/30"
                   : "border-border/60 bg-muted/50 hover:border-muted-foreground/40 text-muted-foreground hover:text-foreground"
