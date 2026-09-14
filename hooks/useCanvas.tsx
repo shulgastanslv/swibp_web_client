@@ -1,97 +1,71 @@
-import { RefObject, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { CanvasManager } from "@/lib/canvas/manager";
+import { useCanvasStore } from "@/store/useCanvasStore";
 import {
   BackgroundConfig,
   CANVAS_RATIOS,
   type RatioKey,
-  type ToolType,
 } from "@/lib/canvas/types";
 import type { Object as FabricObject } from "fabric";
 
-interface SlideData {
-  id: number;
-  canvasJSON: string | null; // Сохраненное состояние canvas
-  thumbnail?: string;
-}
-
 export function useCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const managerRef = useRef<CanvasManager | null>(null);
-  const [activeTool, setActiveTool] = useState<ToolType>("select");
-  const [selectedObject, setSelectedObject] = useState<FabricObject | null>(
-    null,
-  );
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [currentRatio, setCurrentRatio] = useState<RatioKey>("1:1");
-  const [canvasDimensions, setCanvasDimensions] = useState({
-    width: 1080,
-    height: 1080,
-  });
 
-  const [isPixabayOpen, setIsPixabayOpen] = useState(false);
-  const [slides, setSlides] = useState<SlideData[]>([
-    { id: 1, canvasJSON: null },
-  ]);
-  const [currentSlide, setCurrentSlide] = useState(1);
-  const [isSwitchingSlide, setIsSwitchingSlide] = useState(false);
-  const canvasRefs = useRef<RefObject<HTMLCanvasElement>[]>([]);
+  const {
+    managerRef,
+    setManager,
+    setActiveTool,
+    setSelectedObject,
+    setCanvasDimensions,
+    setCurrentRatio,
+    currentRatio,
+    activeTool,
+    slides,
+    currentSlideId,
+    switchToSlide,
+    addSlide,
+    removeSlide,
+    updateCurrentSlideJSON,
+    toggleGrid,
+    isGridVisible,
+    setIsPixabayOpen,
+    isPixabayOpen,
+  } = useCanvasStore();
 
   useEffect(() => {
-    if (!canvasRef.current || managerRef.current) return;
+    if (!canvasRef.current || managerRef) return;
 
     const manager = new CanvasManager(canvasRef.current);
-    managerRef.current = manager;
+    setManager(manager);
 
     const canvas = manager.getCanvas();
 
-    const handleSelection = (e: { selected?: FabricObject[] }) => {
-      setSelectedObject(e.selected?.[0] || null);
+    const handleSelection = () => {
+      const activeObj = canvas.getActiveObject();
+      setSelectedObject(activeObj || null);
     };
 
-    const handlePaste = async (e: ClipboardEvent) => {
-      const activeElement = document.activeElement;
-      if (
-        activeElement?.tagName === "INPUT" ||
-        activeElement?.tagName === "TEXTAREA"
-      ) {
-        return;
-      }
-
-      e.preventDefault();
-
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      // Ищем изображение в буфере
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-
-        if (item.type.indexOf("image") !== -1) {
-          const blob = item.getAsFile();
-
-          if (blob) {
-            try {
-              await manager.addImageFromBlob(blob);
-            } catch (error) {
-              console.error("Failed to paste image:", error);
-            }
-          }
-          break;
-        }
-      }
+    const handleAutoSave = () => {
+      const json = manager.exportAsJSON();
+      const thumbnail = canvas.toDataURL({
+        format: "png",
+        multiplier: 0.1,
+        quality: 0.8,
+      });
+      updateCurrentSlideJSON(json, thumbnail);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
       if (e.key === "Delete" || e.key === "Backspace") {
         const activeElement = document.activeElement;
         if (
-          activeElement?.tagName === "INPUT" ||
-          activeElement?.tagName === "TEXTAREA"
+          activeElement?.tagName !== "INPUT" &&
+          activeElement?.tagName !== "TEXTAREA"
         ) {
-          return;
+          manager.deleteSelected();
         }
-        manager.deleteSelected();
       }
 
       if (isCtrlOrCmd && e.key === "d") {
@@ -101,323 +75,164 @@ export function useCanvas() {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("paste", handlePaste);
+
     canvas.on("selection:created", handleSelection);
     canvas.on("selection:updated", handleSelection);
-    canvas.on("selection:cleared", () => setSelectedObject(null));
+    canvas.on("selection:cleared", handleSelection);
+
+    canvas.on("object:modified", handleAutoSave);
+    canvas.on("object:added", handleAutoSave);
+    canvas.on("object:removed", handleAutoSave);
 
     return () => {
-      window.removeEventListener("paste", handlePaste);
       window.removeEventListener("keydown", handleKeyDown);
+      canvas.off("selection:created", handleSelection);
+      canvas.off("selection:updated", handleSelection);
+      canvas.off("selection:cleared", handleSelection);
+      canvas.off("object:modified", handleAutoSave);
+      canvas.off("object:added", handleAutoSave);
+      canvas.off("object:removed", handleAutoSave);
+
       manager.dispose();
-      managerRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (!managerRef.current || isSwitchingSlide) return;
-
-    const saveCurrentSlide = () => {
-      const manager = managerRef.current;
-      if (!manager) return;
-
-      const canvasJSON = manager.exportAsJSON();
-      const canvas = manager.getCanvas();
-
-      // Создаем превью
-      const thumbnail = canvas.toDataURL({
-        format: "png",
-        multiplier: 0.1, // Маленькое превью
-        quality: 0.8,
-      });
-
-      setSlides((prev) =>
-        prev.map((slide) =>
-          slide.id === currentSlide
-            ? { ...slide, canvasJSON, thumbnail }
-            : slide,
-        ),
-      );
-    };
-
-    // Сохраняем при изменениях
-    const canvas = managerRef.current.getCanvas();
-    canvas.on("object:modified", saveCurrentSlide);
-    canvas.on("object:added", saveCurrentSlide);
-    canvas.on("object:removed", saveCurrentSlide);
-
-    return () => {
-      if (managerRef.current) {
-        const c = managerRef.current.getCanvas();
-        c.off("object:modified", saveCurrentSlide);
-        c.off("object:added", saveCurrentSlide);
-        c.off("object:removed", saveCurrentSlide);
-      }
-    };
-  }, [currentSlide, isSwitchingSlide]);
-
-  useEffect(() => {
-    const manager = managerRef.current;
-    if (!manager) return;
-
-    manager.disableDrawingMode();
+    if (!managerRef) return;
+    managerRef.disableDrawingMode();
 
     switch (activeTool) {
       case "pen":
-        manager.enableDrawingMode();
+        managerRef.enableDrawingMode();
         break;
       case "rectangle":
-        manager.addRectangle();
+        managerRef.addRectangle();
+        setActiveTool("select");
         break;
       case "circle":
-        manager.addCircle();
+        managerRef.addCircle();
+        setActiveTool("select");
         break;
       case "triangle":
-        manager.addTriangle();
+        managerRef.addTriangle();
+        setActiveTool("select");
         break;
       case "line":
-        manager.addLine();
+        managerRef.addLine();
+        setActiveTool("select");
         break;
       case "arrow":
-        manager.addArrow();
+        managerRef.addArrow();
+        setActiveTool("select");
         break;
       case "text":
-        manager.addText("Новый текст");
+        managerRef.addText("New Text");
+        setActiveTool("select");
         break;
     }
-  }, [activeTool]);
-
-  const switchToSlide = async (slideNumber: number) => {
-    if (slideNumber === currentSlide) return;
-
-    setIsSwitchingSlide(true);
-    const manager = managerRef.current;
-    if (!manager) return;
-
-    // Сохраняем текущий слайд
-    const currentCanvasJSON = manager.exportAsJSON();
-    const canvas = manager.getCanvas();
-    const currentThumbnail = canvas.toDataURL({
-      format: "png",
-      multiplier: 0.1,
-      quality: 0.8,
-    });
-
-    setSlides((prev) =>
-      prev.map((slide) =>
-        slide.id === currentSlide
-          ? {
-              ...slide,
-              canvasJSON: currentCanvasJSON,
-              thumbnail: currentThumbnail,
-            }
-          : slide,
-      ),
-    );
-
-    // Загружаем новый слайд
-    const targetSlide = slides.find((s) => s.id === slideNumber);
-    if (targetSlide?.canvasJSON) {
-      await manager.loadFromJSON(targetSlide.canvasJSON);
-    } else {
-      // Пустой слайд
-      manager.clearCanvas();
-      manager.setBackground({ type: "solid", color: "#ffffff" });
-    }
-
-    setCurrentSlide(slideNumber);
-    setIsSwitchingSlide(false);
-  };
-
-  const handlePrev = () => {
-    if (currentSlide > 1) {
-      switchToSlide(currentSlide - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentSlide < slides.length) {
-      switchToSlide(currentSlide + 1);
-    }
-  };
-
-  const handleAddSlide = () => {
-    const newSlideId = slides.length + 1;
-    setSlides((prev) => [...prev, { id: newSlideId, canvasJSON: null }]);
-    // Переключаемся на новый слайд
-    setTimeout(() => switchToSlide(newSlideId), 100);
-  };
-
-  const handleRemoveSlide = (slideNumber: number) => {
-    if (slides.length <= 1) return;
-
-    const newSlides = slides.filter((s) => s.id !== slideNumber);
-    setSlides(newSlides);
-
-    // Если удалили текущий слайд, переключаемся на предыдущий
-    if (slideNumber === currentSlide) {
-      const newCurrentSlide = Math.min(currentSlide, newSlides.length);
-      setTimeout(() => switchToSlide(newCurrentSlide), 100);
-    }
-  };
+  }, [activeTool, setActiveTool, managerRef]);
 
   const handleRatioChange = (ratio: RatioKey) => {
-    const manager = managerRef.current;
-    if (!manager) return;
-
+    if (!managerRef) return;
     const { width, height } = CANVAS_RATIOS[ratio];
-    manager.setRatio(width, height);
+    managerRef.setRatio(width, height);
     setCanvasDimensions({ width, height });
     setCurrentRatio(ratio);
   };
 
-  const [isGridVisible, setIsGridVisible] = useState(false);
-
-  const handleToggleGrid = () => {
-    const manager = managerRef.current;
-    if (!manager) return;
-
-    manager.toggleGrid();
-    setIsGridVisible(manager.isGridEnabled());
-  };
-
   const handleUpdateObject = (updates: Partial<FabricObject>) => {
-    const manager = managerRef.current;
-    if (!manager) return;
-
-    const canvas = manager.getCanvas();
+    if (!managerRef) return;
+    const canvas = managerRef.getCanvas();
     const activeObject = canvas.getActiveObject();
-
     if (activeObject) {
       activeObject.set(updates);
       canvas.renderAll();
     }
   };
 
-  const handlePixabaySelect = async (imageUrl: string) => {
-    const manager = managerRef.current;
-    if (!manager) return;
-
-    await manager.addImageFromUrl(imageUrl);
-    setIsPixabayOpen(false); // Закрываем модалку после добавления
-  };
-
-  const handleBackgroundChange = (config: BackgroundConfig) => {
-    const manager = managerRef.current;
-    if (!manager) return;
-    manager.setBackground(config);
-  };
-
   const handleImageUpload = async (file: File) => {
-    const manager = managerRef.current;
-    if (!manager) return;
+    if (!managerRef) return;
     const url = URL.createObjectURL(file);
-    await manager.addImage(url);
+    await managerRef.addImage(url);
     URL.revokeObjectURL(url);
   };
 
-  const handleDelete = () => {
-    const manager = managerRef.current;
-    if (!manager) return;
-    manager.deleteSelected();
+  const handlePixabaySelect = async (imageUrl: string) => {
+    if (!managerRef) return;
+    await managerRef.addImage(imageUrl);
+    setIsPixabayOpen(false);
   };
 
-  const handleDuplicate = async () => {
-    const manager = managerRef.current;
-    if (!manager) return;
-    await manager.duplicateSelected();
-  };
-
-  const clearCanvas = () => {
-    const manager = managerRef.current;
-    if (!manager) return;
-    manager.clearCanvas();
-  };
-
-  const getCanvas = () => {
-    const manager = managerRef.current;
-    if (!manager) return;
-    manager.getCanvas();
-  };
-
-  const exportToJSON = (): string => {
-    const manager = managerRef.current;
-    if (!manager) return "";
-    return manager.exportAsJSON();
+  const handleBackgroundChange = (config: BackgroundConfig) => {
+    if (!managerRef) return;
+    managerRef.setBackground(config);
   };
 
   const exportAllSlides = async () => {
-      const manager = managerRef.current;
-      if (!manager) return;
+    if (!managerRef) return;
 
-      // Сохраняем текущий слайд
-      const currentCanvasJSON = manager.exportAsJSON();
-      const currentThumbnail = manager.getCanvas().toDataURL({
-        format: "png",
-        multiplier: 0.1,
-        quality: 0.8,
-      });
+    const currentJson = managerRef.exportAsJSON();
+    const currentThumb = managerRef
+      .getCanvas()
+      .toDataURL({ format: "png", multiplier: 0.1 });
+    updateCurrentSlideJSON(currentJson, currentThumb);
 
-      setSlides((prev) =>
-        prev.map((slide) =>
-          slide.id === currentSlide
-            ? { ...slide, canvasJSON: currentCanvasJSON, thumbnail: currentThumbnail }
-            : slide
-        )
-      );
+    const currentSlides = useCanvasStore.getState().slides;
 
-      // Экспортируем каждый слайд
-      for (const slide of slides) {
-        if (slide.canvasJSON) {
-          await manager.loadFromJSON(slide.canvasJSON);
-          const dataURL = await manager.exportAsImage({
-            format: "png",
-            multiplier: 2,
-          });
-          const a = document.createElement("a");
-          a.href = dataURL;
-          a.download = `carousel-slide-${slide.id}.png`;
-          a.click();
-
-          // Небольшая задержка между скачиваниями
-          await new Promise((resolve) => setTimeout(resolve, 300));
-        }
+    for (const slide of currentSlides) {
+      if (slide.canvasJSON) {
+        await managerRef.loadFromJSON(slide.canvasJSON);
+        const dataURL = await managerRef.exportAsImage({
+          format: "png",
+          multiplier: 2,
+        });
+        const a = document.createElement("a");
+        a.href = dataURL;
+        a.download = `carousel-slide-${slide.id}.png`;
+        a.click();
+        await new Promise((resolve) => setTimeout(resolve, 300));
       }
+    }
 
-      // Возвращаемся на текущий слайд
-      await manager.loadFromJSON(currentCanvasJSON);
-    };
+    await managerRef.loadFromJSON(currentJson);
+  };
 
   return {
     canvasRef,
-    containerRef,
     managerRef,
-    isGridVisible,
-    handleToggleGrid,
     activeTool,
-    getCanvas,
     setActiveTool,
-    selectedObject,
-    handleDelete,
-    handleDuplicate,
+    selectedObject: useCanvasStore((state) => state.selectedObject),
+    handleDelete: () => managerRef?.deleteSelected(),
+    handleDuplicate: () => managerRef?.duplicateSelected(),
     handleImageUpload,
     currentRatio,
     handleUpdateObject,
-    canvasDimensions,
+    canvasDimensions: useCanvasStore((state) => state.canvasDimensions),
     isPixabayOpen,
     setIsPixabayOpen,
-    clearCanvas,
-    exportToJSON,
+    clearCanvas: () => managerRef?.clear(),
+    exportToJSON: () => managerRef?.exportAsJSON() || "",
     handlePixabaySelect,
     handleRatioChange,
     handleBackgroundChange,
     slides,
-    currentSlide,
+    currentSlideId,
     switchToSlide,
-    handleAddSlide,
-    handleRemoveSlide,
-    handlePrev,
-    handleNext,
-    exportAllSlides
+    addSlide,
+    removeSlide,
+    handlePrev: () => {
+      const ids = slides.map((s) => s.id);
+      const idx = ids.indexOf(currentSlideId);
+      if (idx > 0) switchToSlide(ids[idx - 1]);
+    },
+    handleNext: () => {
+      const ids = slides.map((s) => s.id);
+      const idx = ids.indexOf(currentSlideId);
+      if (idx < ids.length - 1) switchToSlide(ids[idx + 1]);
+    },
+    exportAllSlides,
+    isGridVisible,
+    toggleGrid,
   };
 }

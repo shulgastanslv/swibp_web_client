@@ -10,37 +10,27 @@ import { BackgroundConfig, RatioKey } from "@/lib/canvas/types";
 import { BackgroundPanel } from "./bg-panel";
 import { PixabaySearch } from "@/components/pixabay/search";
 import { AspectRatioPanel } from "./aspect-ratio-panel";
-import { FabricObject } from "fabric";
-import { StylePanel } from "./style-panel";
+import { useCanvasStore } from "@/store/useCanvasStore";
 
-interface RightToolbarProps {
-  selectedObject: FabricObject | null;
-  currentRatio: RatioKey;
-  onBackgroundChange: (config: BackgroundConfig) => void;
-  onRatioChange: (ratio: RatioKey) => void;
-  exportToJSON: () => string;
-  handlePixabaySelect: (imageUrl: string) => void;
-  onDeleteObject: () => void;
-  onDuplicateObject: () => void;
-  onUpdateObject: (updates: Partial<FabricObject>) => void;
-  onToggleGrid: () => void;
-  isGridVisible: boolean;
-}
 
-export function RightToolbar({
-  currentRatio,
-  onRatioChange,
-  exportToJSON,
-  onBackgroundChange,
-  handlePixabaySelect,
-  onToggleGrid,
-  isGridVisible,
-}: RightToolbarProps) {
-  const [selectedStyle, setSelectedStyle] = React.useState("default");
+export function RightToolbar() {
+  const currentRatio = useCanvasStore((state) => state.currentRatio);
+  const setCurrentRatio = useCanvasStore((state) => state.setCurrentRatio);
+  const setBackground = useCanvasStore((state) => state.setBackground);
+  const addImageFromUrl = useCanvasStore((state) => state.addImageFromUrl);
+  const exportToJSON = useCanvasStore((state) => state.exportToJSON);
+  const setIsPixabayOpen = useCanvasStore((state) => state.setIsPixabayOpen);
 
   const handleExportToJSON = () => {
-    alert(exportToJSON());
+    const json = exportToJSON();
+    alert(json);
+    navigator.clipboard.writeText(json);
   };
+
+  const handlePixabaySelect = async (imageUrl: string) => {
+     await addImageFromUrl(imageUrl);
+     setIsPixabayOpen(false);
+   };
 
   return (
     <aside className="w-72 shrink-0 mx-4 h-full rounded-4xl overflow-y-auto bg-muted/50 backdrop-blur-3xl flex flex-col">
@@ -67,7 +57,6 @@ export function RightToolbar({
           </Button>
         </div>
       </div>
-
       <ScrollArea className="flex-1 px-4 py-4">
         <div className="flex flex-col space-y-4">
           <span className="text-xs font-medium text-muted-foreground">
@@ -75,7 +64,7 @@ export function RightToolbar({
           </span>
           <AspectRatioPanel
             currentRatio={currentRatio}
-            onRatioChange={onRatioChange}
+            onRatioChange={setCurrentRatio}
           />
           <Separator className="bg-border/40" />
           <div className="flex flex-col space-y-4">
@@ -89,7 +78,7 @@ export function RightToolbar({
             <span className="text-xs font-medium text-muted-foreground">
               BACKGROUND
             </span>
-            <BackgroundPanel onBackgroundChange={onBackgroundChange} />
+            <BackgroundPanel onBackgroundChange={setBackground} />
           </div>
         </div>
       </ScrollArea>

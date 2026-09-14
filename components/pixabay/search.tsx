@@ -35,7 +35,6 @@ export function PixabaySearch({ onSelect }: PixabaySearchProps) {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalHits, setTotalHits] = useState(0);
-  const [recentlyUsed, setRecentlyUsed] = useState<PixabayImage[]>([]);
 
   const clearSearch = () => {
     setQuery("");
@@ -64,20 +63,6 @@ export function PixabaySearch({ onSelect }: PixabaySearchProps) {
 
   const handleSelect = (imageUrl: string, metadata: PixabayImage) => {
     onSelect(imageUrl, metadata);
-
-    setRecentlyUsed((prev) => {
-      if (!prev) return [];
-      const filtered = prev.filter((item) => item.id !== metadata.id);
-      const updated = [metadata, ...filtered].slice(0, MAX_RECENT);
-
-      try {
-        localStorage.setItem(RECENTLY_USED_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.error("Failed to save recently used:", e);
-      }
-
-      return updated;
-    });
   };
 
   useEffect(() => {
@@ -118,7 +103,6 @@ export function PixabaySearch({ onSelect }: PixabaySearchProps) {
 
   const totalPages = Math.ceil(totalHits / PER_PAGE);
   const hasQuery = query.trim().length > 0;
-  const showRecentlyUsed = !hasQuery && !recentlyUsed;
 
   return (
     <div className="w-full max-w-md">
@@ -157,37 +141,6 @@ export function PixabaySearch({ onSelect }: PixabaySearchProps) {
         </div>
       )}
       <div>
-        {showRecentlyUsed && (
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">
-                Recently used
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {recentlyUsed.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() =>
-                    handleSelect(item.largeImageURL || item.previewURL, item)
-                  }
-                  className="group relative aspect-square border border-border rounded-xl overflow-hidden hover:border-primary transition-all bg-muted/30"
-                >
-                  <img
-                    src={item.previewURL}
-                    alt={item.tags}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Plus className="w-5 h-5 text-white" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         {loading && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="animate-spin text-muted-foreground h-6 w-6" />

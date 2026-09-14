@@ -12,15 +12,9 @@ import {
   Type,
   Image as ImageIcon,
   Download,
-  ArrowRight,
   ArrowUp,
 } from "lucide-react";
-
-interface ToolbarProps {
-  activeTool: ToolType;
-  onToolChange: (tool: ToolType) => void;
-  onImageUpload: (file: File) => void;
-}
+import { useCanvasStore } from "@/store/useCanvasStore";
 
 const tools: { id: ToolType; label: string; icon: React.ReactNode }[] = [
   { id: "select", label: "Выделение", icon: <MousePointer className="w-4 h-4" /> },
@@ -33,37 +27,31 @@ const tools: { id: ToolType; label: string; icon: React.ReactNode }[] = [
   { id: "text", label: "Текст", icon: <Type className="w-4 h-4" /> },
 ];
 
-export function Toolbar({
-  activeTool,
-  onToolChange,
-  onImageUpload,
-}: ToolbarProps) {
-
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) onImageUpload(file);
-  };
+export function Toolbar() {
+  const activeTool = useCanvasStore((state) => state.activeTool);
+  const setActiveTool = useCanvasStore((state) => state.setActiveTool);
 
   return (
-    <div className="flex flex-col w-full gap-2 bg-muted/50 backdrop-blur-md h-min p-1.5 rounded-4xl shadow-sm">
+    <div className="flex flex-col w-full gap-2 bg-muted/50 backdrop-blur-md h-min p-1.5 rounded-4xl shadow-sm border border-border/40">
       {tools.map((tool) => {
         const isActive = activeTool === tool.id;
         return (
           <button
             key={tool.id}
-            onClick={() => onToolChange(tool.id)}
+            onClick={() => setActiveTool(tool.id)}
             className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
               isActive
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-sm scale-105"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
             title={tool.label}
+            aria-label={tool.label}
           >
             {tool.icon}
           </button>
         );
       })}
+
       <div className="h-px bg-border my-1 mx-1" />
       <label
         className="w-9 h-9 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground flex items-center justify-center cursor-pointer transition-all"
@@ -73,10 +61,15 @@ export function Toolbar({
         <input
           type="file"
           accept="image/*"
-          onChange={handleFileChange}
           className="hidden"
         />
       </label>
+      <button
+        className="w-9 h-9 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground flex items-center justify-center transition-all"
+        title="Скачать текущий слайд"
+      >
+        <Download className="w-4 h-4" />
+      </button>
     </div>
   );
 }

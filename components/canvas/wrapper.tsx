@@ -1,48 +1,46 @@
 "use client";
 
+import { useCanvasStore } from "@/store/useCanvasStore";
 import { RefObject, useEffect, useRef, useState } from "react";
 
 interface CanvasWrapperProps {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   containerRef: RefObject<HTMLDivElement | null>;
-  canvasWidth: number;
-  canvasHeight: number;
 }
 
 export default function CanvasWrapper({
   canvasRef,
   containerRef,
-  canvasWidth,
-  canvasHeight,
 }: CanvasWrapperProps) {
+
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const canvasDemensions = useCanvasStore((state) => state.canvasDimensions);
 
   useEffect(() => {
     const updateScale = () => {
       if (!wrapperRef.current) return;
 
       const wrapper = wrapperRef.current;
-      const availableWidth = wrapper.clientWidth - 80; // отступы
+      const availableWidth = wrapper.clientWidth - 80;
       const availableHeight = wrapper.clientHeight - 80;
 
-      const scaleX = availableWidth / canvasWidth;
-      const scaleY = availableHeight / canvasHeight;
-      const newScale = Math.min(scaleX, scaleY, 1); // не увеличиваем больше 1
+      const scaleX = availableWidth / canvasDemensions.width;
+      const scaleY = availableHeight / canvasDemensions.height;
+      const newScale = Math.min(scaleX, scaleY, 1);
 
       setScale(newScale);
     };
 
     updateScale();
 
-    // Следим за изменением размера окна
     const observer = new ResizeObserver(updateScale);
     if (wrapperRef.current) {
       observer.observe(wrapperRef.current);
     }
 
     return () => observer.disconnect();
-  }, [canvasWidth, canvasHeight]);
+  }, [canvasDemensions.width, canvasDemensions.height]);
 
   return (
     <div
@@ -52,8 +50,8 @@ export default function CanvasWrapper({
       <div
         ref={containerRef}
         style={{
-          width: canvasWidth,
-          height: canvasHeight,
+          width: canvasDemensions.width,
+          height: canvasDemensions.height,
           transform: `scale(${scale})`,
           transformOrigin: "center center",
         }}
@@ -61,8 +59,8 @@ export default function CanvasWrapper({
       >
         <canvas
           ref={canvasRef}
-          width={canvasWidth}
-          height={canvasHeight}
+          width={canvasDemensions.width}
+          height={canvasDemensions.height}
           style={{ display: "block" }}
         />
       </div>

@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { Plus, UserRoundIcon, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { Plus, UserRoundIcon, X } from "lucide-react";
+import { useRef, useState } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface AccountDialogProps {
   isOpen?: boolean;
@@ -23,17 +23,18 @@ interface AccountDialogProps {
 export default function AccountDialog({
   isOpen,
   onOpenChange,
-} : AccountDialogProps) {
-  const [authorName, setAuthorName] = useState('Ephraim Duncan');
-  const [title, setTitle] = useState('Design Engineer');
-  const [image, setImage] = useState<string | null>(null);``
+}: AccountDialogProps) {
+  const [authorName, setAuthorName] = useState("Ephraim Duncan");
+  const [title, setTitle] = useState("Design Engineer");
+  const [image, setImage] = useState<string | null>(null);
+  ``;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 1_048_576) {
-        alert('File size exceeds 1MB limit');
+        alert("File size exceeds 1MB limit");
         return;
       }
 
@@ -77,7 +78,7 @@ export default function AccountDialog({
                   if (image) {
                     setImage(null);
                     if (fileInputRef.current) {
-                      fileInputRef.current.value = '';
+                      fileInputRef.current.value = "";
                     }
                   } else {
                     triggerFileInput();
@@ -92,7 +93,7 @@ export default function AccountDialog({
                   <Plus className="h-3 w-3 text-muted-foreground" />
                 )}
                 <span className="sr-only">
-                  {image ? 'Remove image' : 'Upload image'}
+                  {image ? "Remove image" : "Upload image"}
                 </span>
               </Button>
             </div>
@@ -128,6 +129,7 @@ export default function AccountDialog({
                   id="author-name"
                   onChange={(e) => setAuthorName(e.target.value)}
                   required
+                  className="rounded-full"
                   value={authorName}
                 />
               </div>
@@ -138,6 +140,7 @@ export default function AccountDialog({
                 </div>
                 <Input
                   id="title"
+                  className="rounded-full"
                   onChange={(e) => setTitle(e.target.value)}
                   value={title}
                 />
@@ -145,7 +148,7 @@ export default function AccountDialog({
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" className='rounded-full'>
+              <Button variant="outline" className="rounded-full">
                 Cancel
               </Button>
               <Button className="bg-foreground rounded-full text-background hover:bg-foreground/90">
