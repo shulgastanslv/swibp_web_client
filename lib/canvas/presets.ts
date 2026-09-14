@@ -1,7 +1,6 @@
 import { BackgroundConfig } from "./types";
 
 export const SOLID_PRESETS: BackgroundConfig[] = [
-  // ===== Dark Neutrals (Тёмные нейтральные) =====
   { type: "solid", color: "#0a0a0a" },
   { type: "solid", color: "#111111" },
   { type: "solid", color: "#1a1a1a" },
@@ -10,8 +9,6 @@ export const SOLID_PRESETS: BackgroundConfig[] = [
   { type: "solid", color: "#2a2a2a" },
   { type: "solid", color: "#333333" },
   { type: "solid", color: "#404040" },
-
-  // ===== Light Neutrals (Светлые нейтральные) =====
   { type: "solid", color: "#fafafa" },
   { type: "solid", color: "#f9f9f9" },
   { type: "solid", color: "#f5f5f5" },
@@ -20,34 +17,27 @@ export const SOLID_PRESETS: BackgroundConfig[] = [
   { type: "solid", color: "#fefefe" },
   { type: "solid", color: "#ffffff" },
   { type: "solid", color: "#e5e5e5" },
-
-  // ===== Warm Neutrals (Тёплые / бежевые / кремовые) =====
   { type: "solid", color: "#f5f1ea" },
   { type: "solid", color: "#ede4d3" },
   { type: "solid", color: "#e8dcc4" },
   { type: "solid", color: "#d9c7a7" },
   { type: "solid", color: "#c9b79c" },
   { type: "solid", color: "#b8a082" },
-
-  // ===== Cool Grays (Холодные серые) =====
   { type: "solid", color: "#f4f6f8" },
   { type: "solid", color: "#e2e8f0" },
   { type: "solid", color: "#cbd5e1" },
   { type: "solid", color: "#94a3b8" },
   { type: "solid", color: "#64748b" },
   { type: "solid", color: "#334155" },
-
-  // ===== Soft Pastels (Мягкие пастельные акценты) =====
-  { type: "solid", color: "#fce7f3" }, // розовый пудровый
-  { type: "solid", color: "#fde68a" }, // пастельный жёлтый
-  { type: "solid", color: "#d1fae5" }, // мятный
-  { type: "solid", color: "#dbeafe" }, // голубой
-  { type: "solid", color: "#ede9fe" }, // лавандовый
-  { type: "solid", color: "#ffedd5" }, // персиковый
+  { type: "solid", color: "#fce7f3" },
+  { type: "solid", color: "#fde68a" },
+  { type: "solid", color: "#d1fae5" },
+  { type: "solid", color: "#dbeafe" },
+  { type: "solid", color: "#ede9fe" },
+  { type: "solid", color: "#ffedd5" },
 ];
 
 export const GRADIENT_PRESETS: BackgroundConfig[] = [
-  // ===== Monochrome Dark (Углубленные темные оттенки) =====
   { type: "gradient", colors: ["#0a0a0a", "#121212"] },
   { type: "gradient", colors: ["#121212", "#1a1a1a"] },
   { type: "gradient", colors: ["#151515", "#202020"] },
@@ -66,40 +56,25 @@ export const GRADIENT_PRESETS: BackgroundConfig[] = [
   { type: "gradient", colors: ["#f5f4f0", "#e6e2da"] },
   { type: "gradient", colors: ["#eae5df", "#d8d1c7"] },
   { type: "gradient", colors: ["#f3efe6", "#e4ddd1"] },
-  // ===== Carbon / Industrial Dark (Графитовые и матовые) =====
   { type: "gradient", colors: ["#0d0e11", "#16181d"] },
   { type: "gradient", colors: ["#111318", "#1e222a"] },
   { type: "gradient", colors: ["#191b20", "#2c3038"] },
   { type: "gradient", colors: ["#0f1115", "#21252d"] },
-
-  // ===== Soft Light & Off-White (Чистые и теплые белые/молочные) =====
   { type: "gradient", colors: ["#ffffff", "#f9f9f9"] },
   { type: "gradient", colors: ["#fcfcfc", "#f2f2f2"] },
   { type: "gradient", colors: ["#f5f5f5", "#ebebeb"] },
   { type: "gradient", colors: ["#fafafa", "#f0f0f0"] },
   { type: "gradient", colors: ["#ffffff", "#f4f4f5"] },
-
-  // ===== Warm Alabaster / Cream (Теплый беж и слоновая кость) =====
   { type: "gradient", colors: ["#fefefa", "#f5f3ef"] },
   { type: "gradient", colors: ["#faf8f5", "#eeeae3"] },
   { type: "gradient", colors: ["#fdfcfb", "#e9e5df"] },
-
-  // ===== Subtle Editorial Gradients (Элегантные светлые переходы с микро-тоном) =====
   { type: "gradient", colors: ["#f8f9fa", "#e9ecef"] },
   { type: "gradient", colors: ["#f4f5f7", "#e2e8f0"] },
   { type: "gradient", colors: ["#ffffff", "#e4e4e7"] },
-
-  // ===== Deep Obsidian / Soft Contrast (Глубокий черно-серый микс) =====
   { type: "gradient", colors: ["#09090b", "#18181b"] },
   { type: "gradient", colors: ["#111113", "#222226"] },
   { type: "gradient", colors: ["#18181b", "#27272a"] },
-
-  // ===== Atmospheric Light/Dark Studio (Студийные градиенты под UI) =====
   { type: "gradient", colors: ["#141414", "#1e1e1e"] },
-  {
-    type: "gradient",
-    colors: ["#fdfdfd", "#f0f0f0"],
-  },
   { type: "gradient", colors: ["#fefefa", "#f2eae1"] },
   { type: "gradient", colors: ["#faf8f5", "#e8ded1"] },
   { type: "gradient", colors: ["#fdfcfb", "#e4dcd0"] },

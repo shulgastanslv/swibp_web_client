@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { CanvasManager } from "@/lib/canvas/manager";
 import type { RatioKey, ToolType, BackgroundConfig } from "@/lib/canvas/types";
 import type { Object as FabricObject } from "fabric";
+import { LayoutTemplate } from "@/lib/canvas/layouts";
 
 interface SlideData {
   id: number;
@@ -13,17 +14,14 @@ interface CanvasState {
   managerRef: CanvasManager | null;
   setManager: (manager: CanvasManager) => void;
 
-  // Slides State
   slides: SlideData[];
   currentSlideId: number;
 
-  // Actions: Slides
   addSlide: () => void;
   removeSlide: (id: number) => void;
   switchToSlide: (id: number) => Promise<void>;
   updateCurrentSlideJSON: (json: string, thumbnail?: string) => void;
 
-  // UI State
   activeTool: ToolType;
   setActiveTool: (tool: ToolType) => void;
 
@@ -37,26 +35,62 @@ interface CanvasState {
   setSelectedObject: (obj: FabricObject | null) => void;
 
   isGridVisible: boolean;
+  gridSize: number;
+  gridColor: string;
   toggleGrid: () => void;
+  setGridSize: (size: number) => void;
+  setGridColor: (color: string) => void;
 
-  isPixabayOpen: boolean;
-  setIsPixabayOpen: (isOpen: boolean) => void;
+  isLayoutActive: boolean;
+  snapThreshold: number;
+  setSnapThreshold: (threshold: number) => void;
+  applyLayout: (template: LayoutTemplate) => void;
+  clearLayout: () => void;
 
   setBackground: (config: BackgroundConfig) => void;
-  addImageFromUrl: (url: string) => Promise<void>;
+  addImage: (url: string) => Promise<void>;
   exportToJSON: () => string;
   clearCanvas: () => void;
+  vignette: number;
+  noise: number;
+  blur: number;
+  setVignette: (value: number) => void;
+  setNoise: (value: number) => void;
+  setBlur: (value: number) => void;
+  clearEffects: () => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
-  // --- Initialization ---
   managerRef: null,
   setManager: (manager) => set({ managerRef: manager }),
 
-  // --- Slides ---
   slides: [{ id: 1, canvasJSON: null }],
   currentSlideId: 1,
+  isLayoutActive: false,
+  snapThreshold: 5,
+   setSnapThreshold: (threshold) => {
+     const { managerRef } = get();
+     if (managerRef) {
+       // Можно добавить метод в GridManager для изменения порога
+       // managerRef.setSnapThreshold(threshold);
+     }
+     set({ snapThreshold: threshold });
+   },
+  applyLayout: (template) => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.applyLayout(template);
+      set({ isLayoutActive: true });
+    }
+  },
 
+  clearLayout: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.clearLayout();
+      set({ isLayoutActive: false });
+    }
+  },
   addSlide: () => {
     const { slides } = get();
     const newId =
@@ -73,7 +107,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     const newSlides = slides.filter((s) => s.id !== id);
 
-    // If we removed the active slide, switch to the previous one or the first one
     let nextActiveId = currentSlideId;
     if (currentSlideId === id) {
       const currentIndex = slides.findIndex((s) => s.id === id);
@@ -131,12 +164,31 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   setSelectedObject: (obj) => set({ selectedObject: obj }),
 
   isGridVisible: false,
+  gridSize: 50,
+  gridColor: "rgba(128,128,128,0.15)",
+
   toggleGrid: () => {
-    const { managerRef, isGridVisible } = get();
+    const { managerRef } = get();
     if (managerRef) {
       managerRef.toggleGrid();
-      set({ isGridVisible: !isGridVisible });
+      set({ isGridVisible: !!managerRef.isGridEnabled() });
     }
+  },
+
+  setGridSize: (size) => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.setGridSize(size);
+    }
+    set({ gridSize: size });
+  },
+
+  setGridColor: (color) => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.setGridColor(color);
+    }
+    set({ gridColor: color });
   },
 
   setBackground: (config: BackgroundConfig) => {
@@ -146,10 +198,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }
   },
 
-  isPixabayOpen: false,
-  setIsPixabayOpen: (isOpen) => set({ isPixabayOpen: isOpen }),
-
-  addImageFromUrl: async (url) => {
+  addImage: async (url) => {
     const { managerRef } = get();
     if (managerRef) {
       await managerRef.addImage(url);
@@ -166,5 +215,32 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     if (managerRef) {
       managerRef.clear();
     }
+  },
+  vignette: 0,
+  noise: 0,
+  blur: 0,
+
+  setVignette: (value) => {
+    const { managerRef } = get();
+    if (managerRef) managerRef.setVignette(value);
+    set({ vignette: value });
+  },
+
+  setNoise: (value) => {
+    const { managerRef } = get();
+    if (managerRef) managerRef.setNoise(value);
+    set({ noise: value });
+  },
+
+  setBlur: (value) => {
+    const { managerRef } = get();
+    if (managerRef) managerRef.setBlur(value);
+    set({ blur: value });
+  },
+
+  clearEffects: () => {
+    const { managerRef } = get();
+    if (managerRef) managerRef.clearEffects();
+    set({ vignette: 0, noise: 0, blur: 0 });
   },
 }));

@@ -28,8 +28,22 @@ export function useCanvas() {
     updateCurrentSlideJSON,
     toggleGrid,
     isGridVisible,
-    setIsPixabayOpen,
-    isPixabayOpen,
+    gridSize,
+    gridColor,
+    setGridSize,
+    setGridColor,
+    vignette,
+    noise,
+    blur,
+    setVignette,
+    setNoise,
+    setBlur,
+    clearEffects,
+    isLayoutActive,
+    applyLayout,
+    clearLayout,
+    snapThreshold,
+    setSnapThreshold,
   } = useCanvasStore();
 
   useEffect(() => {
@@ -130,7 +144,7 @@ export function useCanvas() {
         setActiveTool("select");
         break;
     }
-  }, [activeTool, setActiveTool, managerRef]);
+  }, [activeTool, managerRef]);
 
   const handleRatioChange = (ratio: RatioKey) => {
     if (!managerRef) return;
@@ -155,12 +169,6 @@ export function useCanvas() {
     const url = URL.createObjectURL(file);
     await managerRef.addImage(url);
     URL.revokeObjectURL(url);
-  };
-
-  const handlePixabaySelect = async (imageUrl: string) => {
-    if (!managerRef) return;
-    await managerRef.addImage(imageUrl);
-    setIsPixabayOpen(false);
   };
 
   const handleBackgroundChange = (config: BackgroundConfig) => {
@@ -209,11 +217,8 @@ export function useCanvas() {
     currentRatio,
     handleUpdateObject,
     canvasDimensions: useCanvasStore((state) => state.canvasDimensions),
-    isPixabayOpen,
-    setIsPixabayOpen,
     clearCanvas: () => managerRef?.clear(),
     exportToJSON: () => managerRef?.exportAsJSON() || "",
-    handlePixabaySelect,
     handleRatioChange,
     handleBackgroundChange,
     slides,
@@ -234,5 +239,21 @@ export function useCanvas() {
     exportAllSlides,
     isGridVisible,
     toggleGrid,
+    gridSize,
+    setGridSize,
+    gridColor,
+    setGridColor,
+    vignette,
+    setVignette,
+    noise,
+    setNoise,
+    blur,
+    setBlur,
+    clearEffects,
+    isLayoutActive,
+    applyLayout,
+    clearLayout,
+    snapThreshold,
+    setSnapThreshold,
   };
 }

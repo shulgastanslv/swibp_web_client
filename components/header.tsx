@@ -34,8 +34,7 @@ export function Header() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <header className="flex h-16 w-full items-center justify-between px-8 bg-background border-b border-border/40">
-        {/* Левая часть: Меню + Название */}
+      <header className="flex h-16 w-full items-center justify-between px-4 bg-background border-b border-border/40">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <MenuNav />
           <ChevronRight className="h-4 w-4 opacity-40" />
@@ -44,7 +43,6 @@ export function Header() {
           </span>
         </div>
 
-        {/* Центральная часть: Инструменты */}
         <div className="hidden items-center gap-1 lg:flex">
           <Tooltip>
             <TooltipTrigger asChild>

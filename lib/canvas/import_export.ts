@@ -16,7 +16,7 @@ export class ImportExportManager {
     this.canvas = canvas;
   }
 
-  async addSVGFromContent(svgContent: string) {
+  async addSVG(svgContent: string) {
     return new Promise<void>((resolve) => {
       const objects: FabricObject[] = [];
       const myReviver = (_element: Element, fabricObject: FabricObject) => {
@@ -121,6 +121,7 @@ export class ImportExportManager {
     const { format = "png", quality = 1, multiplier = 1 } = options;
     return this.canvas.toDataURL({ format, quality, multiplier });
   }
+
 
   toJSON(): CanvasState {
     return this.canvas.toJSON() as unknown as CanvasState;

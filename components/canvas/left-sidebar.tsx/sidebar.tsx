@@ -60,7 +60,7 @@ export function LeftSidebar({ isOpen = true, onToggle }: LeftSidebarProps) {
 
   return (
     <aside
-      className={`flex shrink-0 flex-col mx-4 h-full rounded-4xl overflow-y-auto backdrop-blur bg-muted/50 text-sm transition-all duration-300 ease-in-out ${
+      className={`flex shrink-0 flex-col h-full  overflow-y-auto backdrop-blur bg-background border-r text-sm transition-all duration-300 ease-in-out ${
         isOpen ? "w-72 opacity-100" : "w-0 opacity-0 m-0 border-0 pointer-events-none"
       }`}
     >

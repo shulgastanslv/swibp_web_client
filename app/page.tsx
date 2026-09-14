@@ -13,15 +13,15 @@ import { PanelLeftOpen } from "lucide-react";
 import { ScaleToolbar } from "@/components/canvas/scale-toolbar";
 
 export default function Home() {
-  const { canvasRef } = useCanvas();
+  const { canvasRef, handleImageUpload } = useCanvas();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <Header />
-
-      <div className="flex min-h-0 flex-1 relative m-4">
+      <div className="flex min-h-0 flex-1 relative">
         {!isSidebarOpen && (
           <Button
             variant="outline"
@@ -45,8 +45,8 @@ export default function Home() {
           </div>
         </main>
 
-        <div className="flex flex-col justify-between">
-          <Toolbar />
+        <div className="flex flex-col items-center justify-between m-4">
+          <Toolbar handleImageUpload={handleImageUpload}/>
           <ScaleToolbar scale={10} onZoomIn={() => {}} onZoomOut={() => {}} />
         </div>
 

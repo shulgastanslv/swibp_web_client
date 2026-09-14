@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { RefObject } from "react";
 import type { ToolType } from "@/lib/canvas/types";
 import {
   MousePointer,
@@ -17,19 +17,40 @@ import {
 import { useCanvasStore } from "@/store/useCanvasStore";
 
 const tools: { id: ToolType; label: string; icon: React.ReactNode }[] = [
-  { id: "select", label: "Выделение", icon: <MousePointer className="w-4 h-4" /> },
-  { id: "rectangle", label: "Прямоугольник", icon: <Square className="w-4 h-4" /> },
+  {
+    id: "select",
+    label: "Выделение",
+    icon: <MousePointer className="w-4 h-4" />,
+  },
+  {
+    id: "rectangle",
+    label: "Прямоугольник",
+    icon: <Square className="w-4 h-4" />,
+  },
   { id: "circle", label: "Круг", icon: <Circle className="w-4 h-4" /> },
-  { id: "triangle", label: "Треугольник", icon: <Triangle className="w-4 h-4" /> },
+  {
+    id: "triangle",
+    label: "Треугольник",
+    icon: <Triangle className="w-4 h-4" />,
+  },
   { id: "line", label: "Линия", icon: <Minus className="w-4 h-4" /> },
   { id: "arrow", label: "Стрелка", icon: <ArrowUp className="w-4 h-4" /> },
   { id: "pen", label: "Ручка", icon: <Pencil className="w-4 h-4" /> },
   { id: "text", label: "Текст", icon: <Type className="w-4 h-4" /> },
 ];
 
-export function Toolbar() {
+interface ToolbarProps {
+  handleImageUpload: (file : File) => void;
+}
+
+export function Toolbar({ handleImageUpload }: ToolbarProps) {
   const activeTool = useCanvasStore((state) => state.activeTool);
   const setActiveTool = useCanvasStore((state) => state.setActiveTool);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleImageUpload(file);
+    };
 
   return (
     <div className="flex flex-col w-full gap-2 bg-muted/50 backdrop-blur-md h-min p-1.5 rounded-4xl shadow-sm border border-border/40">
@@ -59,6 +80,7 @@ export function Toolbar() {
       >
         <ImageIcon className="w-4 h-4" />
         <input
+         onChange={handleFileChange}
           type="file"
           accept="image/*"
           className="hidden"

@@ -12,10 +12,9 @@ export default function CanvasWrapper({
   canvasRef,
   containerRef,
 }: CanvasWrapperProps) {
-
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
-  const canvasDemensions = useCanvasStore((state) => state.canvasDimensions);
+  const canvasDimensions = useCanvasStore((state) => state.canvasDimensions);
 
   useEffect(() => {
     const updateScale = () => {
@@ -25,42 +24,40 @@ export default function CanvasWrapper({
       const availableWidth = wrapper.clientWidth - 80;
       const availableHeight = wrapper.clientHeight - 80;
 
-      const scaleX = availableWidth / canvasDemensions.width;
-      const scaleY = availableHeight / canvasDemensions.height;
+      const scaleX = availableWidth / canvasDimensions.width;
+      const scaleY = availableHeight / canvasDimensions.height;
       const newScale = Math.min(scaleX, scaleY, 1);
 
-      setScale(newScale);
+      setScale(prev => Math.abs(prev - newScale) > 0.01 ? newScale : prev);
     };
 
     updateScale();
 
     const observer = new ResizeObserver(updateScale);
-    if (wrapperRef.current) {
-      observer.observe(wrapperRef.current);
-    }
+    observer.observe(wrapperRef.current!);
 
     return () => observer.disconnect();
-  }, [canvasDemensions.width, canvasDemensions.height]);
+  }, [canvasDimensions]);
 
   return (
     <div
       ref={wrapperRef}
-      className="w-full h-full flex items-center justify-center p-10 overflow-hidden"
+      className="w-full h-full flex items-center justify-center p-4 overflow-hidden"
     >
       <div
         ref={containerRef}
         style={{
-          width: canvasDemensions.width,
-          height: canvasDemensions.height,
+          width: canvasDimensions.width,
+          height: canvasDimensions.height,
           transform: `scale(${scale})`,
-          transformOrigin: "center center",
+          transformOrigin: "center center"
         }}
-        className="shadow-2xl shadow-black/10 rounded-none overflow-hidden bg-white flex-shrink-0"
+        className="shadow-xl shadow-black/5 rounded-lg overflow-hidden bg-white flex-shrink-0"
       >
         <canvas
           ref={canvasRef}
-          width={canvasDemensions.width}
-          height={canvasDemensions.height}
+          width={canvasDimensions.width}
+          height={canvasDimensions.height}
           style={{ display: "block" }}
         />
       </div>
