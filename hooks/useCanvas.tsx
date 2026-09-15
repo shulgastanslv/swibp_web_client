@@ -121,7 +121,6 @@ export function useCanvas() {
         break;
       case "rectangle":
         managerRef.addRectangle();
-        setActiveTool("select");
         break;
       case "circle":
         managerRef.addCircle();
