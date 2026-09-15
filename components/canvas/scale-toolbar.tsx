@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Plus, Minus, Maximize2, RotateCcw } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { Plus, Minus, Maximize2, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 interface ScaleToolbarProps {
-  scale: number // например, 100 (для 100%)
-  onZoomIn: () => void
-  onZoomOut: () => void
-  onReset?: () => void
-  onFitToScreen?: () => void
-  minScale?: number
-  maxScale?: number
-  className?: string
+  scale: number; // например, 100 (для 100%)
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onReset?: () => void;
+  onFitToScreen?: () => void;
+  minScale?: number;
+  maxScale?: number;
+  className?: string;
 }
 
 export function ScaleToolbar({
@@ -27,14 +27,14 @@ export function ScaleToolbar({
   maxScale = 500,
   className,
 }: ScaleToolbarProps) {
-  const isMin = scale <= minScale
-  const isMax = scale >= maxScale
+  const isMin = scale <= minScale;
+  const isMax = scale >= maxScale;
 
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-1.5 bg-muted/50 rounded-full backdrop-blur-md p-1.5 shadow-sm w-full",
-        className
+        "flex flex-col items-center justify-center gap-1.5  bg-sidebar rounded-full backdrop-blur-md p-1.5 shadow-sm w-full",
+        className,
       )}
     >
       {/* Увеличение */}
@@ -69,9 +69,7 @@ export function ScaleToolbar({
         <Minus className="h-4 w-4" />
       </Button>
 
-      {(onReset || onFitToScreen) && (
-        <Separator className="w-full my-0.5" />
-      )}
+      {(onReset || onFitToScreen) && <Separator className="w-full my-0.5" />}
 
       {/* Сброс до 100% (опционально) */}
       {onReset && (
@@ -99,5 +97,5 @@ export function ScaleToolbar({
         </Button>
       )}
     </div>
-  )
+  );
 }

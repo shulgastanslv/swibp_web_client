@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   LogOut,
   ChevronRight,
+  LayoutDashboard,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,7 +23,6 @@ import Link from "next/link";
 import { AuthModal } from "@/components/auth";
 import { MoonIcon, SlideshowIcon, UserIcon } from "@phosphor-icons/react";
 import { useSession, signOut } from "next-auth/react";
-import AccountDialog from "./account/account_modal";
 
 interface MenuNavProps {
   isOpen?: boolean;
@@ -33,7 +33,6 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
 
   return (
     <>
@@ -80,17 +79,10 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
             <>
               <DropdownMenuGroup>
                 <DropdownMenuItem
-                  onClick={() => {
-                    setIsAccountOpen(true);
-                  }}
                   className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground"
                 >
-                  <UserIcon className="h-3.5 w-3.5" />
-                  <span>My Account</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground">
-                  <SlideshowIcon className="h-3.5 w-3.5" />
-                  <span>My Projects</span>
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  <span>Dashboard</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground">
                   <MoonIcon className="h-3.5 w-3.5" />
@@ -139,7 +131,6 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
       </DropdownMenu>
 
       <AuthModal isOpen={isLoginModalOpen} onOpenChange={setIsLoginModalOpen} />
-      <AccountDialog isOpen={isAccountOpen} onOpenChange={setIsAccountOpen} />
     </>
   );
 }

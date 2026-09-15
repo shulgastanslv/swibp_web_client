@@ -1,81 +1,156 @@
-import { create } from "zustand";
-import type { CanvasManager } from "@/lib/canvas/manager";
-import type { RatioKey, ToolType, BackgroundConfig } from "@/lib/canvas/types";
-import type { Object as FabricObject } from "fabric";
-import { LayoutTemplate } from "@/lib/canvas/layouts";
+  import { create } from "zustand";
+  import type { CanvasManager } from "@/lib/canvas/manager";
+  import type { RatioKey, ToolType, BackgroundConfig } from "@/lib/canvas/types";
+  import type { Object as FabricObject } from "fabric";
+  import { LayoutTemplate } from "@/lib/canvas/layouts";
 
-interface SlideData {
-  id: number;
-  canvasJSON: string | null;
-  thumbnail?: string;
-}
+  interface SlideData {
+    id: number;
+    canvasJSON: string | null;
+    thumbnail?: string;
+  }
 
-interface CanvasState {
-  managerRef: CanvasManager | null;
-  setManager: (manager: CanvasManager) => void;
+  interface CanvasState {
+    managerRef: CanvasManager | null;
+    setManager: (manager: CanvasManager) => void;
 
-  slides: SlideData[];
-  currentSlideId: number;
+    slides: SlideData[];
+    currentSlideId: number;
 
-  addSlide: () => void;
-  removeSlide: (id: number) => void;
-  switchToSlide: (id: number) => Promise<void>;
-  updateCurrentSlideJSON: (json: string, thumbnail?: string) => void;
+    addSlide: () => void;
+    removeSlide: (id: number) => void;
+    switchToSlide: (id: number) => Promise<void>;
+    updateCurrentSlideJSON: (json: string, thumbnail?: string) => void;
 
-  activeTool: ToolType;
-  setActiveTool: (tool: ToolType) => void;
+    activeTool: ToolType;
+    setActiveTool: (tool: ToolType) => void;
 
-  currentRatio: RatioKey;
-  setCurrentRatio: (ratio: RatioKey) => void;
+    currentRatio: RatioKey;
+    setCurrentRatio: (ratio: RatioKey) => void;
 
-  canvasDimensions: { width: number; height: number };
-  setCanvasDimensions: (dims: { width: number; height: number }) => void;
+    canvasDimensions: { width: number; height: number };
+    setCanvasDimensions: (dims: { width: number; height: number }) => void;
 
-  selectedObject: FabricObject | null;
-  setSelectedObject: (obj: FabricObject | null) => void;
+    selectedObject: FabricObject | null;
+    objectRevision: number;
+    incrementObjectRevision: () => void;
+    setSelectedObject: (obj: FabricObject | null) => void;
 
-  isGridVisible: boolean;
-  gridSize: number;
-  gridColor: string;
-  toggleGrid: () => void;
-  setGridSize: (size: number) => void;
-  setGridColor: (color: string) => void;
+    isGridVisible: boolean;
+    gridSize: number;
+    gridColor: string;
+    toggleGrid: () => void;
+    setGridSize: (size: number) => void;
+    setGridColor: (color: string) => void;
 
-  isLayoutActive: boolean;
-  snapThreshold: number;
-  setSnapThreshold: (threshold: number) => void;
-  applyLayout: (template: LayoutTemplate) => void;
-  clearLayout: () => void;
+    isLayoutActive: boolean;
+    snapThreshold: number;
+    setSnapThreshold: (threshold: number) => void;
+    applyLayout: (template: LayoutTemplate) => void;
+    clearLayout: () => void;
 
-  setBackground: (config: BackgroundConfig) => void;
-  addImage: (url: string) => Promise<void>;
-  exportToJSON: () => string;
-  clearCanvas: () => void;
-  vignette: number;
-  noise: number;
-  blur: number;
-  setVignette: (value: number) => void;
-  setNoise: (value: number) => void;
-  setBlur: (value: number) => void;
-  clearEffects: () => void;
-}
+    setBackground: (config: BackgroundConfig) => void;
+    addImage: (url: string) => Promise<void>;
+    exportToJSON: () => string;
+    clearCanvas: () => void;
+    vignette: number;
+    noise: number;
+    blur: number;
+    setVignette: (value: number) => void;
+    setNoise: (value: number) => void;
+    setBlur: (value: number) => void;
+    clearEffects: () => void;
+
+    addRectangle: () => void;
+    addCircle: () => void;
+    addTriangle: () => void;
+    addLine: () => void;
+    addArrow: () => void;
+    addText: () => void;
+    enablePen: () => void;
+    selectTool: () => void;
+  }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
   managerRef: null,
   setManager: (manager) => set({ managerRef: manager }),
 
+  addRectangle: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.addRectangle();
+      set({ activeTool: "select" });
+    }
+  },
+
+  addCircle: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.addCircle();
+      set({ activeTool: "select" });
+    }
+  },
+
+  addTriangle: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.addTriangle();
+      set({ activeTool: "select" });
+    }
+  },
+
+  addLine: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.addLine();
+      set({ activeTool: "select" });
+    }
+  },
+
+  addArrow: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.addArrow();
+      set({ activeTool: "select" });
+    }
+  },
+
+  addText: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.addText("New Text");
+      set({ activeTool: "select" });
+    }
+  },
+
+  enablePen: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.enableDrawingMode();
+      set({ activeTool: "pen" });
+    }
+  },
+
+  selectTool: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      managerRef.disableDrawingMode();
+      set({ activeTool: "select" });
+    }
+  },
+
   slides: [{ id: 1, canvasJSON: null }],
   currentSlideId: 1,
   isLayoutActive: false,
   snapThreshold: 5,
-   setSnapThreshold: (threshold) => {
-     const { managerRef } = get();
-     if (managerRef) {
-       // Можно добавить метод в GridManager для изменения порога
-       // managerRef.setSnapThreshold(threshold);
-     }
-     set({ snapThreshold: threshold });
-   },
+  setSnapThreshold: (threshold) => {
+    const { managerRef } = get();
+    if (managerRef) {
+      // Можно добавить метод в GridManager для изменения порога
+      // managerRef.setSnapThreshold(threshold);
+    }
+    set({ snapThreshold: threshold });
+  },
   applyLayout: (template) => {
     const { managerRef } = get();
     if (managerRef) {
@@ -243,4 +318,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     if (managerRef) managerRef.clearEffects();
     set({ vignette: 0, noise: 0, blur: 0 });
   },
-}));
+  objectRevision: 0,
+  incrementObjectRevision: () => set((state) => ({ objectRevision: state.objectRevision + 1 })),
+  }));

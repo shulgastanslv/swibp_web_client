@@ -7,12 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { HexColorPicker } from "react-colorful";
-import { Search, Loader2 } from "lucide-react";
 import type { BackgroundConfig } from "@/lib/canvas/types";
 
 import { SOLID_PRESETS, GRADIENT_PRESETS } from "@/lib/canvas/presets";
 
-// Пример интерфейса фото из Pexels (можно вынести в типы)
 interface PexelsPhoto {
   id: number;
   src: {

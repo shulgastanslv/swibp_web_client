@@ -40,14 +40,17 @@ export function useCanvas() {
     setBlur,
     clearEffects,
     isLayoutActive,
+    incrementObjectRevision,
     applyLayout,
     clearLayout,
     snapThreshold,
+    setBackground,
+    addImage,
     setSnapThreshold,
   } = useCanvasStore();
 
   useEffect(() => {
-    if (!canvasRef.current || managerRef) return;
+    if (!canvasRef.current) return;
 
     const manager = new CanvasManager(canvasRef.current);
     setManager(manager);
@@ -66,6 +69,7 @@ export function useCanvas() {
         multiplier: 0.1,
         quality: 0.8,
       });
+      incrementObjectRevision();
       updateCurrentSlideJSON(json, thumbnail);
     };
 
@@ -110,40 +114,6 @@ export function useCanvas() {
       manager.dispose();
     };
   }, []);
-
-  useEffect(() => {
-    if (!managerRef) return;
-    managerRef.disableDrawingMode();
-
-    switch (activeTool) {
-      case "pen":
-        managerRef.enableDrawingMode();
-        break;
-      case "rectangle":
-        managerRef.addRectangle();
-        break;
-      case "circle":
-        managerRef.addCircle();
-        setActiveTool("select");
-        break;
-      case "triangle":
-        managerRef.addTriangle();
-        setActiveTool("select");
-        break;
-      case "line":
-        managerRef.addLine();
-        setActiveTool("select");
-        break;
-      case "arrow":
-        managerRef.addArrow();
-        setActiveTool("select");
-        break;
-      case "text":
-        managerRef.addText("New Text");
-        setActiveTool("select");
-        break;
-    }
-  }, [activeTool, managerRef]);
 
   const handleRatioChange = (ratio: RatioKey) => {
     if (!managerRef) return;
@@ -225,6 +195,7 @@ export function useCanvas() {
     switchToSlide,
     addSlide,
     removeSlide,
+    objectRevision: useCanvasStore((state) => state.objectRevision),
     handlePrev: () => {
       const ids = slides.map((s) => s.id);
       const idx = ids.indexOf(currentSlideId);
@@ -254,5 +225,8 @@ export function useCanvas() {
     clearLayout,
     snapThreshold,
     setSnapThreshold,
+    setCurrentRatio,
+    setBackground,
+    addImage
   };
 }

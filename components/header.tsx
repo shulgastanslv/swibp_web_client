@@ -18,9 +18,10 @@ import {
   Eye,
   Columns2,
 } from "lucide-react";
-import { MenuNav } from "./menu";
 import { CommandsKbd } from "./commands_kbd";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const clearCanvas = useCanvasStore((state) => state.clearCanvas);
@@ -28,15 +29,17 @@ export function Header() {
   const isPreviewActive = false;
   const onToggleSplit = () => console.log("Toggle split");
   const onPreview = () => console.log("Toggle preview");
-
+  const router = useRouter();
   const unifiedItemClass =
     "h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors";
 
   return (
     <TooltipProvider delayDuration={300}>
-      <header className="flex h-16 w-full items-center justify-between px-4 bg-background border-b border-border/40">
+      <header className="flex h-16 w-full items-center justify-between px-4 bg-muted/50 border-b border-border/40">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <MenuNav />
+          <Button variant="ghost" size="icon" onClick={() => {router.push("/")}}>
+              <Image height={25} width={25} src="/Logo.svg" alt="Logo" />
+          </Button>
           <ChevronRight className="h-4 w-4 opacity-40" />
           <span className="px-1.5 font-medium text-foreground truncate max-w-[200px]">
             Untitled Design
