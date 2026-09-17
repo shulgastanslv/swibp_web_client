@@ -128,7 +128,7 @@ export function AspectRatioPanel({
 
       {isOpen && (
         <>
-          <div className="absolute top-full left-0 right-0 mt-2 p-3 bg-background border border-border/50 rounded-xl shadow-xl z-20 max-h-[400px] overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 p-3 bg-background border border-border/50 rounded-xl shadow-xl z-50 max-h-[400px] overflow-y-auto">
             {Object.entries(RATIO_GROUPS).map(([groupKey, group]) => {
               const GroupIcon = group.icon;
               const availableRatios = group.ratios.filter(

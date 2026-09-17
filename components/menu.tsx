@@ -8,6 +8,7 @@ import {
   LogOut,
   ChevronRight,
   LayoutDashboard,
+  Languages,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -38,7 +39,11 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
     <>
       <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative h-8 w-8 rounded-full overflow-hidden p-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
             {isAuthenticated && session?.user?.image ? (
               <Image
                 src={session.user.image}
@@ -47,7 +52,9 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
                 className="object-cover"
               />
             ) : (
-              <Image height={25} width={25} src="/Logo.svg" alt="Logo" />
+              <span className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                <User className="h-4 w-4" />
+              </span>
             )}
           </Button>
         </DropdownMenuTrigger>
@@ -55,7 +62,7 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
         <DropdownMenuContent
           align="start"
           sideOffset={4}
-          className="w-64 p-3 bg-background/80 backdrop-blur-md text-popover-foreground rounded-4xl shadow-lg"
+          className="w-52 p-3 backdrop-blur-md border-none text-popover-foreground rounded-4xl"
         >
           {!isAuthenticated ? (
             <div className="space-y-1">
@@ -78,55 +85,23 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
           ) : (
             <>
               <DropdownMenuGroup>
-                <DropdownMenuItem
-                  className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                >
-                  <LayoutDashboard className="h-3.5 w-3.5" />
-                  <span>Dashboard</span>
+                <DropdownMenuItem>
+                  <Languages className="h-3.5 w-3.5" />
+                  <span>Language</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer focus:bg-accent focus:text-accent-foreground">
+                <DropdownMenuItem>
                   <MoonIcon className="h-3.5 w-3.5" />
                   <span>Appearance</span>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
-
-              <DropdownMenuSeparator className="bg-border/50 my-1" />
-
               <DropdownMenuItem
                 onClick={() => signOut()}
-                className="flex items-center gap-2.5 px-2 py-1.5 rounded-4xl text-sm text-destructive hover:text-destructive/90 hover:bg-destructive/10 cursor-pointer focus:bg-destructive/10 focus:text-destructive"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 <span>Sign out</span>
               </DropdownMenuItem>
             </>
           )}
-
-          <div className="mt-1 pt-1 border-t border-border/50">
-            <div className="grid grid-cols-2 gap-0.5 px-0.5">
-              <FooterLink href="#">Feedback</FooterLink>
-              <FooterLink href="#">What`s new</FooterLink>
-            </div>
-
-            <div className="px-2 py-1.5 flex items-center justify-between text-xs text-muted-foreground/60 tracking-wide">
-              <span>v1.5.93</span>
-              <div className="flex items-center gap-1.5">
-                <Link
-                  href="#"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Terms
-                </Link>
-                <span>•</span>
-                <Link
-                  href="#"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Privacy
-                </Link>
-              </div>
-            </div>
-          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -134,24 +109,3 @@ export function MenuNav({ isOpen, onOpenChange }: MenuNavProps) {
     </>
   );
 }
-
-const FooterLink = ({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) => (
-  <DropdownMenuItem
-    asChild
-    className="px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer focus:bg-accent"
-  >
-    <Link
-      href={href}
-      className="flex items-center justify-between text-xs text-muted-foreground hover:text-foreground w-full transition-colors"
-    >
-      <span>{children}</span>
-      <ArrowUpRight className="h-2.5 w-2.5 opacity-50" />
-    </Link>
-  </DropdownMenuItem>
-);

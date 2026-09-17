@@ -3,7 +3,7 @@
 import { FileJson, PanelRightClose } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCanvas } from "@/hooks/useCanvas";
-import { ObjectsPropertiesPanel } from "./object-properties";
+import { ObjectPropertiesPanel } from "./object-properties";
 import { CanvasPropertiesPanel } from "./canvas-properties";
 
 export function RightToolbar() {
@@ -45,7 +45,7 @@ export function RightToolbar() {
       </div>
 
       {isObjectSelected ? (
-        <ObjectsPropertiesPanel selectedObject={selectedObject} />
+        <ObjectPropertiesPanel  />
       ) : (
         <CanvasPropertiesPanel />
       )}

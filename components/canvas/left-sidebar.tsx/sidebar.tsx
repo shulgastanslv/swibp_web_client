@@ -4,9 +4,11 @@ import React, { useState } from "react";
 import {
   Search,
   PanelLeft,
-  Eye,
   LayoutGrid,
-  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Sparkles,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,6 +51,8 @@ const TEMPLATES = [
   },
 ];
 
+const CATEGORIES = ["All", "Trending", "New", "Animation", "Minimal", "3D"];
+
 interface LeftSidebarProps {
   isOpen?: boolean;
   onToggle?: () => void;
@@ -57,10 +61,22 @@ interface LeftSidebarProps {
 export function LeftSidebar({ isOpen = true, onToggle }: LeftSidebarProps) {
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState("community");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  const handlePrev = () => {
+    setCarouselIndex((prev) => (prev > 0 ? prev - 1 : prev));
+  };
+
+  const handleNext = () => {
+    setCarouselIndex((prev) => (prev < CATEGORIES.length - 1 ? prev + 1 : prev));
+  };
+
+  const visibleCategories = CATEGORIES.slice(carouselIndex, carouselIndex + 3);
 
   return (
     <aside
-      className={`flex shrink-0 flex-col h-full  overflow-y-auto backdrop-blur bg-sidebar border-r text-sm transition-all duration-300 ease-in-out ${
+      className={`flex shrink-0 flex-col h-full overflow-y-auto backdrop-blur bg-sidebar border-r text-sm transition-all duration-300 ease-in-out ${
         isOpen ? "w-72 opacity-100" : "w-0 opacity-0 m-0 border-0 pointer-events-none"
       }`}
     >
@@ -77,17 +93,17 @@ export function LeftSidebar({ isOpen = true, onToggle }: LeftSidebarProps) {
         <div className="flex items-center gap-1.5">
           <Button
             variant="ghost"
-            size="sm"
-            className="h-7 gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary px-2 cursor-pointer"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-primary cursor-pointer"
+            title="Filter templates"
           >
-            <Eye className="h-3 w-3" />
-            See all
+            <Filter className="h-4 w-4" />
           </Button>
-          <div className="h-3 w-px bg-border" />
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-primary cursor-pointer"
+            title="Grid view"
           >
             <LayoutGrid className="h-4 w-4" />
           </Button>
@@ -129,6 +145,51 @@ export function LeftSidebar({ isOpen = true, onToggle }: LeftSidebarProps) {
         </Tabs>
       </div>
 
+      <div className="px-4 py-2">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs font-semibold text-foreground">Categories</span>
+        </div>
+        <div className="relative flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handlePrev}
+            disabled={carouselIndex === 0}
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary disabled:opacity-30 cursor-pointer"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
+
+          <div className="flex-1 flex gap-1.5 overflow-hidden px-1">
+            {visibleCategories.map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "secondary"}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+                className={`h-7 px-2.5 text-xs font-medium rounded-full whitespace-nowrap cursor-pointer transition-all ${
+                  selectedCategory === category
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleNext}
+            disabled={carouselIndex >= CATEGORIES.length - 3}
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary disabled:opacity-30 cursor-pointer"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+
       {/* Список шаблонов */}
       <ScrollArea className="flex-1 px-3 py-1">
         <div className="space-y-3 pb-6">
@@ -155,7 +216,10 @@ export function LeftSidebar({ isOpen = true, onToggle }: LeftSidebarProps) {
                   <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end p-2.5 z-10">
                     <div className="flex items-center justify-between w-full text-white font-semibold text-sm">
                       <span>{item.title}</span>
-                      <ArrowUpRight className="h-3.5 w-3.5 text-zinc-400 group-hover:text-white transition-colors" />
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-zinc-400">View</span>
+                        <ChevronRight className="h-3 w-3 text-zinc-400 group-hover:text-white transition-colors" />
+                      </div>
                     </div>
                   </div>
                 </div>

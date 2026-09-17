@@ -18,23 +18,35 @@ export class ObjectFactory {
     this.canvas = canvas;
   }
 
-  addLine(): Line {
-    const line = new Line([50, 50, 300, 300], {
+  private getPosition(x?: number, y?: number) {
+    if (x !== undefined && y !== undefined) {
+      return { left: x, top: y, originX: "center", originY: "center" };
+    }
+    return { left: 100, top: 100, originX: "left", originY: "top" };
+  }
+
+   addLine(x?: number, y?: number): Line {
+    const pos = this.getPosition(x, y);
+    const length = 200;
+    const startX = -length / 2;
+    const endX = length / 2;
+
+    const line = new Line([startX, 0, endX, 0], {
       stroke: "#000000",
       strokeWidth: 3,
+      left: pos.left,
+      top: pos.top,
     });
-    this.canvas.add(line);
-    this.canvas.setActiveObject(line);
-    this.canvas.renderAll();
+
+    this.addToCanvas(line);
+    return line;
     return line;
   }
 
   async addImage(url: string): Promise<void> {
     const img = await Image.fromURL(url);
-
     const width = this.canvas.width || 1080;
     const height = this.canvas.height || 1080;
-
     const scale = Math.min(
       (width * 0.8) / (img.width || 1),
       (height * 0.8) / (img.height || 1),
@@ -55,96 +67,87 @@ export class ObjectFactory {
     this.canvas.renderAll();
   }
 
-  addRectangle() {
+  addRectangle(x?: number, y?: number) {
+    const pos = this.getPosition(x, y);
     const rect = new Rect({
-      left: 100,
-      top: 100,
       width: 200,
       height: 150,
       fill: "#3b82f6",
       rx: 8,
       ry: 8,
+      left: pos.left,
+      top: pos.top,
+      originX: "center",
+      originY: "center",
     });
     this.addToCanvas(rect);
     return rect;
   }
 
-  addCircle() {
+  addCircle(x?: number, y?: number) {
+    const pos = this.getPosition(x, y);
     const circle = new Circle({
-      left: 150,
-      top: 150,
       radius: 75,
       fill: "#ef4444",
+      left: pos.left,
+      top: pos.top,
     });
     this.addToCanvas(circle);
     return circle;
   }
 
-  addTriangle() {
+  addTriangle(x?: number, y?: number) {
+    const pos = this.getPosition(x, y);
     const triangle = new Triangle({
-      left: 200,
-      top: 200,
       width: 150,
       height: 150,
       fill: "#10b981",
+      left: pos.left,
+      top: pos.top,
     });
     this.addToCanvas(triangle);
     return triangle;
   }
 
-  addArrow() {
-    const width = this.canvas.getWidth();
-    const height = this.canvas.getHeight();
-    const startX = width / 2 - 100;
-    const startY = height / 2;
-    const endX = width / 2 + 100;
-    const endY = height / 2;
+  addArrow(x?: number, y?: number) {
+    const pos = this.getPosition(x, y);
 
-    const line = new Line([startX, startY, endX, endY], {
+    const length = 200;
+    const headSize = 15;
+
+    const line = new Line([-length / 2, 0, length / 2, 0], {
       stroke: "#000",
       strokeWidth: 4,
       strokeLineCap: "round",
     });
 
-    const angle = Math.atan2(endY - startY, endX - startX);
-    const headSize = 15;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-
     const arrowHead = new Polygon(
       [
-        { x: endX, y: endY },
-        {
-          x: endX - headSize * cos + headSize * sin,
-          y: endY - headSize * sin - headSize * cos,
-        },
-        {
-          x: endX - headSize * cos - headSize * sin,
-          y: endY - headSize * sin + headSize * cos,
-        },
+        { x: length / 2, y: 0 },
+        { x: length / 2 - headSize, y: -headSize },
+        { x: length / 2 - headSize, y: headSize },
       ],
       { fill: "#000" },
     );
 
     const group = new Group([line, arrowHead], {
-      left: width / 2,
-      top: height / 2,
-      originX: "center",
-      originY: "center",
+      left: pos.left,
+      top: pos.top,
     });
 
     this.addToCanvas(group);
     return group;
   }
 
-  addText(text: string) {
+  addText(text: string, x?: number, y?: number) {
+    const pos = this.getPosition(x, y);
     const textbox = new Textbox(text, {
-      left: 100,
-      top: 100,
       width: 300,
       fontSize: 32,
       fontFamily: "Inter",
       fill: "#000",
+      left: pos.left,
+      top: pos.top,
     });
     this.addToCanvas(textbox);
     return textbox;

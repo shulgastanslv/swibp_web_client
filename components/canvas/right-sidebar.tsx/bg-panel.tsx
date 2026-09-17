@@ -49,7 +49,6 @@ export function BackgroundPanel({ onBackgroundChange }: BackgroundPanelProps) {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      // Примечание: Для работы с API нужен NEXT_PUBLIC_PEXELS_API_KEY в .env
       const response = await fetch(
         `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=12`,
         {
@@ -77,15 +76,15 @@ export function BackgroundPanel({ onBackgroundChange }: BackgroundPanelProps) {
 
   return (
     <div className="w-full overflow-y-auto font-sans">
-      <Tabs defaultValue="gradient" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="solid" className="text-xs">
+      <Tabs defaultValue="gradient" className="w-full rounded-full">
+        <TabsList className="grid w-full grid-cols-3 mb-4 rounded-full">
+          <TabsTrigger value="solid" className="text-xs rounded-full">
             Color
           </TabsTrigger>
-          <TabsTrigger value="gradient" className="text-xs">
+          <TabsTrigger value="gradient" className="text-xs rounded-full">
             Gradient
           </TabsTrigger>
-          <TabsTrigger value="image" className="text-xs">
+          <TabsTrigger value="image" className="text-xs rounded-full">
             Image
           </TabsTrigger>
         </TabsList>

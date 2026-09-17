@@ -61,12 +61,12 @@
     setBlur: (value: number) => void;
     clearEffects: () => void;
 
-    addRectangle: () => void;
-    addCircle: () => void;
-    addTriangle: () => void;
-    addLine: () => void;
-    addArrow: () => void;
-    addText: () => void;
+    addRectangle: (x?: number, y?: number) => void;
+    addCircle: (x?: number, y?: number) => void;
+    addTriangle: (x?: number, y?: number) => void;
+    addLine: (x?: number, y?: number) => void;
+    addArrow: (x?: number, y?: number) => void;
+    addText: (x?: number, y?: number) => void;
     enablePen: () => void;
     selectTool: () => void;
   }
@@ -75,50 +75,50 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   managerRef: null,
   setManager: (manager) => set({ managerRef: manager }),
 
-  addRectangle: () => {
+  addRectangle: (x?: number, y?: number) => {
     const { managerRef } = get();
     if (managerRef) {
-      managerRef.addRectangle();
+      managerRef.addRectangle(x, y);
       set({ activeTool: "select" });
     }
   },
 
-  addCircle: () => {
+  addCircle: (x?: number, y?: number) => {
     const { managerRef } = get();
     if (managerRef) {
-      managerRef.addCircle();
+      managerRef.addCircle(x, y);
       set({ activeTool: "select" });
     }
   },
 
-  addTriangle: () => {
+  addTriangle: (x?: number, y?: number) => {
     const { managerRef } = get();
     if (managerRef) {
-      managerRef.addTriangle();
+      managerRef.addTriangle(x, y);
       set({ activeTool: "select" });
     }
   },
 
-  addLine: () => {
+  addLine: (x?: number, y?: number) => {
     const { managerRef } = get();
     if (managerRef) {
-      managerRef.addLine();
+      managerRef.addLine(x, y);
       set({ activeTool: "select" });
     }
   },
 
-  addArrow: () => {
+  addArrow: (x?: number, y?: number) => {
     const { managerRef } = get();
     if (managerRef) {
-      managerRef.addArrow();
+      managerRef.addArrow(x,y);
       set({ activeTool: "select" });
     }
   },
 
-  addText: () => {
+  addText: (x?: number, y?: number) => {
     const { managerRef } = get();
     if (managerRef) {
-      managerRef.addText("New Text");
+      managerRef.addText("New Text", x, y);
       set({ activeTool: "select" });
     }
   },

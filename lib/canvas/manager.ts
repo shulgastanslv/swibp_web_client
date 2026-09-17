@@ -91,27 +91,33 @@ export class CanvasManager {
     return this.grid["isGridVisible"];
   }
 
-  public addRectangle() {
-    return this.factory.addRectangle();
+  public addRectangle(x?: number, y?: number) {
+    return this.factory.addRectangle(x, y);
   }
-  public addCircle() {
-    return this.factory.addCircle();
+
+  public addCircle(x?: number, y?: number) {
+    return this.factory.addCircle(x, y);
   }
-  public addTriangle() {
-    return this.factory.addTriangle();
+
+  public addTriangle(x?: number, y?: number) {
+    return this.factory.addTriangle(x, y);
   }
-  public addImage(url: string) {
+
+  public addLine(x?: number, y?: number) {
+    return this.factory.addLine(x, y);
+  }
+
+  public addArrow(x?: number, y?: number) {
+    return this.factory.addArrow(x, y);
+  }
+
+  public addText(text: string, x?: number, y?: number) {
+    return this.factory.addText(text, x, y);
+  }
+  public addImage(url : string, x?: number, y?: number) {
     return this.factory.addImage(url);
   }
-  public addArrow() {
-    return this.factory.addArrow();
-  }
-  public addText(text: string) {
-    return this.factory.addText(text);
-  }
-  public addLine() {
-    return this.factory.addLine();
-  }
+
   public deleteSelected() {
     this.factory.deleteSelected();
   }

@@ -6,7 +6,12 @@ import {
   CANVAS_RATIOS,
   type RatioKey,
 } from "@/lib/canvas/types";
-import type { Object as FabricObject } from "fabric";
+import type {
+  Object as FabricObject,
+  TPointerEvent,
+  TPointerEventInfo,
+} from "fabric";
+import { IEvent } from "fabric/fabric-impl";
 
 export function useCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -110,7 +115,6 @@ export function useCanvas() {
       canvas.off("object:modified", handleAutoSave);
       canvas.off("object:added", handleAutoSave);
       canvas.off("object:removed", handleAutoSave);
-
       manager.dispose();
     };
   }, []);
@@ -227,6 +231,6 @@ export function useCanvas() {
     setSnapThreshold,
     setCurrentRatio,
     setBackground,
-    addImage
+    addImage,
   };
 }
