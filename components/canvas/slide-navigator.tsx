@@ -1,103 +1,99 @@
-// src/components/canvas/slide-navigator.tsx
 "use client";
 
-import * as React from "react";
-import { Plus, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useCanvasStore } from "@/store/useCanvasStore";
+import React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+} from "lucide-react";
+import { SlideData } from "@/components/canvas/types";
 
-export function SliderNavigator({ className = "" }: { className?: string }) {
-  // Получаем данные и действия из стора
-  const slides = useCanvasStore((state) => state.slides);
-  const currentSlideId = useCanvasStore((state) => state.currentSlideId);
+interface SlideNavigatorProps {
+  slides: SlideData[];
+  currentIdx: number;
+  setCurrentIdx: React.Dispatch<React.SetStateAction<number>>;
+  addSlide: () => void;
+  moveSlide: (direction: "up" | "down") => void;
+}
 
-  const switchToSlide = useCanvasStore((state) => state.switchToSlide);
-  const addSlide = useCanvasStore((state) => state.addSlide);
-  const removeSlide = useCanvasStore((state) => state.removeSlide);
-
+export function SlideNavigator({
+  slides,
+  currentIdx,
+  setCurrentIdx,
+  addSlide,
+  moveSlide,
+}: SlideNavigatorProps) {
   return (
-    <div className={cn("flex flex-col items-center gap-2", className)}>
-      {/* Контейнер слайдов */}
-      <div className="flex items-center gap-1.5 overflow-x-auto max-w-[600px] p-1.5 rounded-xl bg-muted/30 backdrop-blur-sm scrollbar-hide">
-        {slides.map((slide, i) => {
-          const isActive = slide.id === currentSlideId;
-
-          return (
-            <div
-              key={slide.id}
-              onClick={() => switchToSlide(slide.id)}
-              className={cn(
-                "group relative flex flex-col items-center gap-1 cursor-pointer shrink-0 transition-all",
-                isActive ? "scale-105" : "hover:scale-105 opacity-70 hover:opacity-100"
-              )}
-            >
-              {/* Превью слайда */}
-              <div
-                className={cn(
-                  "relative w-14 h-16 rounded-md border-2 overflow-hidden bg-background transition-all",
-                  isActive
-                    ? "border-primary shadow-md shadow-primary/20"
-                    : "border-border/50 hover:border-muted-foreground/50"
-                )}
-              >
-                {slide.thumbnail ? (
-                  <img
-                    src={slide.thumbnail}
-                    alt={`Slide ${slide.id}`}
-                    className="w-full h-full object-cover pointer-events-none"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-muted/50">
-                    <span className="text-[8px] text-muted-foreground font-medium">
-                      {i + 1}
-                    </span>
-                  </div>
-                )}
-
-                {isActive && (
-                  <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
-                )}
-              </div>
-
-              {/* Номер и кнопка удаления */}
-              <div className="flex items-center gap-0.5 h-4">
-                <span className={cn(
-                  "text-[9px] font-medium leading-none select-none",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )}>
-                  {i + 1}
-                </span>
-
-                {slides.length > 1 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeSlide(slide.id);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded flex items-center justify-center"
-                    aria-label="Remove slide"
-                  >
-                    <X className="w-2.5 h-2.5 text-destructive" />
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Кнопка добавления */}
-        <button
-          onClick={addSlide}
-          className="flex flex-col items-center gap-1 shrink-0 ml-1"
+    <footer className="h-14 flex items-center justify-between px-6 bg-background border-t border-border text-xs z-10">
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-xl border-border/60"
+          onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
+          title="Previous Slide"
         >
-          <div className="w-14 h-16 rounded-md border-2 border-dashed border-border/50 hover:border-primary/50 bg-transparent hover:bg-primary/5 flex items-center justify-center transition-all">
-            <Plus className="w-4 h-4 text-muted-foreground hover:text-primary" />
-          </div>
-          <span className="text-[9px] font-medium text-muted-foreground leading-none select-none">
-            Add
-          </span>
-        </button>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+
+        <div className="flex items-center gap-1 max-w-[360px] overflow-x-auto py-1 px-1">
+          {slides.map((s, idx) => (
+            <button
+              key={s.id}
+              onClick={() => setCurrentIdx(idx)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all border ${
+                currentIdx === idx
+                  ? "bg-primary text-primary-foreground font-semibold border-primary shadow-2xs"
+                  : "bg-muted/40 text-muted-foreground hover:bg-muted border-border/40"
+              }`}
+            >
+              0{idx + 1}
+            </button>
+          ))}
+        </div>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-xl border-border/60"
+          onClick={() =>
+            setCurrentIdx((prev) => Math.min(slides.length - 1, prev + 1))
+          }
+          title="Next Slide"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={addSlide}
+          className="h-8 text-xs font-normal gap-1.5 rounded-xl border-border/60 ml-2"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Add Slide</span>
+        </Button>
       </div>
-    </div>
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => moveSlide("up")}
+          className="h-8 text-xs rounded-xl text-muted-foreground hover:text-foreground gap-1"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" /> Move Left
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => moveSlide("down")}
+          className="h-8 text-xs rounded-xl text-muted-foreground hover:text-foreground gap-1"
+        >
+          Move Right <ChevronRight className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    </footer>
   );
 }

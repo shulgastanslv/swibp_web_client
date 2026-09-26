@@ -17,6 +17,19 @@ export class CanvasCore {
     this.canvas.renderAll();
   }
 
+  /**
+   * Apply viewport zoom via Fabric's built-in zoom.
+   * Also resizes the canvas DOM element so it occupies the correct screen space.
+   * nativeW/nativeH are the logical canvas dimensions (e.g. 1080×1080).
+   */
+  setZoom(scale: number, nativeW: number, nativeH: number) {
+    this.canvas.setZoom(scale);
+    this.canvas.setDimensions({
+      width: Math.round(nativeW * scale),
+      height: Math.round(nativeH * scale),
+    });
+  }
+
   clear() {
     this.canvas.clear();
   }

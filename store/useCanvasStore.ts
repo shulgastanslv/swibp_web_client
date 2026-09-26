@@ -36,6 +36,9 @@
     incrementObjectRevision: () => void;
     setSelectedObject: (obj: FabricObject | null) => void;
 
+    zoom: number;
+    setZoom: (zoom: number) => void;
+
     isGridVisible: boolean;
     gridSize: number;
     gridColor: string;
@@ -69,6 +72,19 @@
     addText: (x?: number, y?: number) => void;
     enablePen: () => void;
     selectTool: () => void;
+
+    addHeading: (x?: number, y?: number) => void;
+    addSubtitle: (x?: number, y?: number) => void;
+    addParagraph: (x?: number, y?: number) => void;
+    addQuote: (x?: number, y?: number) => void;
+    addCodeBlock: (x?: number, y?: number) => void;
+    addTag: (x?: number, y?: number) => void;
+    addStarRating: (x?: number, y?: number) => void;
+    addSwipeTag: (x?: number, y?: number) => void;
+    addCTAButton: (x?: number, y?: number) => void;
+    addBadge: (x?: number, y?: number) => void;
+    addHandle: (x?: number, y?: number) => void;
+    addDividerLine: (x?: number, y?: number) => void;
   }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
@@ -137,6 +153,55 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       managerRef.disableDrawingMode();
       set({ activeTool: "select" });
     }
+  },
+
+  addHeading: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addHeading(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addSubtitle: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addSubtitle(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addParagraph: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addParagraph(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addQuote: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addQuote(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addCodeBlock: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addCodeBlock(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addTag: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addTag(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addStarRating: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addStarRating(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addSwipeTag: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addSwipeTag(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addCTAButton: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addCTAButton(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addBadge: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addBadge(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addHandle: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addHandle(undefined, x, y); set({ activeTool: "select" }); }
+  },
+  addDividerLine: (x?, y?) => {
+    const { managerRef } = get();
+    if (managerRef) { managerRef.addDividerLine(x, y); set({ activeTool: "select" }); }
   },
 
   slides: [{ id: 1, canvasJSON: null }],
@@ -237,6 +302,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   selectedObject: null,
   setSelectedObject: (obj) => set({ selectedObject: obj }),
+
+  zoom: 100,
+  setZoom: (zoom) => set({ zoom }),
 
   isGridVisible: false,
   gridSize: 50,
