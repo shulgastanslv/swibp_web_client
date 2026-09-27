@@ -6,9 +6,7 @@ import {
   CANVAS_RATIOS,
   type RatioKey,
 } from "@/lib/canvas/types";
-import type {
-  Object as FabricObject,
-} from "fabric";
+import type { FabricObject } from "fabric";
 
 export function useCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -16,12 +14,10 @@ export function useCanvas() {
   const {
     managerRef,
     setManager,
-    setActiveTool,
     setSelectedObject,
     setCanvasDimensions,
     setCurrentRatio,
     currentRatio,
-    activeTool,
     slides,
     currentSlideId,
     switchToSlide,
@@ -45,10 +41,8 @@ export function useCanvas() {
     moveSlide,
     applyLayout,
     clearLayout,
-    snapThreshold,
     setBackground,
     addImage,
-    setSnapThreshold,
   } = useCanvasStore();
 
   useEffect(() => {
@@ -140,7 +134,6 @@ export function useCanvas() {
     managerRef.setBackground(config);
   };
 
-
   const exportAllSlides = async () => {
     if (!managerRef) return;
 
@@ -169,17 +162,17 @@ export function useCanvas() {
 
   const currentIdx = slides.findIndex((s) => s.id === currentSlideId);
 
-    const handlePrev = () => {
-      if (currentIdx > 0) {
-        switchToSlide(slides[currentIdx - 1].id);
-      }
-    };
+  const handlePrev = () => {
+    if (currentIdx > 0) {
+      switchToSlide(slides[currentIdx - 1].id);
+    }
+  };
 
-    const handleNext = () => {
-      if (currentIdx < slides.length - 1) {
-        switchToSlide(slides[currentIdx + 1].id);
-      }
-    };
+  const handleNext = () => {
+    if (currentIdx < slides.length - 1) {
+      switchToSlide(slides[currentIdx + 1].id);
+    }
+  };
 
   return {
     canvasRef,
@@ -187,8 +180,6 @@ export function useCanvas() {
     handleNext,
     handlePrev,
     currentSlideId,
-    activeTool,
-    setActiveTool,
     selectedObject: useCanvasStore((state) => state.selectedObject),
     handleDelete: () => managerRef?.deleteSelected(),
     handleDuplicate: () => managerRef?.duplicateSelected(),
@@ -205,7 +196,6 @@ export function useCanvas() {
     switchToSlide,
     addSlide,
     removeSlide,
-    objectRevision: useCanvasStore((state) => state.objectRevision),
     exportAllSlides,
     isGridVisible,
     toggleGrid,
@@ -223,8 +213,6 @@ export function useCanvas() {
     isLayoutActive,
     applyLayout,
     clearLayout,
-    snapThreshold,
-    setSnapThreshold,
     setCurrentRatio,
     setBackground,
     addImage,

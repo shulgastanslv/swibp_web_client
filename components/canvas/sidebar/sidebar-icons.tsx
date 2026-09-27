@@ -5,6 +5,7 @@ import { Search, Clock, Loader2, Sparkles } from "lucide-react";
 import { useCanvas } from "@/hooks/useCanvas";
 import { util, loadSVGFromString } from "fabric";
 import { fetchIconifySvg } from "@/actions/icons";
+import { Input } from "@/components/ui/input";
 
 interface IconItem {
   id: string;
@@ -123,16 +124,17 @@ export function SidebarIcons() {
   const currentList = isSearchActive ? searchResults : recentIcons;
 
   return (
-    <div className="flex flex-col gap-4 text-xs">
+    <div className="flex flex-col gap-4 text-xs p-2">
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-        <input
+        <Input
           type="text"
-          placeholder="Поиск иконок (e.g. fire, star, social)…"
+          placeholder="Поиск иконок…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-8 rounded-full border border-border/60 bg-muted/30 text-xs pl-8 pr-8 outline-none placeholder:text-muted-foreground/60 focus:border-border transition-colors"
+          className="h-8 pl-8 text-xs rounded-full bg-muted/30 border-border/60"
         />
+
         {isSearching && (
           <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground animate-spin pointer-events-none" />
         )}

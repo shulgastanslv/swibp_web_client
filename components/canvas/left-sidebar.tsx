@@ -19,7 +19,7 @@ import {
 import { Object as FabricObject } from "fabric";
 import { useCanvasStore } from "@/store/useCanvasStore";
 
-import { SidebarProjects } from "@/components/canvas/sidebar/sidebar-projects";
+import { SidebarProjects } from "@/components/canvas/sidebar/projects/sidebar-projects";
 import { SidebarTemplates } from "@/components/canvas/sidebar/sidebar-templates";
 import { SidebarElements } from "@/components/canvas/sidebar/sidebar-elements";
 import { SidebarLayers } from "@/components/canvas/sidebar/sidebar-layers";
@@ -69,7 +69,8 @@ export function LeftSidebar({
   showDotGrid,
   setShowDotGrid,
 }: LeftSidebarProps) {
-  const { managerRef, objectRevision } = useCanvasStore();
+
+  const { managerRef } = useCanvasStore();
 
   const canvasObjects = React.useMemo<FabricObject[]>(() => {
     if (!managerRef) return [];
@@ -77,8 +78,7 @@ export function LeftSidebar({
       .getCanvas()
       .getObjects()
       .filter((o) => o.selectable !== false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [managerRef, objectRevision]);
+  }, [managerRef]);
 
   const selectObject = (obj: FabricObject) => {
     const canvas = managerRef?.getCanvas();

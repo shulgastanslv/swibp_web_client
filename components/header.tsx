@@ -46,6 +46,33 @@ interface HeaderProps {
   onPublishTemplate?: () => void;
 }
 
+export function Figma() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+      <path
+        fill="#0acf83"
+        d="M45.5 129c11.9 0 21.5-9.6 21.5-21.5V86H45.5C33.6 86 24 95.6 24 107.5S33.6 129 45.5 129zm0 0"
+      />
+      <path
+        fill="#a259ff"
+        d="M24 64.5C24 52.6 33.6 43 45.5 43H67v43H45.5C33.6 86 24 76.4 24 64.5zm0 0"
+      />
+      <path
+        fill="#f24e1e"
+        d="M24 21.5C24 9.6 33.6 0 45.5 0H67v43H45.5C33.6 43 24 33.4 24 21.5zm0 0"
+      />
+      <path
+        fill="#ff7262"
+        d="M67 0h21.5C100.4 0 110 9.6 110 21.5S100.4 43 88.5 43H67zm0 0"
+      />
+      <path
+        fill="#1abcfe"
+        d="M110 64.5c0 11.9-9.6 21.5-21.5 21.5S67 76.4 67 64.5 76.6 43 88.5 43 110 52.6 110 64.5zm0 0"
+      />
+    </svg>
+  );
+}
+
 export function Header({
   projectName = "Untitled Carousel",
   onProjectNameChange,
@@ -64,13 +91,7 @@ export function Header({
     onProjectNameChange?.(e.target.value);
   };
 
-  const slides = useCanvasStore((s) => s.slides);
-  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
 
-  // Расчет индекса и общего количества
-  const currentIdx = slides.findIndex((s) => s.id === currentSlideId);
-  const currentNum = currentIdx >= 0 ? currentIdx + 1 : 1;
-  const totalNum = slides.length || 1;
   const userEmail = session?.user?.email ?? "";
   const userName = session?.user?.name ?? userEmail;
   const userInitial = userName ? userName[0].toUpperCase() : "?";
@@ -78,7 +99,6 @@ export function Header({
   return (
     <>
       <header className="h-14 w-full flex items-center justify-between px-4 bg-background border-b border-border text-xs z-20 shrink-0 gap-2">
-        {/* Левая секция: Лого, Название, Справка и What's New */}
         <div className="flex items-center gap-1.5 min-w-0">
           <Logo width={25} height={25} />
           <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
@@ -86,7 +106,7 @@ export function Header({
             type="text"
             value={name}
             onChange={handleNameChange}
-            className="bg-transparent font-medium text-foreground text-xs px-2 py-1 rounded-full border hover:border-border/50 focus:border-border focus:bg-muted/30 focus:outline-none transition-colors w-32 sm:w-44 truncate"
+            className="bg-muted font-medium text-foreground text-xs px-2 py-1 rounded-full border-transparent hover:border-border/50 focus:border-border focus:bg-muted/30 focus:outline-none transition-colors w-32 sm:w-44 truncate"
             placeholder="Project name..."
           />
 
@@ -98,12 +118,8 @@ export function Header({
           >
             <HelpCircle className="w-3.5 h-3.5" />
           </Button>
-
-          {/* Кнопка What's New, вынесенная из меню */}
-
         </div>
 
-        {/* Центральная секция: Горячие клавиши и слайды */}
         <div className="flex items-center gap-0.5">
           <CommandsKbd />
           <div className="h-3.5 w-px bg-border mx-1" />
@@ -116,23 +132,18 @@ export function Header({
           >
             <BookOpen className="w-3.5 h-3.5" />
           </Button>
-          <div className="flex items-center font-mono text-xs px-3 py-1.5 rounded-full bg-muted select-none">
-            <span className="font-semibold text-foreground">
-              {String(currentNum).padStart(2, "0")}
-            </span>
-            <span className="text-muted-foreground mx-1">/</span>
-            <span className="text-muted-foreground">
-              {String(totalNum).padStart(2, "0")}
-            </span>
-            <span className="text-muted-foreground ml-1.5 text-[11px] font-sans hidden sm:inline">
-              <GalleryHorizontal className="h-3.5 w-3.5"/>
-            </span>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2.5 rounded-full text-xs font-medium gap-1.5 hidden md:inline-flex text-muted-foreground hover:text-foreground"
+            title="Import from Figma"
+          >
+            <Figma />
+            <span>Import</span>
+          </Button>
         </div>
 
-        {/* Правая секция: Уведомления, Шаблон, Экспорт и Профиль */}
         <div className="flex items-center gap-1.5">
-          {/* Кнопка уведомлений */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -165,12 +176,11 @@ export function Header({
           >
             <Share className="w-4 h-4" />
           </Button>
-          {/* Кнопка Publish as Template */}
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={onPublishTemplate}
-            className="h-8 px-2.5 rounded-full text-xs font-medium gap-1.5 hidden md:inline-flex border-border/80 hover:bg-muted/50"
+            className="h-8 px-2.5 rounded-full text-xs font-medium gap-1.5 hidden md:inline-flex"
             title="Publish as Template"
           >
             <Globe className="w-3.5 h-3.5 text-muted-foreground" />
@@ -212,7 +222,6 @@ export function Header({
                   <span>New project</span>
                 </DropdownMenuItem>
 
-                {/* На мобильных экранах дублируем кнопку Publish Template в меню */}
                 <DropdownMenuItem
                   className="cursor-pointer text-xs md:hidden"
                   onClick={onPublishTemplate}
@@ -220,17 +229,7 @@ export function Header({
                   <Globe className="w-3.5 h-3.5 mr-2" />
                   <span>Publish template</span>
                 </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  className="cursor-pointer text-xs sm:hidden"
-                  onClick={() => setIsWhatsNewOpen(true)}
-                >
-                  <Sparkles className="w-3.5 h-3.5 mr-2 text-amber-500" />
-                  <span>What`s new</span>
-                </DropdownMenuItem>
-
                 <ThemeSwitcherMenu />
-
                 <DropdownMenuItem asChild className="cursor-pointer text-xs">
                   <a
                     href="https://t.me/your_channel"
@@ -291,7 +290,6 @@ export function Header({
 
           <div className="h-4 w-px bg-border mx-0.5" />
 
-          {/* Кнопка Export */}
           <div className="flex items-center h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full pl-3 pr-1 py-1 shadow-sm transition-all select-none gap-1.5">
             <button
               type="button"
@@ -324,7 +322,6 @@ export function Header({
         </div>
       </header>
 
-      {/* Модальные окна */}
       <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
       <NewProjectModal
         open={isNewProjectOpen}

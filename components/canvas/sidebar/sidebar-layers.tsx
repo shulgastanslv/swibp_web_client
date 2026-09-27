@@ -19,8 +19,7 @@ export function SidebarLayers({
   getObjectLabel,
   reorderObjects,
 }: SidebarLayersProps) {
-  // Display order: reversed (top of canvas = top of list, like Figma)
-  // displayItems[0] = canvasObjects[last], displayItems[n] = canvasObjects[0]
+
   const displayItems = [...canvasObjects].reverse();
   const total = displayItems.length;
 
@@ -35,22 +34,18 @@ export function SidebarLayers({
   const handleDragOver = (e: React.DragEvent, displayIdx: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    // Show indicator above or below based on mouse position
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const mid = rect.top + rect.height / 2;
     setDropIndicator(e.clientY < mid ? displayIdx : displayIdx + 1);
   };
 
   const handleDragLeave = () => {
-    // keep indicator while dragging through list
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (dragIndex === null || dropIndicator === null) return;
 
-    // Convert display indices back to canvas indices
-    // displayIdx 0 → canvasIdx (total-1), displayIdx n → canvasIdx (total-1-n)
     const fromCanvasIdx = total - 1 - dragIndex;
     const toDisplayIdx = dropIndicator > dragIndex ? dropIndicator - 1 : dropIndicator;
     const toCanvasIdx = total - 1 - toDisplayIdx;
@@ -69,7 +64,7 @@ export function SidebarLayers({
   };
 
   return (
-    <div className="flex flex-col gap-1 text-xs">
+    <div className="flex flex-col gap-1 text-xs p-2">
       <span className="text-muted-foreground text-[11px] font-medium mb-1">
         Objects on canvas ({canvasObjects.length})
       </span>

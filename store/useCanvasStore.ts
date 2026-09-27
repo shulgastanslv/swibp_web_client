@@ -2,11 +2,9 @@ import { create } from "zustand";
 import type { CanvasManager } from "@/lib/canvas/manager";
 import {
   type RatioKey,
-  type ToolType,
   type BackgroundConfig,
-  CANVAS_RATIOS,
 } from "@/lib/canvas/types";
-import type { Object as FabricObject, FabricObjectProps } from "fabric";
+import type { FabricObject, FabricObjectProps } from "fabric";
 import { LayoutTemplate } from "@/lib/canvas/layouts";
 
 interface SlideData {
@@ -55,15 +53,12 @@ interface CanvasState {
   projectName: string;
   setProjectId: (id: string | null) => void;
   setProjectName: (name: string) => void;
-  loadProjectState: (project: Project) => Promise<void>;
 
   addSlide: () => void;
   removeSlide: (id: number) => void;
   switchToSlide: (id: number) => Promise<void>;
   updateCurrentSlideJSON: (json: string) => void;
   moveSlide: (direction: "left" | "right") => void;
-  activeTool: ToolType;
-  setActiveTool: (tool: ToolType) => void;
 
   currentRatio: RatioKey;
   setCurrentRatio: (ratio: RatioKey) => void;
@@ -72,8 +67,6 @@ interface CanvasState {
   setCanvasDimensions: (dims: { width: number; height: number }) => void;
 
   selectedObject: FabricObject | null;
-  objectRevision: number;
-  incrementObjectRevision: () => void;
   setSelectedObject: (obj: FabricObject | null) => void;
 
   zoom: number;
@@ -89,14 +82,13 @@ interface CanvasState {
   connectSelected: () => void;
 
   isLayoutActive: boolean;
-  snapThreshold: number;
-  setSnapThreshold: (threshold: number) => void;
   applyLayout: (template: LayoutTemplate) => void;
   clearLayout: () => void;
-  applyTemplatePreset: (json: string) => Promise<void>;
   setBackground: (config: BackgroundConfig) => void;
   addImage: (url: string) => Promise<void>;
   exportToJSON: () => string;
+
+
   clearCanvas: () => void;
   vignette: number;
   noise: number;
@@ -114,7 +106,6 @@ interface CanvasState {
   addText: (x?: number, y?: number) => void;
   enablePen: () => void;
   selectTool: () => void;
-
   addHeading: (x?: number, y?: number) => void;
   addSubtitle: (x?: number, y?: number) => void;
   addParagraph: (x?: number, y?: number) => void;
@@ -132,82 +123,16 @@ interface CanvasState {
 export const useCanvasStore = create<CanvasState>((set, get) => ({
   managerRef: null,
   setManager: (manager) => set({ managerRef: manager }),
+
   currentProjectId: null,
   projectName: "Untitled Carousel",
   setProjectId: (id) => set({ currentProjectId: id }),
   setProjectName: (name) => set({ projectName: name }),
 
-  loadProjectState: async (project: Project) => {
-    const { managerRef, incrementObjectRevision } = get();
-    if (!project) return;
-
-    const rawSlides = Array.isArray(project.slides) ? project.slides : [];
-    const mappedSlides: SlideData[] = rawSlides.map((s, idx) => {
-      let jsonString: string | null = null;
-      if (typeof s.canvasJSON === "string") {
-        jsonString = s.canvasJSON;
-      } else if (s.canvasJSON !== null && s.canvasJSON !== undefined) {
-        jsonString = JSON.stringify(s.canvasJSON);
-      }
-
-      return {
-        id: idx + 1,
-        dbId: s.id,
-        canvasJSON: jsonString,
-        thumbnail: s.thumbnail ?? undefined,
-      };
-    });
-
-    const finalSlides: SlideData[] =
-      mappedSlides.length > 0 ? mappedSlides : [{ id: 1, canvasJSON: null }];
-
-    const targetRatio = (project.aspectRatio as RatioKey) || "1:1";
-    const dims = CANVAS_RATIOS[targetRatio] || {
-      width: project.width || 1080,
-      height: project.height || 1080,
-    };
-
-    set({
-      currentProjectId: project.id,
-      projectName: project.title || "Untitled Carousel",
-      currentRatio: targetRatio,
-      canvasDimensions: dims,
-      slides: finalSlides,
-      currentSlideId: 1,
-    });
-
-    if (managerRef) {
-      managerRef.setRatio(dims.width, dims.height);
-      if (finalSlides[0]?.canvasJSON) {
-        await managerRef.loadFromJSON(finalSlides[0].canvasJSON);
-      } else {
-        managerRef.clear();
-        managerRef.setBackground({ type: "solid", color: "#ffffff" });
-      }
-    }
-
-    incrementObjectRevision();
-  },
-
-  applyTemplatePreset: async (json) => {
-    const { managerRef, updateCurrentSlideJSON, incrementObjectRevision } =
-      get();
-    if (!managerRef) return;
-
-    await managerRef.loadFromJSON(json);
-
-    const canvas = managerRef.getCanvas();
-    const thumb = canvas.toDataURL({ format: "png", multiplier: 0.2 });
-
-    updateCurrentSlideJSON(json);
-    incrementObjectRevision();
-  },
-
   addRectangle: (x?: number, y?: number) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addRectangle(x, y);
-      set({ activeTool: "select" });
     }
   },
 
@@ -215,7 +140,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addCircle(x, y);
-      set({ activeTool: "select" });
     }
   },
 
@@ -223,7 +147,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addTriangle(x, y);
-      set({ activeTool: "select" });
     }
   },
 
@@ -231,7 +154,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addLine(x, y);
-      set({ activeTool: "select" });
     }
   },
 
@@ -239,7 +161,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addArrow(x, y);
-      set({ activeTool: "select" });
     }
   },
 
@@ -247,7 +168,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addText("New Text", x, y);
-      set({ activeTool: "select" });
     }
   },
 
@@ -255,7 +175,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const { managerRef } = get();
     if (managerRef) {
       managerRef.enableDrawingMode();
-      set({ activeTool: "pen" });
     }
   },
 
@@ -263,7 +182,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const { managerRef } = get();
     if (managerRef) {
       managerRef.disableDrawingMode();
-      set({ activeTool: "select" });
     }
   },
 
@@ -271,91 +189,78 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addHeading(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addSubtitle: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addSubtitle(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addParagraph: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addParagraph(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addQuote: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addQuote(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addCodeBlock: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addCodeBlock(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addTag: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addTag(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addStarRating: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addStarRating(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addSwipeTag: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addSwipeTag(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addCTAButton: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addCTAButton(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addBadge: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addBadge(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addHandle: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addHandle(undefined, x, y);
-      set({ activeTool: "select" });
     }
   },
   addDividerLine: (x?, y?) => {
     const { managerRef } = get();
     if (managerRef) {
       managerRef.addDividerLine(x, y);
-      set({ activeTool: "select" });
     }
   },
 
   slides: [{ id: 1, canvasJSON: null }],
   currentSlideId: 1,
   isLayoutActive: false,
-  snapThreshold: 5,
 
   moveSlide: (direction: "left" | "right") => {
     const { slides, currentSlideId } = get();
@@ -372,12 +277,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set({ slides: newSlides });
   },
 
-  setSnapThreshold: (threshold) => {
-    const { managerRef } = get();
-    if (managerRef) {
-    }
-    set({ snapThreshold: threshold });
-  },
+
   applyLayout: (template) => {
     const { managerRef } = get();
     if (managerRef) {
@@ -385,6 +285,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       set({ isLayoutActive: true });
     }
   },
+
   connectSelected: () => {
     const { managerRef } = get();
     if (managerRef) {
@@ -396,6 +297,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       }
     }
   },
+
   clearLayout: () => {
     const { managerRef } = get();
     if (managerRef) {
@@ -403,10 +305,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       set({ isLayoutActive: false });
     }
   },
+
   addSlide: async () => {
     const { managerRef, currentSlideId } = get();
 
-    // 1. Сохраняем текущий активный слайд
     if (managerRef) {
       const currentJson = managerRef.exportAsJSON();
       let thumb = "";
@@ -425,7 +327,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       }));
     }
 
-    // 2. Генерируем уникальный ID для нового слайда
     const currentSlides = get().slides;
     const newId =
       currentSlides.length > 0
@@ -440,7 +341,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       selectedObject: null,
     });
 
-    // 3. Очищаем холст под новый слайд
     if (managerRef) {
       managerRef.clear();
       managerRef.setBackground({ type: "solid", color: "#ffffff" });
@@ -497,7 +397,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       selectedObject: null,
     });
 
-    // Загружаем целевой слайд
     const target = updatedSlides.find((s) => s.id === id);
     if (target?.canvasJSON) {
       await managerRef.loadFromJSON(target.canvasJSON);
@@ -516,9 +415,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       ),
     }));
   },
-
-  activeTool: "select",
-  setActiveTool: (tool) => set({ activeTool: tool }),
 
   currentRatio: "1:1",
   setCurrentRatio: (ratio) => set({ currentRatio: ratio }),
@@ -563,6 +459,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   setBackground: (config: BackgroundConfig) => {
     const { managerRef } = get();
     if (managerRef) {
+      managerRef.clear();
       managerRef.setBackground(config);
     }
   },
@@ -612,7 +509,4 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     if (managerRef) managerRef.clearEffects();
     set({ vignette: 0, noise: 0, blur: 0 });
   },
-  objectRevision: 0,
-  incrementObjectRevision: () =>
-    set((state) => ({ objectRevision: state.objectRevision + 1 })),
 }));

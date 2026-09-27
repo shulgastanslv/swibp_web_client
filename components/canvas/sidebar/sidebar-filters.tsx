@@ -20,13 +20,13 @@ export function SidebarFilters() {
   const hasActiveEffects = vignette > 0 || noise > 0 || blur > 0;
 
   return (
-    <div className="flex flex-col gap-4 p-1 text-xs">
+    <div className="flex flex-col gap-4 p-2 text-xs">
         {hasActiveEffects && (
           <Button
             variant="ghost"
             size="sm"
             onClick={clearEffects}
-            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground gap-1"
+            className="h-6 p-4 text-[10px] text-muted-foreground hover:text-foreground gap-1"
           >
             <RotateCcw className="w-3 h-3" />
             Reset all

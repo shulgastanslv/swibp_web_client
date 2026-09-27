@@ -313,7 +313,7 @@ export function RightSidebar({
     <div className="flex h-full bg-background border-l border-border overflow-y-scroll relative">
       <div
         className={`flex flex-col transition-all duration-200 ease-in-out overflow-y-scroll ${
-          isRightCollapsed ? "w-0 opacity-0" : "w-64 opacity-100 p-3"
+          isRightCollapsed ? "w-0 opacity-0" : "w-64 opacity-100 p-4"
         }`}
       >
         <div className="h-8 flex items-center justify-between px-1 border-b border-border/40 mb-3">

@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   Circle,
   Square,
@@ -20,202 +22,96 @@ import {
 import { Button } from "@/components/ui/button";
 import { useCanvasStore } from "@/store/useCanvasStore";
 
+interface ElementItem {
+  label: string;
+  icon: LucideIcon;
+  action: () => void;
+  iconClassName?: string;
+  title?: string;
+}
+
+interface ElementSection {
+  title: string;
+  items: ElementItem[];
+}
+
 export function SidebarElements() {
-  const {
-    addRectangle,
-    addCircle,
-    addTriangle,
-    addLine,
-    addArrow,
-    addText,
-    addHeading,
-    addSubtitle,
-    addParagraph,
-    addQuote,
-    addCodeBlock,
-    addTag,
-    addStarRating,
-    addSwipeTag,
-    addCTAButton,
-    addBadge,
-    addHandle,
-    addDividerLine,
-    connectSelected,
-  } = useCanvasStore();
+  const store = useCanvasStore();
+
+  const sections: ElementSection[] = useMemo(
+    () => [
+      {
+        title: "Text & Typography",
+        items: [
+          { label: "Heading", icon: Type, action: store.addHeading },
+          {
+            label: "Subtitle",
+            icon: Type,
+            iconClassName: "opacity-50",
+            action: store.addSubtitle,
+          },
+          { label: "Paragraph", icon: AlignLeft, action: store.addParagraph },
+          { label: "Text", icon: Pencil, action: store.addText },
+          { label: "Quote Block", icon: Quote, action: store.addQuote },
+          { label: "Code Snippet", icon: Code, action: store.addCodeBlock },
+        ],
+      },
+      {
+        title: "Shapes",
+        items: [
+          { label: "Rectangle", icon: Square, action: store.addRectangle },
+          { label: "Circle", icon: Circle, action: store.addCircle },
+          { label: "Triangle", icon: Triangle, action: store.addTriangle },
+          { label: "Line", icon: Minus, action: store.addLine },
+          {
+            label: "Connect Arrow",
+            icon: Waypoints,
+            iconClassName: "text-blue-500",
+            title: "Выделите 2 объекта через Shift и нажмите",
+            action: store.connectSelected,
+          },
+          { label: "Divider", icon: Minus, action: store.addDividerLine },
+        ],
+      },
+      {
+        title: "Badges & Blocks",
+        items: [
+          { label: "Tag Chip", icon: Tag, action: store.addTag },
+          { label: "Badge", icon: Tag, action: store.addBadge },
+          { label: "Star Rating", icon: Star, action: store.addStarRating },
+          { label: "Handle", icon: User, action: store.addHandle },
+          { label: "Swipe Tag", icon: ArrowRight, action: store.addSwipeTag },
+          { label: "CTA Button", icon: MousePointerClick, action: store.addCTAButton },
+        ],
+      },
+    ],
+    [store]
+  );
 
   return (
-    <div className="flex flex-col gap-5 text-xs">
-      {/* Text & Typography */}
-      <section>
-        <p className="text-[11px] text-muted-foreground font-medium mb-2">
-          Text & Typography
-        </p>
-        <div className="grid grid-cols-2 gap-1.5">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addHeading()}
-          >
-            <Type className="w-3.5 h-3.5" /> Heading
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addSubtitle()}
-          >
-            <Type className="w-3.5 h-3.5 opacity-50" /> Subtitle
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addParagraph()}
-          >
-            <AlignLeft className="w-3.5 h-3.5" /> Paragraph
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addText()}
-          >
-            <Pencil className="w-3.5 h-3.5" /> Text
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addQuote()}
-          >
-            <Quote className="w-3.5 h-3.5" /> Quote Block
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addCodeBlock()}
-          >
-            <Code className="w-3.5 h-3.5" /> Code Snippet
-          </Button>
-        </div>
-      </section>
-
-      {/* Shapes */}
-      <section>
-        <p className="text-[11px] text-muted-foreground font-medium mb-2">
-          Shapes
-        </p>
-        <div className="grid grid-cols-2 gap-1.5">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addRectangle()}
-          >
-            <Square className="w-3.5 h-3.5" /> Rectangle
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addCircle()}
-          >
-            <Circle className="w-3.5 h-3.5" /> Circle
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addTriangle()}
-          >
-            <Triangle className="w-3.5 h-3.5" /> Triangle
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addLine()}
-          >
-            <Minus className="w-3.5 h-3.5" /> Line
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => connectSelected()}
-            title="Выделите 2 объекта через Shift и нажмите"
-          >
-            <Waypoints className="w-3.5 h-3.5 text-blue-500" /> Connect Arrow
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addDividerLine()}
-          >
-            <Minus className="w-3.5 h-3.5 rotate-0" /> Divider
-          </Button>
-        </div>
-      </section>
-
-      {/* Badges & Blocks */}
-      <section>
-        <p className="text-[11px] text-muted-foreground font-medium mb-2">
-          Badges & Blocks
-        </p>
-        <div className="grid grid-cols-2 gap-1.5">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addTag()}
-          >
-            <Tag className="w-3.5 h-3.5" /> Tag Chip
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addBadge()}
-          >
-            <Tag className="w-3.5 h-3.5" /> Badge
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addStarRating()}
-          >
-            <Star className="w-3.5 h-3.5" /> Star Rating
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addHandle()}
-          >
-            <User className="w-3.5 h-3.5" /> Handle
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addSwipeTag()}
-          >
-            <ArrowRight className="w-3.5 h-3.5" /> Swipe Tag
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 text-xs justify-start gap-2 rounded-xl bg-muted/50"
-            onClick={() => addCTAButton()}
-          >
-            <MousePointerClick className="w-3.5 h-3.5" /> CTA Button
-          </Button>
-        </div>
-      </section>
+    <div className="flex flex-col gap-5 p-2 text-xs">
+      {sections.map((section) => (
+        <section key={section.title}>
+          <p className="mb-2 text-[11px] font-medium text-muted-foreground">
+            {section.title}
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {section.items.map(({ label, icon: Icon, action, iconClassName, title }) => (
+              <Button
+                key={label}
+                variant="secondary"
+                size="sm"
+                title={title}
+                onClick={action}
+                className="h-9 justify-start gap-2 rounded-xl bg-muted/50 text-xs"
+              >
+                <Icon className={`h-3.5 w-3.5 ${iconClassName ?? ""}`} />
+                <span className="truncate">{label}</span>
+              </Button>
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

@@ -9,7 +9,6 @@ interface RegisterInput {
   password?: string;
 }
 
-
 export async function registerUser({ name, email, password }: RegisterInput) {
   try {
     if (!email || !password) {
