@@ -61,6 +61,33 @@ export class CanvasManager {
   public setBackground(config: BackgroundConfig) { this.io.setBackground(config); }
   public exportAsImage(opts: ExportOptions) { return this.io.exportAsImage(opts); }
   public exportAsJSON() { return this.io.exportAsJSON(); }
+
+
+  /**
+   * Export a high-quality thumbnail at native resolution.
+   * Temporarily resets zoom to 1 so toDataURL captures the full 1080×1080
+   * (or whatever the native size is) instead of the zoomed-down DOM size.
+   */
+  public exportThumbnail(multiplier = 1): string {
+    const canvas = this.core.canvas;
+    const currentZoom = canvas.getZoom();
+    const nativeW = (canvas.width || 1080) / currentZoom;
+    const nativeH = (canvas.height || 1080) / currentZoom;
+
+    // Reset to native resolution
+    canvas.setZoom(1);
+    canvas.setDimensions({ width: nativeW, height: nativeH });
+    canvas.renderAll();
+
+    const dataURL = canvas.toDataURL({ format: "png", multiplier, quality: 1 });
+
+    // Restore zoomed size
+    canvas.setZoom(currentZoom);
+    canvas.setDimensions({ width: Math.round(nativeW * currentZoom), height: Math.round(nativeH * currentZoom) });
+    canvas.renderAll();
+
+    return dataURL;
+  }
   public enableDrawingMode() {
     this.core.canvas.isDrawingMode = true;
     this.core.canvas.freeDrawingBrush = new PencilBrush(this.core.canvas);

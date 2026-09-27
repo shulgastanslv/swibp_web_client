@@ -11,7 +11,11 @@ export interface ProvidersProps {
 }
 
 export function Providers({ children, themeProps }: ProvidersProps) {
-
-
-  return (<SessionProvider>{children}</SessionProvider>);
+  return (
+    <SessionProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        {children}
+      </ThemeProvider>
+    </SessionProvider>
+  );
 }

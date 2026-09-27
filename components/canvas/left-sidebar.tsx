@@ -8,31 +8,37 @@ import {
   LayoutTemplate,
   Layers,
   Settings,
-  User,
   Circle,
-  Square,
-  Triangle,
-  Type,
-  Quote,
-  Code,
-  Tag,
-  Star,
-  ArrowRight,
-  MousePointerClick,
-  Minus,
-  Eye,
-  X,
-  MoreHorizontal,
+  ImageIcon,
   PanelLeftClose,
   PanelLeftOpen,
-  AlignLeft,
-  Pencil,
+  LightbulbIcon,
+  BoxIcon,
+  FilterIcon,
 } from "lucide-react";
 import { Object as FabricObject } from "fabric";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import { templatePresets } from "@/components/canvas/types";
 
-type NavId = "projects" | "templates" | "elements" | "layers" | "settings" | "ai";
+import { SidebarProjects } from "@/components/canvas/sidebar/sidebar-projects";
+import { SidebarTemplates } from "@/components/canvas/sidebar/sidebar-templates";
+import { SidebarElements } from "@/components/canvas/sidebar/sidebar-elements";
+import { SidebarLayers } from "@/components/canvas/sidebar/sidebar-layers";
+import { SidebarSettings } from "@/components/canvas/sidebar/sidebar-settings";
+import { SidebarBackground } from "@/components/canvas/sidebar/sidebar-background";
+import Link from "next/link";
+import { SidebarFilters } from "./sidebar/sidebar-filters";
+import { SidebarIcons } from "./sidebar/sidebar-icons";
+
+export type NavId =
+  | "projects"
+  | "templates"
+  | "elements"
+  | "layers"
+  | "settings"
+  | "filters"
+  | "icons"
+  | "background"
+  | "ai";
 
 interface LeftSidebarProps {
   activeNav: NavId;
@@ -43,6 +49,18 @@ interface LeftSidebarProps {
   setShowDotGrid: (v: boolean) => void;
 }
 
+const PANEL_TITLES: Record<NavId, string> = {
+  projects: "Projects",
+  templates: "Templates Library",
+  elements: "Canvas Elements",
+  layers: "Layers",
+  settings: "Settings",
+  icons: "Icons",
+  filters: "Filters",
+  background: "Background",
+  ai: "AI",
+};
+
 export function LeftSidebar({
   activeNav,
   setActiveNav,
@@ -51,30 +69,8 @@ export function LeftSidebar({
   showDotGrid,
   setShowDotGrid,
 }: LeftSidebarProps) {
-  const {
-    managerRef,
-    objectRevision,
-    addRectangle,
-    addCircle,
-    addTriangle,
-    addLine,
-    addArrow,
-    addText,
-    addHeading,
-    addSubtitle,
-    addParagraph,
-    addQuote,
-    addCodeBlock,
-    addTag,
-    addStarRating,
-    addSwipeTag,
-    addCTAButton,
-    addBadge,
-    addHandle,
-    addDividerLine,
-  } = useCanvasStore();
+  const { managerRef, objectRevision } = useCanvasStore();
 
-  // Live Fabric objects for the Layers tab — recomputed on every canvas change
   const canvasObjects = React.useMemo<FabricObject[]>(() => {
     if (!managerRef) return [];
     return managerRef
@@ -99,6 +95,16 @@ export function LeftSidebar({
     canvas.renderAll();
   };
 
+  const reorderObjects = (fromIndex: number, toIndex: number) => {
+    const canvas = managerRef?.getCanvas();
+    if (!canvas) return;
+    const objs = canvas.getObjects().filter((o) => o.selectable !== false);
+    const obj = objs[fromIndex];
+    if (!obj) return;
+    canvas.moveObjectTo(obj, toIndex);
+    canvas.renderAll();
+  };
+
   const getObjectLabel = (obj: FabricObject): string => {
     const type = obj.type ?? "object";
     const text = (obj as unknown as Record<string, unknown>).text;
@@ -109,14 +115,17 @@ export function LeftSidebar({
   };
 
   const navItems: { id: NavId; icon: React.ElementType; label: string }[] = [
-    { id: "projects",  icon: FolderKanban,   label: "Projects"   },
-    { id: "templates", icon: LayoutTemplate, label: "Templates"  },
-    { id: "elements",  icon: Circle,         label: "Elements"   },
-    { id: "layers",    icon: Layers,         label: "Layers"     },
+    { id: "projects", icon: FolderKanban, label: "Projects" },
+    { id: "elements", icon: BoxIcon, label: "Elements" },
+    { id: "layers", icon: Layers, label: "Layers" },
+    { id: "templates", icon: LayoutTemplate, label: "Templates" },
+    { id: "background", icon: ImageIcon, label: "Background" },
+    { id: "filters", icon: FilterIcon, label: "Filter" },
+    { id: "icons", icon: LightbulbIcon, label: "Icons" },
   ];
 
   return (
-    <div className="flex h-full bg-background border-r border-border overflow-hidden">
+    <div className="flex h-full bg-background border-r border-border overflow-hidden min-h-0">
       {/* ── Icon nav rail ── */}
       <aside className="w-12 flex flex-col items-center justify-between py-3 border-r border-border/50 bg-muted/20 shrink-0">
         <div className="flex flex-col gap-1.5">
@@ -145,9 +154,11 @@ export function LeftSidebar({
             title={isLeftCollapsed ? "Expand panel" : "Collapse panel"}
             onClick={() => setIsLeftCollapsed(!isLeftCollapsed)}
           >
-            {isLeftCollapsed
-              ? <PanelLeftOpen className="w-4 h-4" />
-              : <PanelLeftClose className="w-4 h-4" />}
+            {isLeftCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
           </Button>
 
           <Button
@@ -167,190 +178,53 @@ export function LeftSidebar({
 
       {/* ── Collapsible content panel ── */}
       <div
-        className={`flex flex-col transition-all duration-200 ease-in-out overflow-hidden ${
-          isLeftCollapsed ? "w-0 opacity-0" : "w-72 opacity-100 p-3"
+        className={`flex flex-col transition-all duration-200 ease-in-out overflow-hidden min-h-0 min-w-0 ${
+          isLeftCollapsed ? "w-0 opacity-0" : "w-72 opacity-100"
         }`}
       >
         {/* Panel title */}
-        <div className="h-8 flex items-center px-1 text-xs font-semibold tracking-tight text-foreground border-b border-border/40 mb-3 shrink-0">
-          {activeNav === "projects"  && "Projects"}
-          {activeNav === "templates" && "Templates Library"}
-          {activeNav === "elements"  && "Canvas Elements"}
-          {activeNav === "layers"    && "Layers"}
-          {activeNav === "settings"  && "Settings"}
+        <div className="h-8 flex items-center px-4 text-xs font-semibold tracking-tight text-foreground border-b border-border/40 shrink-0">
+          {PANEL_TITLES[activeNav] ?? activeNav}
         </div>
 
-        <ScrollArea className="flex-1 pr-1">
-
-          {/* ══ TEMPLATES ══ */}
-          {activeNav === "templates" && (
-            <div className="flex flex-col gap-2.5">
-              <span className="text-[11px] text-muted-foreground font-medium">Slide Presets</span>
-              <div className="grid grid-cols-1 gap-2.5">
-                {templatePresets.map((tpl) => (
-                  <button
-                    key={tpl.id}
-                    className="group flex flex-col p-3 rounded-2xl bg-muted/30 hover:bg-muted/70 text-left border border-border/40 transition-all duration-200 gap-2"
-                  >
-                    <div className="w-full h-12 rounded-xl bg-card border border-border/40 p-2 flex flex-col justify-between">
-                      <span className="text-[9px] font-mono text-muted-foreground">{tpl.badge}</span>
-                      <div className="w-1/2 h-1.5 rounded-full bg-muted-foreground/30" />
-                    </div>
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-xs font-medium">{tpl.name}</span>
-                      <span className="text-[10px] text-muted-foreground px-2 py-0.5 rounded-full bg-background/60 border border-border/30">Apply</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ══ ELEMENTS ══ */}
-          {activeNav === "elements" && (
-            <div className="flex flex-col gap-5 text-xs">
-
-              {/* Text & Typography */}
-              <section>
-                <p className="text-[11px] text-muted-foreground font-medium mb-2">Text & Typography</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addHeading()}>
-                    <Type className="w-3.5 h-3.5" /> Heading
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addSubtitle()}>
-                    <Type className="w-3.5 h-3.5 opacity-50" /> Subtitle
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addParagraph()}>
-                    <AlignLeft className="w-3.5 h-3.5" /> Paragraph
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addText()}>
-                    <Pencil className="w-3.5 h-3.5" /> Text
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50 col-span-2" onClick={() => addQuote()}>
-                    <Quote className="w-3.5 h-3.5" /> Quote Block
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50 col-span-2" onClick={() => addCodeBlock()}>
-                    <Code className="w-3.5 h-3.5" /> Code Snippet
-                  </Button>
-                </div>
-              </section>
-
-              {/* Shapes */}
-              <section>
-                <p className="text-[11px] text-muted-foreground font-medium mb-2">Shapes</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addRectangle()}>
-                    <Square className="w-3.5 h-3.5" /> Rectangle
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addCircle()}>
-                    <Circle className="w-3.5 h-3.5" /> Circle
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addTriangle()}>
-                    <Triangle className="w-3.5 h-3.5" /> Triangle
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addLine()}>
-                    <Minus className="w-3.5 h-3.5" /> Line
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addArrow()}>
-                    <ArrowRight className="w-3.5 h-3.5" /> Arrow
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addDividerLine()}>
-                    <Minus className="w-3.5 h-3.5 rotate-0" /> Divider
-                  </Button>
-                </div>
-              </section>
-
-              {/* Badges & Blocks */}
-              <section>
-                <p className="text-[11px] text-muted-foreground font-medium mb-2">Badges & Blocks</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addTag()}>
-                    <Tag className="w-3.5 h-3.5" /> Tag Chip
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addBadge()}>
-                    <Tag className="w-3.5 h-3.5" /> Badge
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addStarRating()}>
-                    <Star className="w-3.5 h-3.5" /> Star Rating
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addHandle()}>
-                    <User className="w-3.5 h-3.5" /> Handle
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50" onClick={() => addSwipeTag()}>
-                    <ArrowRight className="w-3.5 h-3.5" /> Swipe Tag
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-9 text-xs justify-start gap-2 rounded-xl border-border/50 col-span-2" onClick={() => addCTAButton()}>
-                    <MousePointerClick className="w-3.5 h-3.5" /> CTA Button
-                  </Button>
-                </div>
-              </section>
-            </div>
-          )}
-
-          {/* ══ PROJECTS ══ */}
-          {activeNav === "projects" && (
-            <div className="flex flex-col gap-1.5 text-xs">
-              <span className="text-muted-foreground text-[11px] font-medium mb-1">Recent Files</span>
-              {["Instagram Growth Carousel", "LinkedIn Tech Guide", "Minimalist UI Showcase"].map((p, i) => (
-                <div key={i} className="p-2.5 rounded-xl bg-muted/30 hover:bg-muted/60 cursor-pointer border border-border/40 flex items-center justify-between">
-                  <span className="font-medium text-foreground truncate">{p}</span>
-                  <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ══ LAYERS ══ */}
+        <ScrollArea className="flex-1 min-h-0 p-2">
+          {activeNav === "projects" && <SidebarProjects />}
+          {activeNav === "templates" && <SidebarTemplates />}
+          {activeNav === "elements" && <SidebarElements />}
           {activeNav === "layers" && (
-            <div className="flex flex-col gap-1.5 text-xs">
-              <span className="text-muted-foreground text-[11px] font-medium mb-1">
-                Objects on canvas ({canvasObjects.length})
-              </span>
-
-              {canvasObjects.length === 0 && (
-                <p className="text-muted-foreground text-[11px] py-6 text-center">
-                  No objects yet. Add elements from the Elements tab.
-                </p>
-              )}
-
-              {[...canvasObjects].reverse().map((obj, i) => (
-                <div
-                  key={i}
-                  className="p-2.5 rounded-xl bg-background hover:bg-muted/50 border border-border/50 flex items-center justify-between group cursor-pointer"
-                  onClick={() => selectObject(obj)}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Eye className="w-3 h-3 text-muted-foreground shrink-0" />
-                    <span className="truncate font-mono text-[11px]">{getObjectLabel(obj)}</span>
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteObject(obj); }}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity ml-2 shrink-0"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
+            <SidebarLayers
+              canvasObjects={canvasObjects}
+              selectObject={selectObject}
+              deleteObject={deleteObject}
+              getObjectLabel={getObjectLabel}
+              reorderObjects={reorderObjects}
+            />
           )}
-
-          {/* ══ SETTINGS ══ */}
+          {activeNav === "filters" && <SidebarFilters />}
+          {activeNav === "icons" && <SidebarIcons />}
           {activeNav === "settings" && (
-            <div className="flex flex-col gap-3 text-xs">
-              <span className="text-muted-foreground font-medium">Canvas Preferences</span>
-              <label className="flex items-center justify-between bg-muted/30 p-2.5 rounded-xl border border-border/40 cursor-pointer">
-                <span>Show dot grid background</span>
-                <input
-                  type="checkbox"
-                  checked={showDotGrid}
-                  onChange={(e) => setShowDotGrid(e.target.checked)}
-                  className="accent-primary rounded"
-                />
-              </label>
-            </div>
+            <SidebarSettings
+              showDotGrid={showDotGrid}
+              setShowDotGrid={setShowDotGrid}
+            />
           )}
-
+          {activeNav === "background" && <SidebarBackground />}
         </ScrollArea>
+        <div className="px-4 py-2 border-t border-border/40 shrink-0 flex items-center justify-start gap-2 text-[11px] text-muted-foreground">
+          <Link
+            href="/terms"
+            className="hover:text-foreground transition-colors underline-offset-4 hover:underline"
+          >
+            Terms of Service
+          </Link>
+          <span className="text-muted-foreground/40">•</span>
+          <Link
+            href="/privacy"
+            className="hover:text-foreground transition-colors underline-offset-4 hover:underline"
+          >
+            Privacy Policy
+          </Link>
+        </div>
       </div>
     </div>
   );

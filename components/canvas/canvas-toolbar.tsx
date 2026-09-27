@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Copy,
   Trash2,
-  Play,
   Grid3X3,
   SplitSquareVertical,
   Undo2,
@@ -13,6 +12,8 @@ import {
   ZoomIn,
   ZoomOut,
   Layers2,
+  FileCode2,
+  Check,
 } from "lucide-react";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { CANVAS_RATIOS, type RatioKey } from "@/lib/canvas/types";
@@ -49,12 +50,27 @@ export function CanvasToolbar({
     setZoom,
   } = useCanvasStore();
 
+  const [copied, setCopied] = useState(false);
+
   const handleRatioChange = (ratio: RatioKey) => {
     if (!managerRef) return;
     const { width, height } = CANVAS_RATIOS[ratio];
     managerRef.setRatio(width, height);
     setCanvasDimensions({ width, height });
     setCurrentRatio(ratio);
+  };
+
+  const handleCopyJSON = async () => {
+    if (!managerRef) return;
+    try {
+      const json = managerRef.exportAsJSON();
+      const jsonString = typeof json === "string" ? json : JSON.stringify(json, null, 2);
+      await navigator.clipboard.writeText(jsonString);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy JSON:", err);
+    }
   };
 
   return (
@@ -153,7 +169,7 @@ export function CanvasToolbar({
         </Button>
       </div>
 
-      {/* ── Right: History, slide actions, preview ── */}
+      {/* ── Right: History, slide actions, export & preview ── */}
       <div className="flex items-center gap-2">
 
         {/* Undo / Redo */}
@@ -190,6 +206,7 @@ export function CanvasToolbar({
           <Button
             variant="ghost"
             size="icon"
+            disabled={slidesCount <= 1}
             className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30"
             onClick={removeSlide}
             title="Delete slide"
@@ -197,6 +214,27 @@ export function CanvasToolbar({
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
+
+        {/* Copy JSON Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleCopyJSON}
+          className="h-8 px-2.5 text-xs font-medium gap-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all border border-border/40"
+          title="Copy current slide as JSON"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-green-500" />
+              <span className="text-green-600 dark:text-green-400 font-medium">Copied</span>
+            </>
+          ) : (
+            <>
+              <FileCode2 className="w-3.5 h-3.5" />
+              <span>JSON</span>
+            </>
+          )}
+        </Button>
 
         <div className="h-4 w-px bg-border/60 mx-0.5" />
 

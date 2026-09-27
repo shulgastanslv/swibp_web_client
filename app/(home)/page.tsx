@@ -8,15 +8,16 @@ import { CanvasView } from "@/components/canvas/canvas-view";
 import { SlideNavigator } from "@/components/canvas/slide-navigator";
 import { RightSidebar } from "@/components/canvas/right-sidebar";
 import { Modals } from "@/components/canvas/modals";
+import { PreviewModal } from "@/components/canvas/preview-modal";
 import {
   SlideData,
   initialSlides,
 } from "@/components/canvas/types";
+import type { NavId } from "@/components/canvas/left-sidebar";
+import { useCanvasStore } from "@/store/useCanvasStore";
 
 export default function CarouselStudio() {
-  const [activeNav, setActiveNav] = useState<
-    "projects" | "templates" | "elements" | "layers" | "settings" | "ai"
-  >("templates");
+  const [activeNav, setActiveNav] = useState<NavId>("templates");
 
   const [slides, setSlides] = useState<SlideData[]>(initialSlides);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -29,7 +30,7 @@ export default function CarouselStudio() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [previewIdx, setPreviewIdx] = useState(0);
+  const [previewSlideId, setPreviewSlideId] = useState<number>(0);
 
   const [padding, setPadding] = useState(32);
   const [borderRadius, setBorderRadius] = useState(16);
@@ -128,7 +129,8 @@ export default function CarouselStudio() {
             removeSlide={removeSlide}
             slidesCount={slides.length}
             onPreview={() => {
-              setPreviewIdx(currentIdx);
+              const storeCurrentId = useCanvasStore.getState().currentSlideId;
+              setPreviewSlideId(storeCurrentId);
               setShowPreviewModal(true);
             }}
           />
@@ -163,14 +165,12 @@ export default function CarouselStudio() {
         setShowShareModal={setShowShareModal}
         showExportModal={showExportModal}
         setShowExportModal={setShowExportModal}
-        showPreviewModal={showPreviewModal}
-        setShowPreviewModal={setShowPreviewModal}
-        previewIdx={previewIdx}
-        setPreviewIdx={setPreviewIdx}
-        slides={slides}
+      />
 
-        padding={padding}
-        borderRadius={borderRadius}
+      <PreviewModal
+        open={showPreviewModal}
+        initialSlideId={previewSlideId}
+        onClose={() => setShowPreviewModal(false)}
       />
     </div>
   );

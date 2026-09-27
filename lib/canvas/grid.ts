@@ -58,8 +58,9 @@ export class GridManager {
       this.canvas.remove(this.gridGroup);
     }
 
-    const width = this.canvas.getWidth();
-    const height = this.canvas.getHeight();
+    const zoom = this.canvas.getZoom() || 1;
+    const width = (this.canvas.getWidth()) / zoom;
+    const height = (this.canvas.getHeight()) / zoom;
     const lines: Line[] = [];
 
     for (let x = 0; x <= width; x += this.gridSize) {

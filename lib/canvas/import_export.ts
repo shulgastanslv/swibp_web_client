@@ -65,8 +65,9 @@ export class ImportExportManager {
 
   private setImage(url: string): void {
     FabricImage.fromURL(url).then((img) => {
-      const width = this.canvas.width || 1080;
-      const height = this.canvas.height || 1080;
+      const zoom = this.canvas.getZoom() || 1;
+      const width = (this.canvas.width || 1080) / zoom;
+      const height = (this.canvas.height || 1080) / zoom;
 
       const scaleX = width / (img.width || 1);
       const scaleY = height / (img.height || 1);
@@ -87,8 +88,9 @@ export class ImportExportManager {
   }
 
   private setGradient(colors: [string, string]): void {
-    const width = this.canvas.width || 1080;
-    const height = this.canvas.height || 1080;
+    const zoom = this.canvas.getZoom() || 1;
+    const width = (this.canvas.width || 1080) / zoom;
+    const height = (this.canvas.height || 1080) / zoom;
 
     const rect = new Rect({
       left: 0,
@@ -101,12 +103,7 @@ export class ImportExportManager {
 
     rect.fill = new Gradient({
       type: "linear",
-      coords: {
-        x1: 0,
-        y1: 0,
-        x2: width,
-        y2: height,
-      },
+      coords: { x1: 0, y1: 0, x2: width, y2: height },
       colorStops: [
         { offset: 0, color: colors[0] },
         { offset: 1, color: colors[1] },

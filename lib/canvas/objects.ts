@@ -140,6 +140,11 @@ export class ObjectFactory {
       ...pos,
     });
     this.addToCanvas(textbox);
+    const actualWidth = textbox.calcTextWidth();
+    if (actualWidth < textbox.width) {
+      textbox.set({ width: actualWidth });
+      this.canvas.renderAll();
+    }
     return textbox;
   }
 
@@ -174,10 +179,15 @@ export class ObjectFactory {
       fontWeight: "bold",
       fontFamily: "Inter, sans-serif",
       fill: "#0f172a",
-      width: 900,
+      width: 800,
       lineHeight: 1.1,
     });
     this.addToCanvas(tb);
+    const actualWidth = tb.calcTextWidth();
+    if (actualWidth < tb.width) {
+      tb.set({ width: actualWidth });
+      this.canvas.renderAll();
+    }
     return tb;
   }
 
@@ -188,10 +198,15 @@ export class ObjectFactory {
       fontSize: 40,
       fontFamily: "Inter, sans-serif",
       fill: "#64748b",
-      width: 800,
+      width: 700,
       lineHeight: 1.4,
     });
     this.addToCanvas(tb);
+    const actualWidth = tb.calcTextWidth();
+    if (actualWidth < tb.width) {
+      tb.set({ width: actualWidth });
+      this.canvas.renderAll();
+    }
     return tb;
   }
 
@@ -202,10 +217,15 @@ export class ObjectFactory {
       fontSize: 28,
       fontFamily: "Inter, sans-serif",
       fill: "#334155",
-      width: 800,
+      width: 700,
       lineHeight: 1.6,
     });
     this.addToCanvas(tb);
+    const actualWidth = tb.calcTextWidth();
+    if (actualWidth < tb.width) {
+      tb.set({ width: actualWidth });
+      this.canvas.renderAll();
+    }
     return tb;
   }
 
@@ -217,10 +237,15 @@ export class ObjectFactory {
       fontStyle: "italic",
       fontFamily: "Georgia, serif",
       fill: "#475569",
-      width: 800,
+      width: 700,
       lineHeight: 1.5,
     });
     this.addToCanvas(tb);
+    const actualWidth = tb.calcTextWidth();
+    if (actualWidth < tb.width) {
+      tb.set({ width: actualWidth });
+      this.canvas.renderAll();
+    }
     return tb;
   }
 
@@ -305,6 +330,11 @@ export class ObjectFactory {
       width: 500,
     });
     this.addToCanvas(tb);
+    const actualWidth = tb.calcTextWidth();
+    if (actualWidth < tb.width) {
+      tb.set({ width: actualWidth });
+      this.canvas.renderAll();
+    }
     return tb;
   }
 
@@ -420,6 +450,11 @@ export class ObjectFactory {
       width: 400,
     });
     this.addToCanvas(tb);
+    const actualWidth = tb.calcTextWidth();
+    if (actualWidth < tb.width) {
+      tb.set({ width: actualWidth });
+      this.canvas.renderAll();
+    }
     return tb;
   }
 

@@ -1,32 +1,55 @@
-import { randomUUID } from "crypto";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 import { User, type AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 
 export const authOptions: AuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
     CredentialsProvider({
       id: "credentials",
       name: "credentials",
       credentials: {
-        email: { type: "text" },
-        password: { type: "password" },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
-      authorize: async (credentials) => {
-        if (!credentials?.email || !credentials?.password) return null;
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Введите email и пароль");
+        }
 
-        const user: User = {
-          token: randomUUID(),
-          id: randomUUID(),
-          email: credentials.email,
-          group: "",
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email.toLowerCase() },
+        });
+
+        if (!user || !user.password) {
+          throw new Error("Пользователь не найден или вошел через соцсети");
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          user.password,
+        );
+
+        if (!isPasswordValid) {
+          throw new Error("Неверный пароль");
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
         };
-
-        return user;
       },
     }),
   ],
   pages: {
-    signIn: "/auth/login/",
+    signIn: "/",
   },
   session: {
     maxAge: 30 * 24 * 60 * 60, //30 days
@@ -36,16 +59,16 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.user = user;
-        token.accessToken = user.token;
+        token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      session.user = token.user as User;
-      session.accessToken = token.accessToken as string;
+      if (session.user) {
+        session.user.id = token.id as string;
+      }
       return session;
-    }
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",

@@ -2,22 +2,13 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { X, Download, ChevronLeft, ChevronRight } from "lucide-react";
-import { SlideData } from "@/components/canvas/types";
-import { useCanvasStore } from "@/store/useCanvasStore";
+import { X, Download } from "lucide-react";
 
 interface ModalsProps {
   showShareModal: boolean;
   setShowShareModal: (v: boolean) => void;
   showExportModal: boolean;
   setShowExportModal: (v: boolean) => void;
-  showPreviewModal: boolean;
-  setShowPreviewModal: (v: boolean) => void;
-  previewIdx: number;
-  setPreviewIdx: React.Dispatch<React.SetStateAction<number>>;
-  slides: SlideData[];
-  padding: number;
-  borderRadius: number;
 }
 
 export function Modals({
@@ -25,15 +16,7 @@ export function Modals({
   setShowShareModal,
   showExportModal,
   setShowExportModal,
-  showPreviewModal,
-  setShowPreviewModal,
-  previewIdx,
-  setPreviewIdx,
-  slides,
-  padding,
-  borderRadius,
 }: ModalsProps) {
-  const { canvasDimensions: dims } = useCanvasStore();
   return (
     <>
       {/* Share Modal */}
@@ -106,82 +89,6 @@ export function Modals({
                 <Download className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Preview Modal */}
-      {showPreviewModal && (
-        <div className="fixed inset-0 bg-background/95 backdrop-blur-md z-50 flex flex-col items-center justify-between p-6">
-          <div className="w-full flex items-center justify-between">
-            <span className="text-xs font-mono text-muted-foreground">
-              Preview Mode (Slide 0{previewIdx + 1} / 0{slides.length})
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowPreviewModal(false)}
-              className="h-8 rounded-xl"
-            >
-              Close
-            </Button>
-          </div>
-
-          <div
-            style={{
-              width: `${dims.width * 1.1}px`,
-              height: `${dims.height * 1.1}px`,
-              padding: `${padding}px`,
-              borderRadius: `${borderRadius}px`,
-            }}
-            className="bg-card text-card-foreground border border-border shadow-2xl flex flex-col justify-between my-auto"
-          >
-            <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span className="bg-muted px-2.5 py-1 rounded-full text-[10px] font-mono">
-                {slides[previewIdx]?.badgeText}
-              </span>
-              <span className="text-[10px] font-mono uppercase">SWIPE ➔</span>
-            </div>
-
-            <div className="flex flex-col gap-2 my-auto">
-              <h2 className="text-2xl font-bold tracking-tight">
-                {slides[previewIdx]?.title}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {slides[previewIdx]?.subtitle}
-              </p>
-            </div>
-
-            <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-2 border-t border-border/30">
-              <span>carousel.studio</span>
-              <span>0{previewIdx + 1}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={previewIdx === 0}
-              onClick={() => setPreviewIdx((p) => Math.max(0, p - 1))}
-              className="h-9 w-9 rounded-xl"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="font-mono text-xs">
-              0{previewIdx + 1} / 0{slides.length}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={previewIdx === slides.length - 1}
-              onClick={() =>
-                setPreviewIdx((p) => Math.min(slides.length - 1, p + 1))
-              }
-              className="h-9 w-9 rounded-xl"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
           </div>
         </div>
       )}

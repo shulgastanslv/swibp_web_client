@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { registerUser } from "@/actions/user";
+import { Loader2 } from "lucide-react";
 
 type View = "login" | "register" | "forgot-password";
 
@@ -25,47 +27,94 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const searchParams = useSearchParams();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSwitchView = (newView: View) => {
-    setView(newView);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const resetForm = () => {
     setEmail("");
     setPassword("");
     setName("");
+    setErrorMessage(null);
+  };
+
+  const handleSwitchView = (newView: View) => {
+    setView(newView);
+    resetForm();
   };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       setView("login");
-      setEmail("");
-      setPassword("");
-      setName("");
+      resetForm();
     }
     onOpenChange?.(open);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
+    setIsLoading(true);
 
-    if (view === "forgot-password") {
-      // TODO: Реализуйте логику отправки письма для сброса пароля
-      console.log("Forgot password requested for:", email);
-      return;
+    try {
+      const callbackUrl = searchParams.get("callbackUrl") || "/";
+
+      // 1. Регистрация нового аккаунта
+      if (view === "register") {
+        const res = await registerUser({ name, email, password });
+        if (res.error) {
+          setErrorMessage(res.error);
+          setIsLoading(false);
+          return;
+        }
+
+        // Авторизуем пользователя сразу после создания аккаунта
+        const loginRes = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (loginRes?.error) {
+          setErrorMessage(loginRes.error);
+        } else {
+          onOpenChange?.(false);
+          router.refresh();
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Вход по паролю
+      if (view === "login") {
+        const res = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+          callbackUrl,
+        });
+
+        if (res?.error) {
+          setErrorMessage("Неверный email или пароль");
+        } else {
+          onOpenChange?.(false);
+          router.refresh();
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. Восстановление пароля
+      if (view === "forgot-password") {
+        // Логика сброса пароля
+        setIsLoading(false);
+      }
+    } catch {
+      setErrorMessage("Что-то пошло не так. Попробуйте еще раз.");
+      setIsLoading(false);
     }
-
-    if (view === "register") {
-      // TODO: Реализуйте логику регистрации (или signIn("credentials", { action: "register", ... }))
-      console.log("Register requested for:", { name, email, password });
-      return;
-    }
-
-    // Логика входа
-    await signIn("credentials", {
-      email,
-      password,
-      redirect: true,
-      callbackUrl: searchParams.get("callbackUrl") || "/",
-    });
   };
 
   const handleGoogleSignIn = () => {
@@ -74,13 +123,19 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
     });
   };
 
-
-
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-full max-w-md rounded-4xl p-0 gap-0">
+      <DialogContent className="w-full max-w-md rounded-3xl p-0 gap-0 border border-border">
         <div className="p-8 flex flex-col justify-center">
 
+          {/* Плашка ошибки */}
+          {errorMessage && (
+            <div className="mb-4 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive text-center">
+              {errorMessage}
+            </div>
+          )}
+
+          {/* ==================== LOGIN VIEW ==================== */}
           {view === "login" && (
             <>
               <DialogHeader className="space-y-1 mb-6 text-center">
@@ -94,7 +149,8 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
 
               <Button
                 variant="outline"
-                className="w-full h-10 rounded-full text-xs font-medium cursor-pointer transition-all mb-6 flex items-center justify-center gap-2 border-input bg-muted/50 hover:bg-accent hover:text-accent-foreground"
+                type="button"
+                className="w-full h-10 rounded-full text-xs font-medium transition-all mb-6 flex items-center justify-center gap-2 border-input bg-muted/50 hover:bg-accent"
                 onClick={handleGoogleSignIn}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -119,7 +175,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-10 rounded-full bg-muted/50 border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+                    className="h-10 rounded-full bg-muted/50 border-input"
                   />
                 </div>
                 <div>
@@ -141,15 +197,16 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-10 rounded-full bg-muted/50 border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+                    className="h-10 rounded-full bg-muted/50 border-input"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold cursor-pointer transition-all mt-2"
+                  disabled={isLoading}
+                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold mt-2"
                 >
-                  Sign in
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign in"}
                 </Button>
               </form>
 
@@ -158,7 +215,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                 <button
                   type="button"
                   onClick={() => handleSwitchView("register")}
-                  className="text-primary font-medium hover:underline bg-transparent p-0 rounded-4xl"
+                  className="text-primary font-medium hover:underline bg-transparent p-0"
                 >
                   Sign up
                 </button>
@@ -174,13 +231,14 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                   Create an account
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground">
-                  Sign up to get started and join our community.
+                  Sign up to get started and create carousels.
                 </DialogDescription>
               </DialogHeader>
 
               <Button
                 variant="outline"
-                className="w-full h-10 rounded-xl text-xs font-medium cursor-pointer transition-all mb-6 flex items-center justify-center gap-2 border-input bg-muted/50 hover:bg-accent hover:text-accent-foreground"
+                type="button"
+                className="w-full h-10 rounded-full text-xs font-medium transition-all mb-6 flex items-center justify-center gap-2 border-input bg-muted/50 hover:bg-accent"
                 onClick={handleGoogleSignIn}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -205,7 +263,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="h-10 rounded-xl bg-muted/50 border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+                    className="h-10 rounded-full bg-muted/50 border-input"
                   />
                 </div>
                 <div>
@@ -218,7 +276,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-10 rounded-xl bg-muted/50 border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+                    className="h-10 rounded-full bg-muted/50 border-input"
                   />
                 </div>
                 <div>
@@ -227,19 +285,20 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                   </label>
                   <Input
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Минимум 6 символов"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-10 rounded-xl bg-muted/50 border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+                    className="h-10 rounded-full bg-muted/50 border-input"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold cursor-pointer transition-all mt-2"
+                  disabled={isLoading}
+                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold mt-2"
                 >
-                  Create account
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create account"}
                 </Button>
               </form>
 
@@ -279,15 +338,16 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-10 rounded-xl bg-muted/50 border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+                    className="h-10 rounded-full bg-muted/50 border-input"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold cursor-pointer transition-all mt-2"
+                  disabled={isLoading}
+                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold mt-2"
                 >
-                  Send reset link
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send reset link"}
                 </Button>
               </form>
 
@@ -304,18 +364,6 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
             </>
           )}
 
-          {/* ==================== GLOBAL FOOTER ==================== */}
-          <div className="mt-6 pt-4 border-t border-border text-center text-[10px] text-muted-foreground">
-            By continuing, you agree to the{" "}
-            <button className="underline hover:text-foreground transition-colors bg-transparent p-0">
-              Terms
-            </button>{" "}
-            and{" "}
-            <button className="underline hover:text-foreground transition-colors bg-transparent p-0">
-              Privacy Policy
-            </button>
-            .
-          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -327,7 +375,7 @@ const Divider = ({ text }: { text: string }) => (
     <div className="absolute inset-0 flex items-center">
       <div className="w-full border-t border-border" />
     </div>
-    <span className="relative px-3 text-[10px] tracking-wider uppercase text-muted-foreground font-semibold bg-background backdrop-blur-md ">
+    <span className="relative px-3 text-[10px] tracking-wider uppercase text-muted-foreground font-semibold bg-background">
       {text}
     </span>
   </div>

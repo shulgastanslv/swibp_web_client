@@ -12,110 +12,98 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "cn";
-import { LayoutGrid, Smartphone, Monitor, Square } from "lucide-react";
-
-// ─── Format definitions ───────────────────────────────────────────────────────
-
-const FORMATS = [
-  { id: "1:1",     label: "Square",    ratio: "1080×1080", icon: <Square className="w-4 h-4" /> },
-  { id: "4:5",     label: "Portrait",  ratio: "1080×1350", icon: <Smartphone className="w-4 h-4" /> },
-  { id: "9:16",    label: "Story",     ratio: "1080×1920", icon: <Smartphone className="w-4 h-4" /> },
-  { id: "16:9",    label: "Landscape", ratio: "1920×1080", icon: <Monitor className="w-4 h-4" /> },
-  { id: "carousel",label: "Carousel",  ratio: "1080×1080", icon: <LayoutGrid className="w-4 h-4" /> },
-];
-
-// ─── Component ────────────────────────────────────────────────────────────────
+import { createProject, getProjectById } from "@/actions/projects";
+import { useCanvasStore } from "@/store/useCanvasStore";
+import { useSession } from "next-auth/react";
+import { Loader2 } from "lucide-react";
 
 interface NewProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userId?: string; // Можно передать пропсом, либо взять из useSession
 }
 
-export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
+export function NewProjectModal({ open, onOpenChange, userId: propsUserId }: NewProjectModalProps) {
   const router = useRouter();
-  const [name, setName] = useState("Untitled Carousel");
-  const [format, setFormat] = useState("1:1");
+  const { data: session } = useSession();
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  // const loadProjectState = useCanvasStore((s) => s.loadProjectState);
 
-  const handleCreate = () => {
-    onOpenChange(false);
-    router.push("/");
+  // Используем переданный userId или ID из текущей сессии
+  const currentUserId = propsUserId || (session?.user as { id?: string })?.id;
+
+  const handleCreate = async () => {
+    if (!name.trim() || loading) return;
+
+    if (!currentUserId) {
+      alert("Сначала авторизуйтесь, чтобы создать проект");
+      return;
+    }
+
+    setLoading(true);
+
+    // Передаем userId первым аргументом
+    const res = await createProject(currentUserId, name);
+
+    if (res.success && res.projectId) {
+      const fullProject = await getProjectById(res.projectId);
+      // if (fullProject.project) {
+      //   await loadProjectState(fullProject.project);
+      // }
+      setName("");
+      onOpenChange(false);
+      router.push(`/?project=${res.projectId}`);
+    } else {
+      alert(res.error || "Ошибка при создании");
+    }
+
+    setLoading(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0" showCloseButton>
-
-        <DialogHeader className="px-5 pt-5 pb-4 border-b border-border/50">
-          <DialogTitle className="text-sm font-semibold">New project</DialogTitle>
-          <DialogDescription className="text-xs">
-            Choose a format and give your project a name.
+      <DialogContent className="p-0 overflow-hidden border border-border/80 shadow-2xl rounded-2xl bg-background max-w-[380px]">
+        <DialogHeader className="px-5 pt-5 pb-2">
+          <DialogTitle className="text-sm font-semibold tracking-tight text-foreground">
+            Новый проект
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+            Введите название карусели
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-5 py-4 flex flex-col gap-5">
-
-          {/* Project name */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Project name</label>
-            <Input
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              placeholder="Untitled Carousel"
-              className="h-9 rounded-xl border border-border bg-muted/30 px-3 text-sm"
-            />
-          </div>
-
-          {/* Format picker */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Format</label>
-            <div className="grid grid-cols-5 gap-2">
-              {FORMATS.map((f) => {
-                const active = format === f.id;
-                return (
-                  <button
-                    key={f.id}
-                    onClick={() => setFormat(f.id)}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 p-2.5 rounded-xl border text-[11px] font-medium transition-all",
-                      active
-                        ? "border-primary bg-primary/5 text-foreground shadow-sm"
-                        : "border-border/50 bg-muted/30 text-muted-foreground hover:border-border hover:text-foreground hover:bg-muted/60"
-                    )}
-                  >
-                    <span className={cn(active ? "text-primary" : "opacity-60")}>
-                      {f.icon}
-                    </span>
-                    <span>{f.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
+        <div className="px-5 py-3">
+          <Input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            placeholder="Например: AI Tools Carousel"
+            className="h-9 rounded-xl border-border/70 bg-muted/30 px-3 text-xs"
+          />
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="px-5 py-3 bg-muted/20 border-t border-border/40 flex items-center justify-end gap-2">
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="rounded-xl"
+            className="rounded-full px-3 h-7 text-xs text-muted-foreground hover:text-foreground"
           >
-            Cancel
+            Отмена
           </Button>
           <Button
+            type="button"
             size="sm"
             onClick={handleCreate}
-            disabled={!name.trim()}
-            className="rounded-xl gap-1.5"
+            disabled={!name.trim() || loading}
+            className="rounded-full px-4 h-7 text-xs font-medium"
           >
-            Create project
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Создать"}
           </Button>
         </DialogFooter>
-
       </DialogContent>
     </Dialog>
   );

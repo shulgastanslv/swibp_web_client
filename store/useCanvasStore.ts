@@ -1,95 +1,200 @@
-  import { create } from "zustand";
-  import type { CanvasManager } from "@/lib/canvas/manager";
-  import type { RatioKey, ToolType, BackgroundConfig } from "@/lib/canvas/types";
-  import type { Object as FabricObject } from "fabric";
-  import { LayoutTemplate } from "@/lib/canvas/layouts";
+import { create } from "zustand";
+import type { CanvasManager } from "@/lib/canvas/manager";
+import { type RatioKey, type ToolType, type BackgroundConfig, CANVAS_RATIOS } from "@/lib/canvas/types";
+import type { Object as FabricObject, FabricObjectProps } from "fabric";
+import { LayoutTemplate } from "@/lib/canvas/layouts";
 
-  interface SlideData {
-    id: number;
-    canvasJSON: string | null;
-    thumbnail?: string;
-  }
+interface SlideData {
+  id: number;
+  canvasJSON: string | null;
+  thumbnail?: string;
+}
 
-  interface CanvasState {
-    managerRef: CanvasManager | null;
-    setManager: (manager: CanvasManager) => void;
+export interface SerializedCanvasData {
+  version?: string;
+  objects: FabricObjectProps[];
+  background?: string;
+  clipPath?: FabricObjectProps;
+  [key: string]: unknown; // строгий безопасный fallback вместо any
+}
 
-    slides: SlideData[];
-    currentSlideId: number;
+export interface SlideEntity {
+  id: string;
+  order: number;
+  canvasJSON: unknown;
+  thumbnail?: string | null;
+  projectId?: string;
+}
 
-    addSlide: () => void;
-    removeSlide: (id: number) => void;
-    switchToSlide: (id: number) => Promise<void>;
-    updateCurrentSlideJSON: (json: string, thumbnail?: string) => void;
+export interface Project {
+  id: string;
+  title: string;
+  aspectRatio: string;
+  width: number;
+  height: number;
+  isPublic?: boolean;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  userId: string;
+  slides?: SlideEntity[];
+}
 
-    activeTool: ToolType;
-    setActiveTool: (tool: ToolType) => void;
+interface CanvasState {
+  managerRef: CanvasManager | null;
+  setManager: (manager: CanvasManager) => void;
 
-    currentRatio: RatioKey;
-    setCurrentRatio: (ratio: RatioKey) => void;
+  slides: SlideData[];
+  currentSlideId: number;
 
-    canvasDimensions: { width: number; height: number };
-    setCanvasDimensions: (dims: { width: number; height: number }) => void;
+  currentProjectId: string | null;
+  projectName: string;
+  setProjectId: (id: string | null) => void;
+  setProjectName: (name: string) => void;
+  loadProjectState: (project: Project) => Promise<void>;
 
-    selectedObject: FabricObject | null;
-    objectRevision: number;
-    incrementObjectRevision: () => void;
-    setSelectedObject: (obj: FabricObject | null) => void;
+  addSlide: () => void;
+  removeSlide: (id: number) => void;
+  switchToSlide: (id: number) => Promise<void>;
+  updateCurrentSlideJSON: (json: string, thumbnail?: string) => void;
 
-    zoom: number;
-    setZoom: (zoom: number) => void;
+  activeTool: ToolType;
+  setActiveTool: (tool: ToolType) => void;
 
-    isGridVisible: boolean;
-    gridSize: number;
-    gridColor: string;
-    toggleGrid: () => void;
-    setGridSize: (size: number) => void;
-    setGridColor: (color: string) => void;
+  currentRatio: RatioKey;
+  setCurrentRatio: (ratio: RatioKey) => void;
 
-    isLayoutActive: boolean;
-    snapThreshold: number;
-    setSnapThreshold: (threshold: number) => void;
-    applyLayout: (template: LayoutTemplate) => void;
-    clearLayout: () => void;
+  canvasDimensions: { width: number; height: number };
+  setCanvasDimensions: (dims: { width: number; height: number }) => void;
 
-    setBackground: (config: BackgroundConfig) => void;
-    addImage: (url: string) => Promise<void>;
-    exportToJSON: () => string;
-    clearCanvas: () => void;
-    vignette: number;
-    noise: number;
-    blur: number;
-    setVignette: (value: number) => void;
-    setNoise: (value: number) => void;
-    setBlur: (value: number) => void;
-    clearEffects: () => void;
+  selectedObject: FabricObject | null;
+  objectRevision: number;
+  incrementObjectRevision: () => void;
+  setSelectedObject: (obj: FabricObject | null) => void;
 
-    addRectangle: (x?: number, y?: number) => void;
-    addCircle: (x?: number, y?: number) => void;
-    addTriangle: (x?: number, y?: number) => void;
-    addLine: (x?: number, y?: number) => void;
-    addArrow: (x?: number, y?: number) => void;
-    addText: (x?: number, y?: number) => void;
-    enablePen: () => void;
-    selectTool: () => void;
+  zoom: number;
+  setZoom: (zoom: number) => void;
 
-    addHeading: (x?: number, y?: number) => void;
-    addSubtitle: (x?: number, y?: number) => void;
-    addParagraph: (x?: number, y?: number) => void;
-    addQuote: (x?: number, y?: number) => void;
-    addCodeBlock: (x?: number, y?: number) => void;
-    addTag: (x?: number, y?: number) => void;
-    addStarRating: (x?: number, y?: number) => void;
-    addSwipeTag: (x?: number, y?: number) => void;
-    addCTAButton: (x?: number, y?: number) => void;
-    addBadge: (x?: number, y?: number) => void;
-    addHandle: (x?: number, y?: number) => void;
-    addDividerLine: (x?: number, y?: number) => void;
-  }
+  isGridVisible: boolean;
+  gridSize: number;
+  gridColor: string;
+  toggleGrid: () => void;
+  setGridSize: (size: number) => void;
+  setGridColor: (color: string) => void;
+
+  isLayoutActive: boolean;
+  snapThreshold: number;
+  setSnapThreshold: (threshold: number) => void;
+  applyLayout: (template: LayoutTemplate) => void;
+  clearLayout: () => void;
+  applyTemplatePreset: (json: string) => Promise<void>;
+  setBackground: (config: BackgroundConfig) => void;
+  addImage: (url: string) => Promise<void>;
+  exportToJSON: () => string;
+  clearCanvas: () => void;
+  vignette: number;
+  noise: number;
+  blur: number;
+  setVignette: (value: number) => void;
+  setNoise: (value: number) => void;
+  setBlur: (value: number) => void;
+  clearEffects: () => void;
+
+  addRectangle: (x?: number, y?: number) => void;
+  addCircle: (x?: number, y?: number) => void;
+  addTriangle: (x?: number, y?: number) => void;
+  addLine: (x?: number, y?: number) => void;
+  addArrow: (x?: number, y?: number) => void;
+  addText: (x?: number, y?: number) => void;
+  enablePen: () => void;
+  selectTool: () => void;
+
+  addHeading: (x?: number, y?: number) => void;
+  addSubtitle: (x?: number, y?: number) => void;
+  addParagraph: (x?: number, y?: number) => void;
+  addQuote: (x?: number, y?: number) => void;
+  addCodeBlock: (x?: number, y?: number) => void;
+  addTag: (x?: number, y?: number) => void;
+  addStarRating: (x?: number, y?: number) => void;
+  addSwipeTag: (x?: number, y?: number) => void;
+  addCTAButton: (x?: number, y?: number) => void;
+  addBadge: (x?: number, y?: number) => void;
+  addHandle: (x?: number, y?: number) => void;
+  addDividerLine: (x?: number, y?: number) => void;
+}
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
   managerRef: null,
   setManager: (manager) => set({ managerRef: manager }),
+  currentProjectId: null,
+  projectName: "Untitled Carousel",
+  setProjectId: (id) => set({ currentProjectId: id }),
+  setProjectName: (name) => set({ projectName: name }),
+
+  loadProjectState: async (project: Project) => {
+    const { managerRef, incrementObjectRevision } = get();
+    if (!project) return;
+
+    const rawSlides = Array.isArray(project.slides) ? project.slides : [];
+    const mappedSlides: SlideData[] = rawSlides.map((s, idx) => {
+      let jsonString: string | null = null;
+      if (typeof s.canvasJSON === "string") {
+        jsonString = s.canvasJSON;
+      } else if (s.canvasJSON !== null && s.canvasJSON !== undefined) {
+        jsonString = JSON.stringify(s.canvasJSON);
+      }
+
+      return {
+        id: idx + 1,
+        dbId: s.id,
+        canvasJSON: jsonString,
+        thumbnail: s.thumbnail ?? undefined,
+      };
+    });
+
+    const finalSlides: SlideData[] =
+      mappedSlides.length > 0 ? mappedSlides : [{ id: 1, canvasJSON: null }];
+
+    const targetRatio = (project.aspectRatio as RatioKey) || "1:1";
+    const dims = CANVAS_RATIOS[targetRatio] || {
+      width: project.width || 1080,
+      height: project.height || 1080,
+    };
+
+    set({
+      currentProjectId: project.id,
+      projectName: project.title || "Untitled Carousel",
+      currentRatio: targetRatio,
+      canvasDimensions: dims,
+      slides: finalSlides,
+      currentSlideId: 1,
+    });
+
+    if (managerRef) {
+      managerRef.setRatio(dims.width, dims.height);
+      if (finalSlides[0]?.canvasJSON) {
+        await managerRef.loadFromJSON(finalSlides[0].canvasJSON);
+      } else {
+        managerRef.clear();
+        managerRef.setBackground({ type: "solid", color: "#ffffff" });
+      }
+    }
+
+    incrementObjectRevision();
+  },
+
+  applyTemplatePreset: async (json) => {
+    const { managerRef, updateCurrentSlideJSON, incrementObjectRevision } =
+      get();
+    if (!managerRef) return;
+
+    await managerRef.loadFromJSON(json);
+
+    const canvas = managerRef.getCanvas();
+    const thumb = canvas.toDataURL({ format: "png", multiplier: 0.2 });
+
+    updateCurrentSlideJSON(json, thumb);
+    incrementObjectRevision();
+  },
 
   addRectangle: (x?: number, y?: number) => {
     const { managerRef } = get();
@@ -126,7 +231,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   addArrow: (x?: number, y?: number) => {
     const { managerRef } = get();
     if (managerRef) {
-      managerRef.addArrow(x,y);
+      managerRef.addArrow(x, y);
       set({ activeTool: "select" });
     }
   },
@@ -157,51 +262,87 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   addHeading: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addHeading(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addHeading(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addSubtitle: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addSubtitle(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addSubtitle(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addParagraph: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addParagraph(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addParagraph(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addQuote: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addQuote(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addQuote(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addCodeBlock: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addCodeBlock(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addCodeBlock(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addTag: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addTag(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addTag(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addStarRating: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addStarRating(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addStarRating(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addSwipeTag: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addSwipeTag(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addSwipeTag(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addCTAButton: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addCTAButton(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addCTAButton(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addBadge: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addBadge(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addBadge(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addHandle: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addHandle(undefined, x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addHandle(undefined, x, y);
+      set({ activeTool: "select" });
+    }
   },
   addDividerLine: (x?, y?) => {
     const { managerRef } = get();
-    if (managerRef) { managerRef.addDividerLine(x, y); set({ activeTool: "select" }); }
+    if (managerRef) {
+      managerRef.addDividerLine(x, y);
+      set({ activeTool: "select" });
+    }
   },
 
   slides: [{ id: 1, canvasJSON: null }],
@@ -387,5 +528,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     set({ vignette: 0, noise: 0, blur: 0 });
   },
   objectRevision: 0,
-  incrementObjectRevision: () => set((state) => ({ objectRevision: state.objectRevision + 1 })),
-  }));
+  incrementObjectRevision: () =>
+    set((state) => ({ objectRevision: state.objectRevision + 1 })),
+}));
