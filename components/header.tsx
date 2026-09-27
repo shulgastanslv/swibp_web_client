@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Share2,
   User,
   HelpCircle,
   Sparkles,
@@ -11,13 +10,15 @@ import {
   AtSign,
   ChevronRight,
   LogOut,
-  NewspaperIcon,
-  GalleryHorizontal,
   ArrowUp,
   Copy,
   SlidersHorizontal,
   Share,
   GalleryHorizontalEndIcon,
+  Bell,
+  Globe,
+  GalleryHorizontal,
+  BookOpen,
 } from "lucide-react";
 import Logo from "@/components/logo";
 import { useSession, signOut } from "next-auth/react";
@@ -34,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CommandsKbd } from "@/components/commands_kbd";
-import { ThemeSwitcherMenu } from "@/components/theme-switcher"; // <-- Импорт переключателя
+import { ThemeSwitcherMenu } from "@/components/theme-switcher";
 import { ShareModal } from "./share-modal";
 import { ExportModal } from "./export-modal";
 import { useCanvasStore } from "@/store/useCanvasStore";
@@ -42,11 +43,13 @@ import { useCanvasStore } from "@/store/useCanvasStore";
 interface HeaderProps {
   projectName?: string;
   onProjectNameChange?: (name: string) => void;
+  onPublishTemplate?: () => void;
 }
 
 export function Header({
   projectName = "Untitled Carousel",
   onProjectNameChange,
+  onPublishTemplate,
 }: HeaderProps) {
   const [name, setName] = useState(projectName);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -75,31 +78,45 @@ export function Header({
   return (
     <>
       <header className="h-14 w-full flex items-center justify-between px-4 bg-background border-b border-border text-xs z-20 shrink-0 gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+        {/* Левая секция: Лого, Название, Справка и What's New */}
+        <div className="flex items-center gap-1.5 min-w-0">
           <Logo width={25} height={25} />
           <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
           <input
             type="text"
             value={name}
             onChange={handleNameChange}
-            className="bg-transparent font-medium text-foreground text-xs px-2 py-1 rounded-full border hover:border-border/50 focus:border-border focus:bg-muted/30 focus:outline-none transition-colors w-36 sm:w-44 truncate"
+            className="bg-transparent font-medium text-foreground text-xs px-2 py-1 rounded-full border hover:border-border/50 focus:border-border focus:bg-muted/30 focus:outline-none transition-colors w-32 sm:w-44 truncate"
             placeholder="Project name..."
           />
+
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground shrink-0"
             title="Help"
           >
             <HelpCircle className="w-3.5 h-3.5" />
           </Button>
+
+          {/* Кнопка What's New, вынесенная из меню */}
+
         </div>
 
+        {/* Центральная секция: Горячие клавиши и слайды */}
         <div className="flex items-center gap-0.5">
           <CommandsKbd />
           <div className="h-3.5 w-px bg-border mx-1" />
-
-          <div className="flex items-center font-mono text-xs px-4 py-2 rounded-full bg-muted select-none">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsWhatsNewOpen(true)}
+            className="h-7 px-2 rounded-full text-muted-foreground hover:text-foreground text-[11px] gap-1.5 shrink-0 hidden sm:inline-flex"
+            title="What's new"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+          </Button>
+          <div className="flex items-center font-mono text-xs px-3 py-1.5 rounded-full bg-muted select-none">
             <span className="font-semibold text-foreground">
               {String(currentNum).padStart(2, "0")}
             </span>
@@ -107,13 +124,52 @@ export function Header({
             <span className="text-muted-foreground">
               {String(totalNum).padStart(2, "0")}
             </span>
-            <p className="flex flex-row gap-2 px-2">
-              Slides
-            </p>
+            <span className="text-muted-foreground ml-1.5 text-[11px] font-sans hidden sm:inline">
+              <GalleryHorizontal className="h-3.5 w-3.5"/>
+            </span>
           </div>
         </div>
 
+        {/* Правая секция: Уведомления, Шаблон, Экспорт и Профиль */}
         <div className="flex items-center gap-1.5">
+          {/* Кнопка уведомлений */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground relative"
+                title="Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {/* Индикатор новых уведомлений */}
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-background" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 p-2 text-xs">
+              <DropdownMenuLabel className="font-semibold text-xs">
+                Notifications
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="py-4 text-center text-muted-foreground text-[11px]">
+                No new notifications
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Кнопка Publish as Template */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onPublishTemplate}
+            className="h-8 px-2.5 rounded-full text-xs font-medium gap-1.5 hidden md:inline-flex border-border/80 hover:bg-muted/50"
+            title="Publish as Template"
+          >
+            <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Publish template</span>
+          </Button>
+
+          {/* Меню профиля / Вход */}
           {status === "authenticated" ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -128,7 +184,9 @@ export function Header({
                       src={session.user?.image ?? undefined}
                       alt={userName}
                     />
-                    <AvatarFallback className="border border-transparent">{userInitial}</AvatarFallback>
+                    <AvatarFallback className="border border-transparent">
+                      {userInitial}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -142,20 +200,29 @@ export function Header({
                   className="cursor-pointer text-xs"
                   onClick={() => setIsNewProjectOpen(true)}
                 >
-                  <GalleryHorizontalEndIcon className="w-3.5 h-3.5" fill="primary"/>
+                  <GalleryHorizontalEndIcon className="w-3.5 h-3.5 mr-2" />
                   <span>New project</span>
                 </DropdownMenuItem>
+
+                {/* На мобильных экранах дублируем кнопку Publish Template в меню */}
                 <DropdownMenuItem
-                  className="cursor-pointer text-xs"
-                  onClick={() => setIsWhatsNewOpen(true)}
+                  className="cursor-pointer text-xs md:hidden"
+                  onClick={onPublishTemplate}
                 >
-                  <NewspaperIcon className="w-3.5 h-3.5" />
-                  <span>What`s new</span>
+                  <Globe className="w-3.5 h-3.5 mr-2" />
+                  <span>Publish template</span>
                 </DropdownMenuItem>
 
-
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs sm:hidden"
+                  onClick={() => setIsWhatsNewOpen(true)}
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-2 text-amber-500" />
+                  <span>What's new</span>
+                </DropdownMenuItem>
 
                 <ThemeSwitcherMenu />
+
                 <DropdownMenuItem asChild className="cursor-pointer text-xs">
                   <a
                     href="https://t.me/your_channel"
@@ -182,7 +249,7 @@ export function Header({
                   className="cursor-pointer text-xs"
                   onClick={() => setShowShare(true)}
                 >
-                  <Share className="w-3.5 h-3.5" />
+                  <Share className="w-3.5 h-3.5 mr-2" />
                   <span>Share</span>
                 </DropdownMenuItem>
 
@@ -191,7 +258,7 @@ export function Header({
                   className="cursor-pointer text-xs text-destructive focus:text-destructive"
                   onClick={() => signOut({ callbackUrl: "/" })}
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-3.5 h-3.5 mr-2" />
                   <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -213,7 +280,7 @@ export function Header({
                   className="cursor-pointer text-xs font-medium"
                   onClick={() => setIsAuthModalOpen(true)}
                 >
-                  <User className="w-3.5 h-3.5" />
+                  <User className="w-3.5 h-3.5 mr-2" />
                   <span>Sign in</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -221,12 +288,15 @@ export function Header({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
           <div className="h-4 w-px bg-border mx-0.5" />
+
+          {/* Кнопка Export */}
           <div className="flex items-center h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full pl-3 pr-1 py-1 shadow-sm transition-all select-none gap-1.5">
             <button
               type="button"
               onClick={() => setShowExport(true)}
-              className="flex items-center gap-1.5 text-xs font-normal font-normalhover:opacity-90 transition-opacity"
+              className="flex items-center gap-1.5 text-xs font-normal hover:opacity-90 transition-opacity"
             >
               <ArrowUp className="w-3.5 h-3.5" />
               <span>Export</span>
@@ -253,6 +323,8 @@ export function Header({
           </div>
         </div>
       </header>
+
+      {/* Модальные окна */}
       <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
       <NewProjectModal
         open={isNewProjectOpen}
