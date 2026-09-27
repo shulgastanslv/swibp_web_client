@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import type { CanvasManager } from "@/lib/canvas/manager";
-import { type RatioKey, type ToolType, type BackgroundConfig, CANVAS_RATIOS } from "@/lib/canvas/types";
+import {
+  type RatioKey,
+  type ToolType,
+  type BackgroundConfig,
+  CANVAS_RATIOS,
+} from "@/lib/canvas/types";
 import type { Object as FabricObject, FabricObjectProps } from "fabric";
 import { LayoutTemplate } from "@/lib/canvas/layouts";
 
@@ -15,7 +20,7 @@ export interface SerializedCanvasData {
   objects: FabricObjectProps[];
   background?: string;
   clipPath?: FabricObjectProps;
-  [key: string]: unknown; // строгий безопасный fallback вместо any
+  [key: string]: unknown;
 }
 
 export interface SlideEntity {
@@ -55,8 +60,8 @@ interface CanvasState {
   addSlide: () => void;
   removeSlide: (id: number) => void;
   switchToSlide: (id: number) => Promise<void>;
-  updateCurrentSlideJSON: (json: string, thumbnail?: string) => void;
-
+  updateCurrentSlideJSON: (json: string) => void;
+  moveSlide: (direction: "left" | "right") => void;
   activeTool: ToolType;
   setActiveTool: (tool: ToolType) => void;
 
@@ -80,6 +85,8 @@ interface CanvasState {
   toggleGrid: () => void;
   setGridSize: (size: number) => void;
   setGridColor: (color: string) => void;
+
+  connectSelected: () => void;
 
   isLayoutActive: boolean;
   snapThreshold: number;
@@ -192,7 +199,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const canvas = managerRef.getCanvas();
     const thumb = canvas.toDataURL({ format: "png", multiplier: 0.2 });
 
-    updateCurrentSlideJSON(json, thumb);
+    updateCurrentSlideJSON(json);
     incrementObjectRevision();
   },
 
@@ -349,11 +356,25 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   currentSlideId: 1,
   isLayoutActive: false,
   snapThreshold: 5,
+
+  moveSlide: (direction: "left" | "right") => {
+    const { slides, currentSlideId } = get();
+    const index = slides.findIndex((s) => s.id === currentSlideId);
+    if (index === -1) return;
+
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= slides.length) return;
+
+    const newSlides = [...slides];
+    const [moved] = newSlides.splice(index, 1);
+    newSlides.splice(targetIndex, 0, moved);
+
+    set({ slides: newSlides });
+  },
+
   setSnapThreshold: (threshold) => {
     const { managerRef } = get();
     if (managerRef) {
-      // Можно добавить метод в GridManager для изменения порога
-      // managerRef.setSnapThreshold(threshold);
     }
     set({ snapThreshold: threshold });
   },
@@ -364,7 +385,17 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       set({ isLayoutActive: true });
     }
   },
-
+  connectSelected: () => {
+    const { managerRef } = get();
+    if (managerRef) {
+      const conn = managerRef.connectSelectedObjects();
+      if (!conn) {
+        alert(
+          "Выберите 2 объекта на холсте с зажатым Shift, чтобы соединить их стрелкой",
+        );
+      }
+    }
+  },
   clearLayout: () => {
     const { managerRef } = get();
     if (managerRef) {
@@ -372,62 +403,116 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       set({ isLayoutActive: false });
     }
   },
-  addSlide: () => {
-    const { slides } = get();
-    const newId =
-      slides.length > 0 ? Math.max(...slides.map((s) => s.id)) + 1 : 1;
-    set((state) => ({
-      slides: [...state.slides, { id: newId, canvasJSON: null }],
-      currentSlideId: newId,
-    }));
-  },
+  addSlide: async () => {
+    const { managerRef, currentSlideId } = get();
 
-  removeSlide: (id) => {
-    const { slides, currentSlideId } = get();
-    if (slides.length <= 1) return;
+    // 1. Сохраняем текущий активный слайд
+    if (managerRef) {
+      const currentJson = managerRef.exportAsJSON();
+      let thumb = "";
+      try {
+        thumb = managerRef
+          .getCanvas()
+          .toDataURL({ format: "png", multiplier: 0.1 });
+      } catch {}
 
-    const newSlides = slides.filter((s) => s.id !== id);
-
-    let nextActiveId = currentSlideId;
-    if (currentSlideId === id) {
-      const currentIndex = slides.findIndex((s) => s.id === id);
-      const prevSlide = newSlides[currentIndex - 1] || newSlides[0];
-      nextActiveId = prevSlide.id;
+      set((state) => ({
+        slides: state.slides.map((s) =>
+          s.id === currentSlideId
+            ? { ...s, canvasJSON: currentJson, thumbnail: thumb || s.thumbnail }
+            : s,
+        ),
+      }));
     }
 
-    set({ slides: newSlides, currentSlideId: nextActiveId });
+    // 2. Генерируем уникальный ID для нового слайда
+    const currentSlides = get().slides;
+    const newId =
+      currentSlides.length > 0
+        ? Math.max(...currentSlides.map((s) => s.id)) + 1
+        : 1;
+
+    const newSlide: SlideData = { id: newId, canvasJSON: null };
+
+    set({
+      slides: [...currentSlides, newSlide],
+      currentSlideId: newId,
+      selectedObject: null,
+    });
+
+    // 3. Очищаем холст под новый слайд
+    if (managerRef) {
+      managerRef.clear();
+      managerRef.setBackground({ type: "solid", color: "#ffffff" });
+      managerRef.getCanvas().requestRenderAll();
+    }
   },
 
-  switchToSlide: async (id) => {
+  removeSlide: async (id: number) => {
+    const { slides, currentSlideId } = get();
+    if (slides.length <= 1) return; // Не удаляем единственный слайд
+
+    const newSlides = slides.filter((s) => s.id !== id);
+    let nextActiveId = currentSlideId;
+
+    if (currentSlideId === id) {
+      const deletedIndex = slides.findIndex((s) => s.id === id);
+      const nextSlide = newSlides[deletedIndex] || newSlides[deletedIndex - 1];
+      nextActiveId = nextSlide.id;
+    }
+
+    set({ slides: newSlides });
+
+    if (currentSlideId === id) {
+      await get().switchToSlide(nextActiveId);
+    }
+  },
+
+  switchToSlide: async (id: number) => {
     const { managerRef, slides, currentSlideId } = get();
     if (!managerRef || id === currentSlideId) return;
 
-    // 1. Save current slide before switching
+    // Сохраняем текущий слайд
     const currentJson = managerRef.exportAsJSON();
+    let currentThumb = "";
+    try {
+      currentThumb = managerRef
+        .getCanvas()
+        .toDataURL({ format: "png", multiplier: 0.1 });
+    } catch {}
 
-    // Update state immediately to reflect save
-    set((state) => ({
-      slides: state.slides.map((s) =>
-        s.id === currentSlideId ? { ...s, canvasJSON: currentJson } : s,
-      ),
-      currentSlideId: id, // <-- ID переключается СРАЗУ
-    }));
+    const updatedSlides = slides.map((s) =>
+      s.id === currentSlideId
+        ? {
+            ...s,
+            canvasJSON: currentJson,
+            thumbnail: currentThumb || s.thumbnail,
+          }
+        : s,
+    );
 
-    const targetSlide = slides.find((s) => s.id === id);
-    if (targetSlide?.canvasJSON) {
-      await managerRef.loadFromJSON(targetSlide.canvasJSON);
+    set({
+      slides: updatedSlides,
+      currentSlideId: id,
+      selectedObject: null,
+    });
+
+    // Загружаем целевой слайд
+    const target = updatedSlides.find((s) => s.id === id);
+    if (target?.canvasJSON) {
+      await managerRef.loadFromJSON(target.canvasJSON);
     } else {
-      // New empty slide
       managerRef.clear();
       managerRef.setBackground({ type: "solid", color: "#ffffff" });
     }
+    managerRef.getCanvas().requestRenderAll();
   },
 
-  updateCurrentSlideJSON: (json, thumbnail) => {
+  updateCurrentSlideJSON: (json) => {
     const { currentSlideId } = get();
     set((state) => ({
       slides: state.slides.map((s) =>
-        s.id === currentSlideId ? { ...s, canvasJSON: json, thumbnail } : s,
+        s.id === currentSlideId ? { ...s, canvasJSON: json } : s,
       ),
     }));
   },

@@ -18,7 +18,6 @@ import {
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { CANVAS_RATIOS, type RatioKey } from "@/lib/canvas/types";
 
-// Only the four quick-pick ratios shown in the pill switcher
 const QUICK_RATIOS: { ratio: RatioKey; iconClass: string }[] = [
   { ratio: "4:5",  iconClass: "w-2.5 h-3"   },
   { ratio: "1:1",  iconClass: "w-2.5 h-2.5" },
@@ -27,16 +26,10 @@ const QUICK_RATIOS: { ratio: RatioKey; iconClass: string }[] = [
 ];
 
 interface CanvasToolbarProps {
-  duplicateSlide: () => void;
-  removeSlide: () => void;
-  slidesCount: number;
   onPreview: () => void;
 }
 
 export function CanvasToolbar({
-  duplicateSlide,
-  removeSlide,
-  slidesCount,
   onPreview,
 }: CanvasToolbarProps) {
   const {
@@ -138,41 +131,9 @@ export function CanvasToolbar({
         </div>
       </div>
 
-      {/* ── Center: Zoom controls ── */}
-      <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-full border border-border/40">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => setZoom(Math.max(25, zoom - 10))}
-          title="Zoom out"
-        >
-          <ZoomOut className="w-3.5 h-3.5" />
-        </Button>
 
-        <button
-          className="text-xs font-mono w-10 text-center text-foreground hover:text-primary transition-colors"
-          onClick={() => setZoom(100)}
-          title="Reset zoom"
-        >
-          {zoom}%
-        </button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => setZoom(Math.min(200, zoom + 10))}
-          title="Zoom in"
-        >
-          <ZoomIn className="w-3.5 h-3.5" />
-        </Button>
-      </div>
-
-      {/* ── Right: History, slide actions, export & preview ── */}
       <div className="flex items-center gap-2">
 
-        {/* Undo / Redo */}
         <div className="flex items-center bg-muted/40 p-0.5 rounded-full border border-border/40">
           <Button
             variant="ghost"
@@ -191,31 +152,35 @@ export function CanvasToolbar({
             <Redo2 className="w-3.5 h-3.5" />
           </Button>
         </div>
-
-        {/* Duplicate & delete slide */}
-        <div className="flex items-center bg-muted/40 p-0.5 rounded-full border border-border/40">
+        <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-full border border-border/40">
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/70 transition-colors"
-            onClick={duplicateSlide}
-            title="Duplicate slide"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setZoom(Math.max(25, zoom - 10))}
+            title="Zoom out"
           >
-            <Copy className="w-3.5 h-3.5" />
+            <ZoomOut className="w-3.5 h-3.5" />
           </Button>
+
+          <button
+            className="text-xs font-mono w-10 text-center text-foreground hover:text-primary transition-colors"
+            onClick={() => setZoom(100)}
+            title="Reset zoom"
+          >
+            {zoom}%
+          </button>
+
           <Button
             variant="ghost"
             size="icon"
-            disabled={slidesCount <= 1}
-            className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30"
-            onClick={removeSlide}
-            title="Delete slide"
+            className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setZoom(Math.min(200, zoom + 10))}
+            title="Zoom in"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <ZoomIn className="w-3.5 h-3.5" />
           </Button>
         </div>
-
-        {/* Copy JSON Button */}
         <Button
           variant="ghost"
           size="sm"

@@ -173,21 +173,29 @@ export class ObjectFactory {
 
   addHeading(text = "New Heading", x?: number, y?: number): Textbox {
     const pos = this.getPosition(x, y);
+
     const tb = new Textbox(text, {
       ...pos,
       fontSize: 80,
       fontWeight: "bold",
       fontFamily: "Inter, sans-serif",
       fill: "#0f172a",
-      width: 800,
       lineHeight: 1.1,
     });
+
+    // Принудительно рассчитываем геометрию текста
+    tb.initDimensions();
+
+    // Получаем реальную ширину текста (с запасом 2-4px для предотвращения переноса)
+    const actualWidth = Math.ceil(tb.calcTextWidth()) + 4;
+
+    // Устанавливаем ширину ровно под текст
+    tb.set({ width: actualWidth });
+    tb.setCoords(); // Обязательно обновляем синюю рамку выделения
+
     this.addToCanvas(tb);
-    const actualWidth = tb.calcTextWidth();
-    if (actualWidth < tb.width) {
-      tb.set({ width: actualWidth });
-      this.canvas.renderAll();
-    }
+    this.canvas.renderAll();
+
     return tb;
   }
 

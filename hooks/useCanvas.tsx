@@ -8,10 +8,7 @@ import {
 } from "@/lib/canvas/types";
 import type {
   Object as FabricObject,
-  TPointerEvent,
-  TPointerEventInfo,
 } from "fabric";
-import { IEvent } from "fabric/fabric-impl";
 
 export function useCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -45,7 +42,7 @@ export function useCanvas() {
     setBlur,
     clearEffects,
     isLayoutActive,
-    incrementObjectRevision,
+    moveSlide,
     applyLayout,
     clearLayout,
     snapThreshold,
@@ -69,13 +66,7 @@ export function useCanvas() {
 
     const handleAutoSave = () => {
       const json = manager.exportAsJSON();
-      const thumbnail = canvas.toDataURL({
-        format: "png",
-        multiplier: 0.1,
-        quality: 0.8,
-      });
-      incrementObjectRevision();
-      updateCurrentSlideJSON(json, thumbnail);
+      updateCurrentSlideJSON(json);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -149,14 +140,12 @@ export function useCanvas() {
     managerRef.setBackground(config);
   };
 
+
   const exportAllSlides = async () => {
     if (!managerRef) return;
 
     const currentJson = managerRef.exportAsJSON();
-    const currentThumb = managerRef
-      .getCanvas()
-      .toDataURL({ format: "png", multiplier: 0.1 });
-    updateCurrentSlideJSON(currentJson, currentThumb);
+    updateCurrentSlideJSON(currentJson);
 
     const currentSlides = useCanvasStore.getState().slides;
 
@@ -178,9 +167,26 @@ export function useCanvas() {
     await managerRef.loadFromJSON(currentJson);
   };
 
+  const currentIdx = slides.findIndex((s) => s.id === currentSlideId);
+
+    const handlePrev = () => {
+      if (currentIdx > 0) {
+        switchToSlide(slides[currentIdx - 1].id);
+      }
+    };
+
+    const handleNext = () => {
+      if (currentIdx < slides.length - 1) {
+        switchToSlide(slides[currentIdx + 1].id);
+      }
+    };
+
   return {
     canvasRef,
     managerRef,
+    handleNext,
+    handlePrev,
+    currentSlideId,
     activeTool,
     setActiveTool,
     selectedObject: useCanvasStore((state) => state.selectedObject),
@@ -195,21 +201,11 @@ export function useCanvas() {
     handleRatioChange,
     handleBackgroundChange,
     slides,
-    currentSlideId,
+    currentIdx,
     switchToSlide,
     addSlide,
     removeSlide,
     objectRevision: useCanvasStore((state) => state.objectRevision),
-    handlePrev: () => {
-      const ids = slides.map((s) => s.id);
-      const idx = ids.indexOf(currentSlideId);
-      if (idx > 0) switchToSlide(ids[idx - 1]);
-    },
-    handleNext: () => {
-      const ids = slides.map((s) => s.id);
-      const idx = ids.indexOf(currentSlideId);
-      if (idx < ids.length - 1) switchToSlide(ids[idx + 1]);
-    },
     exportAllSlides,
     isGridVisible,
     toggleGrid,
@@ -232,5 +228,6 @@ export function useCanvas() {
     setCurrentRatio,
     setBackground,
     addImage,
+    moveSlide,
   };
 }

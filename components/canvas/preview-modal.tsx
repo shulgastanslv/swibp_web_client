@@ -29,22 +29,17 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
   const activeIdx = Math.max(0, slideIds.indexOf(activeId));
   const aspectRatio = canvasDimensions.width / canvasDimensions.height;
 
-  // ── Initialise + render when modal opens ─────────────────────────────────
   useEffect(() => {
     if (!open || !managerRef || initDoneRef.current) return;
     initDoneRef.current = true;
 
     const canvas = managerRef.getCanvas();
 
-    // Save current slide state
     const json = managerRef.exportAsJSON();
-    const thumb = canvas.toDataURL({ format: "png", multiplier: 1.5, quality: 0.95 });
-    updateCurrentSlideJSON(json, thumb);
+    updateCurrentSlideJSON(json);
 
-    // Capture fresh store state (thumbnail just set above)
     const freshSlides = useCanvasStore.getState().slides;
 
-    // Build initial snapshots — already-rendered slides have thumbnails
     const initial: SlideSnapshot[] = freshSlides.map((s) => ({
       id: s.id,
       thumbnail: s.thumbnail ?? null,
@@ -54,7 +49,6 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
     setActiveId(initialSlideId);
     setSnapshots(initial);
 
-    // Check if anything needs rendering
     const needsRender = freshSlides.filter((s) => !s.thumbnail && s.canvasJSON);
     if (needsRender.length === 0) return;
 
@@ -67,7 +61,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
         if (slide.thumbnail || !slide.canvasJSON) continue;
         try {
           await managerRef.loadFromJSON(slide.canvasJSON);
-          const dataURL = canvas.toDataURL({ format: "png", multiplier: 0.4, quality: 0.9 });
+          const dataURL = canvas.toDataURL({ format: "png", multiplier: 1.0, quality: 0.9 });
           setSnapshots((prev) =>
             prev.map((s) => s.id === slide.id ? { ...s, thumbnail: dataURL, loading: false } : s)
           );

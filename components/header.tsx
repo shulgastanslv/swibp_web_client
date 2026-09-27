@@ -16,6 +16,8 @@ import {
   ArrowUp,
   Copy,
   SlidersHorizontal,
+  Share,
+  GalleryHorizontalEndIcon,
 } from "lucide-react";
 import Logo from "@/components/logo";
 import { useSession, signOut } from "next-auth/react";
@@ -33,31 +35,39 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CommandsKbd } from "@/components/commands_kbd";
 import { ThemeSwitcherMenu } from "@/components/theme-switcher"; // <-- Импорт переключателя
+import { ShareModal } from "./share-modal";
+import { ExportModal } from "./export-modal";
+import { useCanvasStore } from "@/store/useCanvasStore";
 
 interface HeaderProps {
   projectName?: string;
   onProjectNameChange?: (name: string) => void;
-  onShare?: () => void;
-  onExport?: () => void;
 }
 
 export function Header({
   projectName = "Untitled Carousel",
   onProjectNameChange,
-  onShare,
-  onExport,
 }: HeaderProps) {
   const [name, setName] = useState(projectName);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
   const { data: session, status } = useSession();
+  const [showShare, setShowShare] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
     onProjectNameChange?.(e.target.value);
   };
 
+  const slides = useCanvasStore((s) => s.slides);
+  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
+
+  // Расчет индекса и общего количества
+  const currentIdx = slides.findIndex((s) => s.id === currentSlideId);
+  const currentNum = currentIdx >= 0 ? currentIdx + 1 : 1;
+  const totalNum = slides.length || 1;
   const userEmail = session?.user?.email ?? "";
   const userName = session?.user?.name ?? userEmail;
   const userInitial = userName ? userName[0].toUpperCase() : "?";
@@ -72,7 +82,7 @@ export function Header({
             type="text"
             value={name}
             onChange={handleNameChange}
-            className="bg-transparent font-medium text-foreground text-xs px-2 py-1 rounded-full border border-transparent hover:border-border/50 focus:border-border focus:bg-muted/30 focus:outline-none transition-colors w-36 sm:w-44 truncate"
+            className="bg-transparent font-medium text-foreground text-xs px-2 py-1 rounded-full border hover:border-border/50 focus:border-border focus:bg-muted/30 focus:outline-none transition-colors w-36 sm:w-44 truncate"
             placeholder="Project name..."
           />
           <Button
@@ -88,45 +98,37 @@ export function Header({
         <div className="flex items-center gap-0.5">
           <CommandsKbd />
           <div className="h-3.5 w-px bg-border mx-1" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsWhatsNewOpen(true)}
-            className="rounded-full flex flex-row gap-2 border border-primary/10"
-            title="What's new"
-          >
-            <NewspaperIcon className="w-3.5 h-3.5" />
-            What&apos;s new?
-          </Button>
+
+          <div className="flex items-center font-mono text-xs px-4 py-2 rounded-full bg-muted select-none">
+            <span className="font-semibold text-foreground">
+              {String(currentNum).padStart(2, "0")}
+            </span>
+            <span className="text-muted-foreground mx-1">/</span>
+            <span className="text-muted-foreground">
+              {String(totalNum).padStart(2, "0")}
+            </span>
+            <p className="flex flex-row gap-2 px-2">
+              Slides
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onShare}
-            className="h-7 text-xs font-normal gap-1.5 rounded-full border-border/60 hover:bg-muted/50 px-3"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Share</span>
-          </Button>
-
-          {/* User menu / Auth */}
           {status === "authenticated" ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-xl p-0"
+                  className="h-8 w-8 rounded-xl p-0 border border-transparent"
                   title="Account"
                 >
-                  <Avatar size="default">
+                  <Avatar className="h-8 w-8 border border-transparent">
                     <AvatarImage
                       src={session.user?.image ?? undefined}
                       alt={userName}
                     />
-                    <AvatarFallback>{userInitial}</AvatarFallback>
+                    <AvatarFallback className="border border-transparent">{userInitial}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -140,11 +142,19 @@ export function Header({
                   className="cursor-pointer text-xs"
                   onClick={() => setIsNewProjectOpen(true)}
                 >
-                  <GalleryHorizontal className="w-3.5 h-3.5" />
+                  <GalleryHorizontalEndIcon className="w-3.5 h-3.5" fill="primary"/>
                   <span>New project</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs"
+                  onClick={() => setIsWhatsNewOpen(true)}
+                >
+                  <NewspaperIcon className="w-3.5 h-3.5" />
+                  <span>What`s new</span>
+                </DropdownMenuItem>
 
-                {/* Theme Switcher внутри дропдауна */}
+
+
                 <ThemeSwitcherMenu />
                 <DropdownMenuItem asChild className="cursor-pointer text-xs">
                   <a
@@ -154,7 +164,7 @@ export function Header({
                     className="flex items-center gap-2 w-full"
                   >
                     <Send className="w-3.5 h-3.5 text-sky-500" />
-                    <span>Telegram-канал</span>
+                    <span>Telegram</span>
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="cursor-pointer text-xs">
@@ -168,6 +178,14 @@ export function Header({
                     <span>Threads</span>
                   </a>
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs"
+                  onClick={() => setShowShare(true)}
+                >
+                  <Share className="w-3.5 h-3.5" />
+                  <span>Share</span>
+                </DropdownMenuItem>
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer text-xs text-destructive focus:text-destructive"
@@ -184,7 +202,7 @@ export function Header({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 rounded-xl border-none text-muted-foreground hover:text-foreground"
                   title="Menu"
                 >
                   <User className="w-4 h-4" />
@@ -207,7 +225,7 @@ export function Header({
           <div className="flex items-center h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full pl-3 pr-1 py-1 shadow-sm transition-all select-none gap-1.5">
             <button
               type="button"
-              onClick={onExport}
+              onClick={() => setShowExport(true)}
               className="flex items-center gap-1.5 text-xs font-normal font-normalhover:opacity-90 transition-opacity"
             >
               <ArrowUp className="w-3.5 h-3.5" />
@@ -240,6 +258,8 @@ export function Header({
         open={isNewProjectOpen}
         onOpenChange={setIsNewProjectOpen}
       />
+      <ShareModal open={showShare} onOpenChange={setShowShare} />
+      <ExportModal open={showExport} onOpenChange={setShowExport} />
       <WhatsNewModal open={isWhatsNewOpen} onOpenChange={setIsWhatsNewOpen} />
     </>
   );

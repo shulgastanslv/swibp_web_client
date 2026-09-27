@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { Loader2 } from "lucide-react";
+
 import {
   Dialog,
   DialogContent,
@@ -12,25 +15,24 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createProject, getProjectById } from "@/actions/projects";
-import { useCanvasStore } from "@/store/useCanvasStore";
-import { useSession } from "next-auth/react";
-import { Loader2 } from "lucide-react";
+import { createProject } from "@/actions/projects";
 
 interface NewProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId?: string; // Можно передать пропсом, либо взять из useSession
+  userId?: string;
 }
 
-export function NewProjectModal({ open, onOpenChange, userId: propsUserId }: NewProjectModalProps) {
+export function NewProjectModal({
+  open,
+  onOpenChange,
+  userId: propsUserId,
+}: NewProjectModalProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  // const loadProjectState = useCanvasStore((s) => s.loadProjectState);
 
-  // Используем переданный userId или ID из текущей сессии
   const currentUserId = propsUserId || (session?.user as { id?: string })?.id;
 
   const handleCreate = async () => {
@@ -43,14 +45,9 @@ export function NewProjectModal({ open, onOpenChange, userId: propsUserId }: New
 
     setLoading(true);
 
-    // Передаем userId первым аргументом
     const res = await createProject(currentUserId, name);
 
     if (res.success && res.projectId) {
-      const fullProject = await getProjectById(res.projectId);
-      // if (fullProject.project) {
-      //   await loadProjectState(fullProject.project);
-      // }
       setName("");
       onOpenChange(false);
       router.push(`/?project=${res.projectId}`);
@@ -63,12 +60,12 @@ export function NewProjectModal({ open, onOpenChange, userId: propsUserId }: New
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 overflow-hidden border border-border/80 shadow-2xl rounded-2xl bg-background max-w-[380px]">
-        <DialogHeader className="px-5 pt-5 pb-2">
+      <DialogContent className="rounded-2xl border border-border/80 bg-background p-2 shadow-2xl">
+        <DialogHeader className="px-5 pb-2 pt-5">
           <DialogTitle className="text-sm font-semibold tracking-tight text-foreground">
             Новый проект
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+          <DialogDescription className="mt-0.5 text-xs text-muted-foreground">
             Введите название карусели
           </DialogDescription>
         </DialogHeader>
@@ -84,13 +81,13 @@ export function NewProjectModal({ open, onOpenChange, userId: propsUserId }: New
           />
         </div>
 
-        <DialogFooter className="px-5 py-3 bg-muted/20 border-t border-border/40 flex items-center justify-end gap-2">
+        <DialogFooter className="flex items-center justify-end gap-2 border-t border-border/40 bg-muted/20 p-4">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="rounded-full px-3 h-7 text-xs text-muted-foreground hover:text-foreground"
+            className="h-7 rounded-full px-3 text-xs text-muted-foreground hover:text-foreground"
           >
             Отмена
           </Button>
@@ -99,9 +96,9 @@ export function NewProjectModal({ open, onOpenChange, userId: propsUserId }: New
             size="sm"
             onClick={handleCreate}
             disabled={!name.trim() || loading}
-            className="rounded-full px-4 h-7 text-xs font-medium"
+            className="h-7 rounded-full px-4 text-xs font-medium"
           >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Создать"}
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Создать"}
           </Button>
         </DialogFooter>
       </DialogContent>
