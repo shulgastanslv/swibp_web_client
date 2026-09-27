@@ -156,7 +156,15 @@ export function Header({
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
-
+          <Button
+            variant="ghost"
+            onClick={() => setShowShare(true)}
+            size="icon"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground relative"
+            title="Share"
+          >
+            <Share className="w-4 h-4" />
+          </Button>
           {/* Кнопка Publish as Template */}
           <Button
             variant="outline"
@@ -166,7 +174,7 @@ export function Header({
             title="Publish as Template"
           >
             <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>Publish template</span>
+            <span>Publish</span>
           </Button>
 
           {/* Меню профиля / Вход */}
@@ -218,7 +226,7 @@ export function Header({
                   onClick={() => setIsWhatsNewOpen(true)}
                 >
                   <Sparkles className="w-3.5 h-3.5 mr-2 text-amber-500" />
-                  <span>What's new</span>
+                  <span>What`s new</span>
                 </DropdownMenuItem>
 
                 <ThemeSwitcherMenu />
@@ -245,14 +253,6 @@ export function Header({
                     <span>Threads</span>
                   </a>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer text-xs"
-                  onClick={() => setShowShare(true)}
-                >
-                  <Share className="w-3.5 h-3.5 mr-2" />
-                  <span>Share</span>
-                </DropdownMenuItem>
-
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer text-xs text-destructive focus:text-destructive"

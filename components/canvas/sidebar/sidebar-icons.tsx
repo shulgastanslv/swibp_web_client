@@ -7,11 +7,10 @@ import { util, loadSVGFromString } from "fabric";
 import { fetchIconifySvg } from "@/actions/icons";
 
 interface IconItem {
-  id: string; // Формат "prefix:name", например "solar:star-bold-duotone"
+  id: string;
   name: string;
 }
 
-// Заглушка недавних по умолчанию
 const DEFAULT_RECENT: IconItem[] = [
   { id: "solar:rocket-2-bold-duotone", name: "Ракета" },
   { id: "solar:fire-bold-duotone", name: "Огонь" },
@@ -31,7 +30,6 @@ export function SidebarIcons() {
   const [isSearching, setIsSearching] = useState(false);
   const [loadingIconId, setLoadingIconId] = useState<string | null>(null);
 
-  // Загрузка недавних из LocalStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem("canvas_recent_iconify");
@@ -42,7 +40,6 @@ export function SidebarIcons() {
     } catch {}
   }, []);
 
-  // Динамический поиск по API Iconify с задержкой (Debounce 350ms)
   useEffect(() => {
     const trimmed = search.trim();
     if (!trimmed) {
@@ -58,12 +55,11 @@ export function SidebarIcons() {
         const prefixes = "solar,lucide,tabler,fluent-emoji-flat";
         const url = `https://api.iconify.design/search?query=${encodeURIComponent(
           trimmed
-        )}&prefixes=${prefixes}&limit=32`;
+        )}&prefixes=${prefixes}&limit=64`;
 
         const res = await fetch(url);
         const data = await res.json();
 
-        // data.icons возвращает массив строк вида ["solar:fire-bold", "lucide:fire", ...]
         const parsedIcons: IconItem[] = (data.icons || []).map((fullId: string) => {
           const parts = fullId.split(":");
           const rawName = parts[1] || fullId;
@@ -84,7 +80,6 @@ export function SidebarIcons() {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  // Добавление векторной иконки на холст Fabric.js
   const handleSelectIcon = async (icon: IconItem) => {
     if (!managerRef) return;
     setLoadingIconId(icon.id);
@@ -129,7 +124,6 @@ export function SidebarIcons() {
 
   return (
     <div className="flex flex-col gap-4 text-xs">
-      {/* ── Строка поиска ── */}
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
         <input
@@ -144,7 +138,6 @@ export function SidebarIcons() {
         )}
       </div>
 
-      {/* ── Заголовок секции ── */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
@@ -156,7 +149,6 @@ export function SidebarIcons() {
           </span>
         </div>
 
-        {/* ── Сетка иконок ── */}
         {!isSearching && currentList.length === 0 ? (
           <p className="text-center text-[11px] text-muted-foreground py-6">
             Иконки не найдены

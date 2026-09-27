@@ -19,7 +19,7 @@ import {
 import { useSession } from "next-auth/react";
 
 interface SidebarProjectsProps {
-  userId?: string; // Опциональный пропс, если нужно прокинуть сверху
+  userId?: string;
 }
 
 type Filter = "all" | "saved";
@@ -168,7 +168,7 @@ export function SidebarProjects({ userId: propsUserId }: SidebarProjectsProps) {
                   {p.slideCount} сл.
                 </span>
 
-                <DropdownMenu>
+                <DropdownMenu >
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
@@ -178,9 +178,8 @@ export function SidebarProjects({ userId: propsUserId }: SidebarProjectsProps) {
                       <MoreHorizontal className="w-3.5 h-3.5" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-32">
+                  <DropdownMenuContent align="start" className="w-32">
                     <DropdownMenuItem
-                      onClick={(e) => handleDelete(e as any, p.id)}
                       className="text-xs text-destructive focus:text-destructive cursor-pointer gap-2"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
