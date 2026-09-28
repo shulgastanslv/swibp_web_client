@@ -20,7 +20,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCanvasStore } from "@/store/useCanvasStore";
+import { useCanvasManager } from "@/context/canvas-manager";
 
 interface ElementItem {
   label: string;
@@ -36,56 +36,56 @@ interface ElementSection {
 }
 
 export function SidebarElements() {
-  const store = useCanvasStore();
+  const { manager } = useCanvasManager();
 
   const sections: ElementSection[] = useMemo(
     () => [
       {
         title: "Text & Typography",
         items: [
-          { label: "Heading", icon: Type, action: store.addHeading },
+          { label: "Heading", icon: Type, action: () => manager?.addHeading() },
           {
             label: "Subtitle",
             icon: Type,
             iconClassName: "opacity-50",
-            action: store.addSubtitle,
+            action: () => manager?.addSubtitle(),
           },
-          { label: "Paragraph", icon: AlignLeft, action: store.addParagraph },
-          { label: "Text", icon: Pencil, action: store.addText },
-          { label: "Quote Block", icon: Quote, action: store.addQuote },
-          { label: "Code Snippet", icon: Code, action: store.addCodeBlock },
+          { label: "Paragraph", icon: AlignLeft, action: () => manager?.addParagraph() },
+          { label: "Text", icon: Pencil, action: () => manager?.addText("Новый текст") },
+          { label: "Quote Block", icon: Quote, action: () => manager?.addQuote() },
+          { label: "Code Snippet", icon: Code, action: () => manager?.addCodeBlock() },
         ],
       },
       {
         title: "Shapes",
         items: [
-          { label: "Rectangle", icon: Square, action: store.addRectangle },
-          { label: "Circle", icon: Circle, action: store.addCircle },
-          { label: "Triangle", icon: Triangle, action: store.addTriangle },
-          { label: "Line", icon: Minus, action: store.addLine },
+          { label: "Rectangle", icon: Square, action: () => manager?.addRectangle() },
+          { label: "Circle", icon: Circle, action: () => manager?.addCircle() },
+          { label: "Triangle", icon: Triangle, action: () => manager?.addTriangle() },
+          { label: "Line", icon: Minus, action: () => manager?.addLine() },
           {
             label: "Connect Arrow",
             icon: Waypoints,
             iconClassName: "text-blue-500",
             title: "Выделите 2 объекта через Shift и нажмите",
-            action: store.connectSelected,
+            action: () => manager?.connectSelectedObjects(),
           },
-          { label: "Divider", icon: Minus, action: store.addDividerLine },
+          { label: "Divider", icon: Minus, action: () => manager?.addDividerLine() },
         ],
       },
       {
         title: "Badges & Blocks",
         items: [
-          { label: "Tag Chip", icon: Tag, action: store.addTag },
-          { label: "Badge", icon: Tag, action: store.addBadge },
-          { label: "Star Rating", icon: Star, action: store.addStarRating },
-          { label: "Handle", icon: User, action: store.addHandle },
-          { label: "Swipe Tag", icon: ArrowRight, action: store.addSwipeTag },
-          { label: "CTA Button", icon: MousePointerClick, action: store.addCTAButton },
+          { label: "Tag Chip", icon: Tag, action: () => manager?.addTag() },
+          { label: "Badge", icon: Tag, action: () => manager?.addBadge() },
+          { label: "Star Rating", icon: Star, action: () => manager?.addStarRating() },
+          { label: "Handle", icon: User, action: () => manager?.addHandle() },
+          { label: "Swipe Tag", icon: ArrowRight, action: () => manager?.addSwipeTag() },
+          { label: "CTA Button", icon: MousePointerClick, action: () => manager?.addCTAButton() },
         ],
       },
     ],
-    [store]
+    [manager]
   );
 
   return (
@@ -103,6 +103,7 @@ export function SidebarElements() {
                 size="sm"
                 title={title}
                 onClick={action}
+                disabled={!manager}
                 className="h-9 justify-start gap-2 rounded-xl bg-muted/50 text-xs"
               >
                 <Icon className={`h-3.5 w-3.5 ${iconClassName ?? ""}`} />

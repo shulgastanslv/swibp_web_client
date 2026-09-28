@@ -1,4 +1,4 @@
-import { FabricImage, FabricObject, PencilBrush } from "fabric";
+import { FabricObject, PencilBrush } from "fabric";
 import type { BackgroundConfig, CanvasState, ExportOptions } from "./types";
 import { CanvasCore } from "./core";
 import { GridManager } from "./grid";
@@ -7,18 +7,17 @@ import { ImportExportManager } from "./import_export";
 import { ObjectFactory } from "./objects";
 import { EffectsManager } from "./effects";
 import { LayoutManager, LayoutTemplate } from "./layouts";
-import { removeBackground } from "@imgly/background-removal";
 import { ArrowManager, ConnectorArrow } from "./arrow";
 
 export class CanvasManager {
-  private core: CanvasCore;
-  private history: HistoryManager;
-  private grid: GridManager;
-  private factory: ObjectFactory;
-  private io: ImportExportManager;
-  private effects: EffectsManager;
-  private layoutManager: LayoutManager;
-  private arrowManager: ArrowManager;
+  public core: CanvasCore;
+  public history: HistoryManager;
+  public grid: GridManager;
+  public factory: ObjectFactory;
+  public io: ImportExportManager;
+  public effects: EffectsManager;
+  public layoutManager: LayoutManager;
+  public arrowManager: ArrowManager;
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.core = new CanvasCore(canvasElement);
@@ -39,7 +38,9 @@ export class CanvasManager {
     }
     return null;
   }
-
+  public get canvas() {
+    return this.core.canvas;
+  }
   public connectObjects(
     from: FabricObject,
     to: FabricObject,
@@ -82,7 +83,11 @@ export class CanvasManager {
   }
   public clear() {
     this.arrowManager?.clear();
-    this.core.clear();
+    this.core.clear(); // или this.core.canvas.clear()
+
+    // Явно восстанавливаем белый фон и перерисовываем
+    this.core.canvas.backgroundColor = "#ffffff";
+    this.core.canvas.renderAll();
   }
   public dispose() {
     this.core.dispose();
@@ -185,11 +190,16 @@ export class CanvasManager {
   public toJSON() {
     return this.core.canvas.toJSON();
   }
-  public loadFromJSON(json: CanvasState | string) {
+  public async loadFromJSON(json: CanvasState | string) {
     const data = typeof json === "string" ? JSON.parse(json) : json;
-    this.core.canvas.loadFromJSON(data).then(() => {
-      this.core.canvas.renderAll();
-    });
+
+    await this.core.canvas.loadFromJSON(data);
+
+    if (!this.core.canvas.backgroundColor) {
+      this.core.canvas.backgroundColor = "#ffffff";
+    }
+
+    this.core.canvas.renderAll();
   }
 
   // ── NEW ELEMENT METHODS ──

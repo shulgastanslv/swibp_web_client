@@ -3,20 +3,21 @@
 import React, { useRef, useEffect } from "react";
 import { useCanvas } from "@/hooks/useCanvas";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import { useCanvasManager } from "@/context/canvas-manager";
 
 const PADDING = 48;
 
 export function CanvasView() {
   const { canvasRef } = useCanvas();
   const containerRef = useRef<HTMLDivElement>(null);
+  const { manager } = useCanvasManager();
 
-  const managerRef = useCanvasStore((s) => s.managerRef);
   const canvasDimensions = useCanvasStore((s) => s.canvasDimensions);
   const zoom = useCanvasStore((s) => s.zoom);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || !managerRef) return;
+    if (!container || !manager) return;
 
     const applyZoom = (containerW: number, containerH: number) => {
       const { width: nativeW, height: nativeH } = canvasDimensions;
@@ -24,10 +25,9 @@ export function CanvasView() {
       const scaleY = (containerH - PADDING * 2) / nativeH;
       const baseScale = Math.min(scaleX, scaleY);
       const scale = Math.max(0.05, baseScale * (zoom / 100));
-      managerRef.setZoom(scale, nativeW, nativeH);
+      manager.core.setZoom(scale, nativeW, nativeH);
     };
 
-    // Apply immediately with current size
     applyZoom(container.clientWidth, container.clientHeight);
 
     const ro = new ResizeObserver((entries) => {
@@ -35,8 +35,9 @@ export function CanvasView() {
       applyZoom(rect.width, rect.height);
     });
     ro.observe(container);
+
     return () => ro.disconnect();
-  }, [managerRef, canvasDimensions, zoom]);
+  }, [manager, canvasDimensions, zoom]);
 
   return (
     <div

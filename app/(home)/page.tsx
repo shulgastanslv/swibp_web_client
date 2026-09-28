@@ -5,11 +5,16 @@ import { Header } from "@/components/header";
 import { LeftSidebar } from "@/components/canvas/left-sidebar";
 import { CanvasToolbar } from "@/components/canvas/canvas-toolbar";
 import { CanvasView } from "@/components/canvas/canvas-view";
-import { SlideNavigator } from "@/components/canvas/slide-navigator";
 import { RightSidebar } from "@/components/canvas/right-sidebar";
 import { PreviewModal } from "@/components/canvas/preview-modal";
 import type { NavId } from "@/components/canvas/left-sidebar";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import dynamic from "next/dynamic";
+
+const SlideNavigator = dynamic(
+  () => import("@/components/canvas/slide-navigator").then((mod) => mod.SlideNavigator),
+  { ssr: false }
+);
 
 export default function CarouselStudio() {
   const [activeNav, setActiveNav] = useState<NavId>("templates");
@@ -19,7 +24,6 @@ export default function CarouselStudio() {
   const [isRightCollapsed, setIsRightCollapsed] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewSlideId, setPreviewSlideId] = useState<number>(0);
-
 
   return (
     <div className="flex flex-col h-screen w-full bg-background text-foreground font-sans overflow-hidden select-none">

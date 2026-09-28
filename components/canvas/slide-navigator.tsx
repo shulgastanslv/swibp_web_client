@@ -2,33 +2,32 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { useCanvasStore } from "@/store/useCanvasStore";
 import { useCanvas } from "@/hooks/useCanvas";
 
 export function SlideNavigator() {
+  const { switchToSlide } = useCanvas();
 
-  const {
-    slides,
-    currentSlideId,
-    currentIdx,
-    switchToSlide,
-    addSlide,
-    removeSlide,
-    moveSlide,
-    handlePrev,
-    handleNext,
-  } = useCanvas();
+  const slides = useCanvasStore((s) => s.slides);
+  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
+  const addSlide = useCanvasStore((s) => s.addSlide);
+  const removeSlide = useCanvasStore((s) => s.removeSlide);
+  const moveSlide = useCanvasStore((s) => s.moveSlide);
 
+  const currentIdx = slides.findIndex((s) => s.id === currentSlideId);
+
+  const handlePrev = () => {
+    if (currentIdx > 0) switchToSlide(slides[currentIdx - 1].id);
+  };
+
+  const handleNext = () => {
+    if (currentIdx < slides.length - 1) switchToSlide(slides[currentIdx + 1].id);
+  };
 
   return (
     <footer className="h-14 flex items-center justify-between px-6 bg-background border-t border-border text-xs z-10 select-none">
       <div className="flex items-center gap-2">
-        {/* Кнопка "Назад" */}
         <Button
           variant="outline"
           size="icon"
@@ -40,7 +39,6 @@ export function SlideNavigator() {
           <ChevronLeft className="w-4 h-4" />
         </Button>
 
-        {/* Список слайдов */}
         <div className="flex items-center gap-1.5 max-w-[420px] overflow-x-auto py-1 px-1 no-scrollbar">
           {slides.map((s, idx) => {
             const isActive = currentSlideId === s.id;
@@ -61,7 +59,6 @@ export function SlideNavigator() {
           })}
         </div>
 
-        {/* Кнопка "Вперед" */}
         <Button
           variant="outline"
           size="icon"
@@ -73,7 +70,6 @@ export function SlideNavigator() {
           <ChevronRight className="w-4 h-4" />
         </Button>
 
-        {/* Создать новый пустой слайд */}
         <Button
           variant="outline"
           size="sm"
@@ -84,7 +80,6 @@ export function SlideNavigator() {
           <span>Add Slide</span>
         </Button>
 
-        {/* Удалить текущий слайд (если их больше 1) */}
         {slides.length > 1 && (
           <Button
             variant="ghost"
@@ -98,13 +93,12 @@ export function SlideNavigator() {
         )}
       </div>
 
-      {/* Перемещение текущего слайда влево/вправо */}
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => moveSlide("left")}
-          disabled={currentIdx <= 0}
+          disabled={Boolean(currentIdx <= 0)}
           className="h-8 text-xs rounded-xl text-muted-foreground hover:text-foreground gap-1"
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Move Left

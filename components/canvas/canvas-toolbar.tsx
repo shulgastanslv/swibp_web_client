@@ -3,8 +3,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Copy,
-  Trash2,
   Grid3X3,
   SplitSquareVertical,
   Undo2,
@@ -18,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { CANVAS_RATIOS, type RatioKey } from "@/lib/canvas/types";
+import { useCanvasManager } from "@/context/canvas-manager";
 
 const QUICK_RATIOS: { ratio: RatioKey; iconClass: string }[] = [
   { ratio: "4:5", iconClass: "w-2.5 h-3" },
@@ -31,31 +30,52 @@ interface CanvasToolbarProps {
 }
 
 export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
-  const {
-    managerRef,
-    currentRatio,
-    setCurrentRatio,
-    setCanvasDimensions,
-    isGridVisible,
-    toggleGrid,
-    zoom,
-    setZoom,
-  } = useCanvasStore();
+  const { manager } = useCanvasManager();
+
+  const currentRatio = useCanvasStore((s) => s.currentRatio);
+  const setCurrentRatio = useCanvasStore((s) => s.setCurrentRatio);
+  const setCanvasDimensions = useCanvasStore((s) => s.setCanvasDimensions);
+  const isGridVisible = useCanvasStore((s) => s.isGridVisible);
+  const toggleGrid = useCanvasStore((s) => s.toggleGrid);
+  const zoom = useCanvasStore((s) => s.zoom);
+  const setZoom = useCanvasStore((s) => s.setZoom);
+  const slides = useCanvasStore((s) => s.slides);
+  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
 
   const [copied, setCopied] = useState(false);
 
   const handleRatioChange = (ratio: RatioKey) => {
-    if (!managerRef) return;
     const { width, height } = CANVAS_RATIOS[ratio];
-    managerRef.setRatio(width, height);
+    if (manager) {
+      manager.core.resize(width, height);
+    }
     setCanvasDimensions({ width, height });
     setCurrentRatio(ratio);
   };
 
+  const handleToggleGrid = () => {
+    if (manager) {
+      manager.grid.toggleGrid();
+    }
+    toggleGrid();
+  };
+
+  const handleUndo = () => {
+    if (manager) {
+      manager.history.undo();
+    }
+  };
+
+  const handleRedo = () => {
+    if (manager) {
+      manager.history.redo();
+    }
+  };
+
   const handleCopyJSON = async () => {
-    if (!managerRef) return;
+    if (!manager) return;
     try {
-      const json = managerRef.exportAsJSON();
+      const json = manager.io.exportAsJSON();
       const jsonString =
         typeof json === "string" ? json : JSON.stringify(json, null, 2);
       await navigator.clipboard.writeText(jsonString);
@@ -65,9 +85,6 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
       console.error("Failed to copy JSON:", err);
     }
   };
-
-  const slides = useCanvasStore((s) => s.slides);
-  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
 
   // Расчет индекса и общего количества
   const currentIdx = slides.findIndex((s) => s.id === currentSlideId);
@@ -89,6 +106,7 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
             return (
               <button
                 key={ratio}
+                type="button"
                 onClick={() => handleRatioChange(ratio)}
                 className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-full transition-all duration-150 ${
                   isActive
@@ -116,7 +134,7 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggleGrid}
+            onClick={handleToggleGrid}
             className={`h-7 w-7 rounded-full transition-colors ${
               isGridVisible
                 ? "bg-background text-foreground shadow-2xs"
@@ -136,6 +154,7 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
             <SplitSquareVertical className="w-3.5 h-3.5" />
           </Button>
         </div>
+
         <div className="flex items-center font-mono text-xs px-3 py-2 rounded-full bg-muted/40 select-none">
           <span className="font-semibold text-foreground">
             {String(currentNum).padStart(2, "0")}
@@ -150,12 +169,14 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
         </div>
       </div>
 
+      {/* ── Right: Undo/Redo + Zoom + Export + Preview ── */}
       <div className="flex items-center gap-2">
         <div className="flex items-center bg-muted/40 p-0.5 rounded-full">
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/70 transition-colors"
+            onClick={handleUndo}
             title="Undo (Ctrl+Z)"
           >
             <Undo2 className="w-3.5 h-3.5" />
@@ -164,6 +185,7 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
             variant="ghost"
             size="icon"
             className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/70 transition-colors"
+            onClick={handleRedo}
             title="Redo (Ctrl+Y)"
           >
             <Redo2 className="w-3.5 h-3.5" />
@@ -182,6 +204,7 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
           </Button>
 
           <button
+            type="button"
             className="text-xs font-mono w-10 text-center text-foreground hover:text-primary transition-colors"
             onClick={() => setZoom(100)}
             title="Reset zoom"
@@ -199,6 +222,7 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
             <ZoomIn className="w-3.5 h-3.5" />
           </Button>
         </div>
+
         <Button
           variant="ghost"
           size="sm"
