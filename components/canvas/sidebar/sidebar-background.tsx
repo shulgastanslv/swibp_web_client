@@ -2,23 +2,23 @@
 
 import React, { useRef, useState } from "react";
 import { UploadCloud, Plus } from "lucide-react";
-import { useCanvasStore } from "@/store/useCanvasStore";
 import {
   SOLID_PRESETS,
   GRADIENT_PRESETS,
   RADIAL_PRESETS,
 } from "@/lib/presets/backgrounds";
 import { cn } from "@/lib/utils";
+import { useCanvasManager } from "@/context/canvas-manager";
 
 export function SidebarBackground() {
-  const setBackground = useCanvasStore((s) => s.setBackground);
+  const { manager } = useCanvasManager();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const applyImageFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
     const url = URL.createObjectURL(file);
-    setBackground({
+    manager.setBackground({
       type: "image",
       url,
     });
@@ -110,7 +110,7 @@ export function SidebarBackground() {
             <button
               key={p.color}
               type="button"
-              onClick={() => setBackground({ type: "solid", color: p.color })}
+              onClick={() => manager.setBackground({ type: "solid", color: p.color })}
               style={{ backgroundColor: p.color }}
               className="h-7 w-7 rounded-full border border-border/40 shadow-xs hover:scale-110 hover:ring-2 hover:ring-primary/40 transition-all shrink-0 cursor-pointer focus-visible:outline-hidden"
               aria-label={`Выбрать цвет ${p.color}`}
@@ -122,7 +122,7 @@ export function SidebarBackground() {
               type="color"
               className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
               onChange={(e) =>
-                setBackground({ type: "solid", color: e.target.value })
+                manager.setBackground({ type: "solid", color: e.target.value })
               }
             />
             <Plus className="h-3.5 w-3.5 text-muted-foreground" />
@@ -141,7 +141,7 @@ export function SidebarBackground() {
               key={i}
               type="button"
               onClick={() =>
-                setBackground({
+                manager.setBackground({
                   type: "gradient",
                   colors: g.colors as [string, string],
                 })
@@ -166,7 +166,7 @@ export function SidebarBackground() {
               key={i}
               type="button"
               onClick={() =>
-                setBackground({
+                manager.setBackground({
                   type: "gradient",
                   colors: r.colors as [string, string],
                 })

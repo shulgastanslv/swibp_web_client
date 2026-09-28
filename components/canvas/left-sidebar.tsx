@@ -8,7 +8,6 @@ import {
   LayoutTemplate,
   Layers,
   Settings,
-  Circle,
   ImageIcon,
   PanelLeftClose,
   PanelLeftOpen,
@@ -17,7 +16,6 @@ import {
   FilterIcon,
 } from "lucide-react";
 import { Object as FabricObject } from "fabric";
-import { useCanvasStore } from "@/store/useCanvasStore";
 
 import { SidebarProjects } from "@/components/canvas/sidebar/projects/sidebar-projects";
 import { SidebarTemplates } from "@/components/canvas/sidebar/sidebar-templates";
@@ -28,6 +26,7 @@ import { SidebarBackground } from "@/components/canvas/sidebar/sidebar-backgroun
 import Link from "next/link";
 import { SidebarFilters } from "./sidebar/sidebar-filters";
 import { SidebarIcons } from "./sidebar/sidebar-icons";
+import { useCanvasManager } from "@/context/canvas-manager";
 
 export type NavId =
   | "projects"
@@ -70,25 +69,25 @@ export function LeftSidebar({
   setShowDotGrid,
 }: LeftSidebarProps) {
 
-  const { managerRef } = useCanvasStore();
+  const {manager} = useCanvasManager();
 
   const canvasObjects = React.useMemo<FabricObject[]>(() => {
-    if (!managerRef) return [];
-    return managerRef
+    if (!manager) return [];
+    return manager
       .getCanvas()
       .getObjects()
       .filter((o) => o.selectable !== false);
-  }, [managerRef]);
+  }, [manager]);
 
   const selectObject = (obj: FabricObject) => {
-    const canvas = managerRef?.getCanvas();
+    const canvas = manager?.getCanvas();
     if (!canvas) return;
     canvas.setActiveObject(obj);
     canvas.renderAll();
   };
 
   const deleteObject = (obj: FabricObject) => {
-    const canvas = managerRef?.getCanvas();
+    const canvas = manager?.getCanvas();
     if (!canvas) return;
     canvas.remove(obj);
     canvas.discardActiveObject();
@@ -96,7 +95,7 @@ export function LeftSidebar({
   };
 
   const reorderObjects = (fromIndex: number, toIndex: number) => {
-    const canvas = managerRef?.getCanvas();
+    const canvas = manager?.getCanvas();
     if (!canvas) return;
     const objs = canvas.getObjects().filter((o) => o.selectable !== false);
     const obj = objs[fromIndex];

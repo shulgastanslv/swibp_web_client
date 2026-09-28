@@ -18,11 +18,43 @@ export function SlideNavigator() {
   const currentIdx = slides.findIndex((s) => s.id === currentSlideId);
 
   const handlePrev = () => {
-    if (currentIdx > 0) switchToSlide(slides[currentIdx - 1].id);
+    if (currentIdx > 0) {
+      switchToSlide(slides[currentIdx - 1].id);
+    }
   };
 
   const handleNext = () => {
-    if (currentIdx < slides.length - 1) switchToSlide(slides[currentIdx + 1].id);
+    if (currentIdx < slides.length - 1) {
+      switchToSlide(slides[currentIdx + 1].id);
+    }
+  };
+
+  const handleAddSlide = async () => {
+    addSlide();
+    // Даем стору обновиться и переключаемся на созданный слайд
+    setTimeout(() => {
+      const freshSlides = useCanvasStore.getState().slides;
+      const latestSlide = freshSlides[freshSlides.length - 1];
+      if (latestSlide) {
+        switchToSlide(latestSlide.id);
+      }
+    }, 0);
+  };
+
+  const handleRemoveSlide = (id: number) => {
+    if (slides.length <= 1) return;
+
+    const remainingSlides = slides.filter((s) => s.id !== id);
+    const nextActiveSlide =
+      id === currentSlideId
+        ? remainingSlides[Math.max(0, currentIdx - 1)]
+        : slides.find((s) => s.id === currentSlideId);
+
+    removeSlide(id);
+
+    if (nextActiveSlide && nextActiveSlide.id !== currentSlideId) {
+      switchToSlide(nextActiveSlide.id);
+    }
   };
 
   return (
@@ -73,7 +105,7 @@ export function SlideNavigator() {
         <Button
           variant="outline"
           size="sm"
-          onClick={addSlide}
+          onClick={handleAddSlide}
           className="h-8 text-xs font-normal gap-1.5 rounded-xl border-border/60 ml-2"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -84,7 +116,7 @@ export function SlideNavigator() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => removeSlide(currentSlideId)}
+            onClick={() => handleRemoveSlide(currentSlideId)}
             className="h-8 w-8 rounded-xl text-muted-foreground hover:text-destructive"
             title="Удалить текущий слайд"
           >
@@ -98,7 +130,7 @@ export function SlideNavigator() {
           variant="ghost"
           size="sm"
           onClick={() => moveSlide("left")}
-          disabled={Boolean(currentIdx <= 0)}
+          disabled={currentIdx <= 0}
           className="h-8 text-xs rounded-xl text-muted-foreground hover:text-foreground gap-1"
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Move Left

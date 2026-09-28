@@ -13,11 +13,14 @@ import {
   FileCode2,
   Check,
   GalleryHorizontal,
+  Smartphone,
+  Workflow,
 } from "lucide-react";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import { CANVAS_RATIOS, type RatioKey } from "@/lib/canvas/types";
+import { CANVAS_RATIOS, type RatioKey } from "@/lib/types";
 import { useCanvasManager } from "@/context/canvas-manager";
 
+// Массив конфигураций для переключателя
 const QUICK_RATIOS: { ratio: RatioKey; iconClass: string }[] = [
   { ratio: "4:5", iconClass: "w-2.5 h-3" },
   { ratio: "1:1", iconClass: "w-2.5 h-2.5" },
@@ -27,9 +30,15 @@ const QUICK_RATIOS: { ratio: RatioKey; iconClass: string }[] = [
 
 interface CanvasToolbarProps {
   onPreview: () => void;
+  onPhonePreview?: () => void;
+  onAutoFlow?: () => void;
 }
 
-export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
+export function CanvasToolbar({
+  onPreview,
+  onPhonePreview,
+  onAutoFlow,
+}: CanvasToolbarProps) {
   const { manager } = useCanvasManager();
 
   const currentRatio = useCanvasStore((s) => s.currentRatio);
@@ -45,7 +54,10 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
   const [copied, setCopied] = useState(false);
 
   const handleRatioChange = (ratio: RatioKey) => {
-    const { width, height } = CANVAS_RATIOS[ratio];
+    const dimensions = CANVAS_RATIOS[ratio];
+    if (!dimensions) return;
+
+    const { width, height } = dimensions;
     if (manager) {
       manager.core.resize(width, height);
     }
@@ -129,7 +141,7 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
 
         <div className="h-4 w-px bg-border/60 mx-1" />
 
-        {/* Grid & split-screen toggles */}
+        {/* Grid, Split-screen & Auto Flow toggles */}
         <div className="flex items-center bg-muted/50 p-0.5 rounded-full">
           <Button
             variant="ghost"
@@ -152,6 +164,18 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
             title="Split screen"
           >
             <SplitSquareVertical className="w-3.5 h-3.5" />
+          </Button>
+
+          {/* Заглушка: Auto Flow */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onAutoFlow}
+            className="h-7 px-2 text-xs gap-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
+            title="Auto Flow"
+          >
+            <Workflow className="w-3.5 h-3.5" />
+            <span className="hidden md:inline text-[11px] font-medium">Auto Flow</span>
           </Button>
         </div>
 
@@ -247,7 +271,19 @@ export function CanvasToolbar({ onPreview }: CanvasToolbarProps) {
 
         <div className="h-4 w-px bg-border/60 mx-0.5" />
 
-        {/* Preview */}
+        {/* Заглушка: Phone Preview */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onPhonePreview}
+          className="h-8 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
+          title="Phone Preview"
+        >
+          <Smartphone className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="hidden sm:inline">Phone</span>
+        </Button>
+
+        {/* Preview Slides */}
         <Button
           variant="secondary"
           size="sm"

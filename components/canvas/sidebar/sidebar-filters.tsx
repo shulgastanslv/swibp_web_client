@@ -4,34 +4,28 @@ import React from "react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Sparkles } from "lucide-react";
-import { useCanvas } from "@/hooks/useCanvas"; // путь к вашему хуку useCanvas
+import { useCanvasManager } from "@/context/canvas-manager";
+import { useCanvasStore } from "@/store/useCanvasStore";
 
 export function SidebarFilters() {
-  const {
-    vignette,
-    noise,
-    blur,
-    setVignette,
-    setNoise,
-    setBlur,
-    clearEffects,
-  } = useCanvas();
+  const { manager } = useCanvasManager();
+  const { vignette, noise, blur } = useCanvasStore();
 
   const hasActiveEffects = vignette > 0 || noise > 0 || blur > 0;
 
   return (
     <div className="flex flex-col gap-4 p-2 text-xs">
-        {hasActiveEffects && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearEffects}
-            className="h-6 p-4 text-[10px] text-muted-foreground hover:text-foreground gap-1"
-          >
-            <RotateCcw className="w-3 h-3" />
-            Reset all
-          </Button>
-        )}
+      {hasActiveEffects && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={manager.clearEffects}
+          className="h-6 p-4 text-[10px] text-muted-foreground hover:text-foreground gap-1"
+        >
+          <RotateCcw className="w-3 h-3" />
+          Reset all
+        </Button>
+      )}
 
       {/* ── Vignette ── */}
       <div className="flex items-center justify-between text-xs">
@@ -45,7 +39,7 @@ export function SidebarFilters() {
         min={0}
         max={100}
         step={1}
-        onValueChange={([val]) => setVignette((val ?? 0) / 100)}
+        onValueChange={([val]) => manager.setVignette((val ?? 0) / 100)}
         className="py-1"
       />
 
@@ -61,7 +55,7 @@ export function SidebarFilters() {
         min={0}
         max={100}
         step={1}
-        onValueChange={([val]) => setNoise((val ?? 0) / 100)}
+        onValueChange={([val]) => manager.setNoise((val ?? 0) / 100)}
         className="py-1"
       />
 
@@ -77,7 +71,7 @@ export function SidebarFilters() {
         min={0}
         max={40}
         step={1}
-        onValueChange={([val]) => setBlur(val ?? 0)}
+        onValueChange={([val]) => manager.setBlur(val ?? 0)}
         className="py-1"
       />
 

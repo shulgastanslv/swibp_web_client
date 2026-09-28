@@ -4,6 +4,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import { useCanvasManager } from "@/context/canvas-manager";
+import { Canvas as FabricCanvas } from "fabric";
 
 interface PreviewModalProps {
   open: boolean;
@@ -18,75 +20,126 @@ interface SlideSnapshot {
 }
 
 export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProps) {
-  const { slides, managerRef, updateCurrentSlideJSON, canvasDimensions } = useCanvasStore();
+  const slides = useCanvasStore((s) => s.slides);
+  const canvasDimensions = useCanvasStore((s) => s.canvasDimensions);
+  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
+  const updateSlideJSONById = useCanvasStore((s) => s.updateSlideJSONById);
+  const updateSlideThumbnail = useCanvasStore((s) => s.updateSlideThumbnail);
+
+  const { manager } = useCanvasManager();
 
   const [activeId, setActiveId] = useState(initialSlideId);
   const [snapshots, setSnapshots] = useState<SlideSnapshot[]>([]);
   const [rendering, setRendering] = useState(false);
-  const initDoneRef = useRef(false);
+
+  const isMountedRef = useRef(true);
 
   const slideIds = slides.map((s) => s.id);
   const activeIdx = Math.max(0, slideIds.indexOf(activeId));
   const aspectRatio = canvasDimensions.width / canvasDimensions.height;
 
+  // Синхронизация текущего состояния и генерация миниатюр
   useEffect(() => {
-    if (!open || !managerRef || initDoneRef.current) return;
-    initDoneRef.current = true;
+    if (!open) return;
+    isMountedRef.current = true;
 
-    const canvas = managerRef.getCanvas();
-
-    const json = managerRef.exportAsJSON();
-    updateCurrentSlideJSON(json);
+    // 1. Сохраняем текущее актуальное состояние активного слайда перед открытием
+    if (manager) {
+      const currentJson = manager.io.exportAsJSON();
+      updateSlideJSONById(currentSlideId, currentJson);
+    }
 
     const freshSlides = useCanvasStore.getState().slides;
 
-    const initial: SlideSnapshot[] = freshSlides.map((s) => ({
+    // Инициализируем снапшоты
+    const initialSnapshots: SlideSnapshot[] = freshSlides.map((s) => ({
       id: s.id,
       thumbnail: s.thumbnail ?? null,
       loading: !s.thumbnail && !!s.canvasJSON,
     }));
 
     setActiveId(initialSlideId);
-    setSnapshots(initial);
+    setSnapshots(initialSnapshots);
 
-    const needsRender = freshSlides.filter((s) => !s.thumbnail && s.canvasJSON);
-    if (needsRender.length === 0) return;
+    const slidesNeedingRender = freshSlides.filter((s) => !s.thumbnail && s.canvasJSON);
+    if (slidesNeedingRender.length === 0) return;
 
     setRendering(true);
 
-    // Async: render missing thumbnails offscreen via Fabric
-    const savedJSON = json;
+    // 2. Рендерим отсутствующие миниатюры через скрытый offscreen-канвас, не трогая рабочий
+    const offscreenEl = document.createElement("canvas");
+    offscreenEl.width = canvasDimensions.width;
+    offscreenEl.height = canvasDimensions.height;
+
+    const offscreenCanvas = new FabricCanvas(offscreenEl, {
+      width: canvasDimensions.width,
+      height: canvasDimensions.height,
+      renderOnAddRemove: false,
+    });
+
     (async () => {
-      for (const slide of freshSlides) {
-        if (slide.thumbnail || !slide.canvasJSON) continue;
+      for (const slide of slidesNeedingRender) {
+        if (!isMountedRef.current) break;
+        if (!slide.canvasJSON) continue;
+
         try {
-          await managerRef.loadFromJSON(slide.canvasJSON);
-          const dataURL = canvas.toDataURL({ format: "png", multiplier: 1.0, quality: 0.9 });
-          setSnapshots((prev) =>
-            prev.map((s) => s.id === slide.id ? { ...s, thumbnail: dataURL, loading: false } : s)
-          );
-        } catch {
-          setSnapshots((prev) =>
-            prev.map((s) => s.id === slide.id ? { ...s, loading: false } : s)
-          );
+          await offscreenCanvas.loadFromJSON(slide.canvasJSON);
+
+          if (!offscreenCanvas.backgroundColor) {
+            offscreenCanvas.backgroundColor = "#ffffff";
+          }
+          offscreenCanvas.renderAll();
+
+          // Формируем оптимизированное превью
+          const dataURL = offscreenCanvas.toDataURL({
+            format: "png",
+            multiplier: Math.min(1, 300 / canvasDimensions.width),
+            quality: 0.8,
+          });
+
+          if (isMountedRef.current) {
+            updateSlideThumbnail(slide.id, dataURL);
+            setSnapshots((prev) =>
+              prev.map((s) =>
+                s.id === slide.id ? { ...s, thumbnail: dataURL, loading: false } : s
+              )
+            );
+          }
+        } catch (error) {
+          console.error(`Ошибка рендеринга слайда ${slide.id}:`, error);
+          if (isMountedRef.current) {
+            setSnapshots((prev) =>
+              prev.map((s) => (s.id === slide.id ? { ...s, loading: false } : s))
+            );
+          }
         }
       }
-      // Restore original slide
-      await managerRef.loadFromJSON(savedJSON);
-      setRendering(false);
+
+      offscreenCanvas.dispose();
+      if (isMountedRef.current) {
+        setRendering(false);
+      }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
 
-  // Reset init flag when modal closes
-  useEffect(() => {
-    if (!open) initDoneRef.current = false;
-  }, [open]);
+    return () => {
+      isMountedRef.current = false;
+      offscreenCanvas.dispose();
+    };
+  }, [
+    open,
+    manager,
+    initialSlideId,
+    currentSlideId,
+    canvasDimensions,
+    updateSlideJSONById,
+    updateSlideThumbnail,
+  ]);
 
-  // ── Keyboard navigation ───────────────────────────────────────────────────
+  // Навигация с клавиатуры
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => {
+
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         setActiveId((id) => {
           const i = slideIds.indexOf(id);
@@ -101,91 +154,92 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
         onClose();
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, slideIds, onClose]);
 
   if (!open) return null;
 
   const activeSnap = snapshots.find((s) => s.id === activeId);
 
-  const goTo = (id: number) => setActiveId(id);
-  const goPrev = () => setActiveId((id) => slideIds[Math.max(0, slideIds.indexOf(id) - 1)] ?? id);
-  const goNext = () => setActiveId((id) => slideIds[Math.min(slideIds.length - 1, slideIds.indexOf(id) + 1)] ?? id);
+  const goPrev = () => {
+    setActiveId((id) => slideIds[Math.max(0, slideIds.indexOf(id) - 1)] ?? id);
+  };
 
-  // Responsive slide sizing — fit inside viewport keeping aspect ratio
-  const thumbW = 64;
+  const goNext = () => {
+    setActiveId((id) => slideIds[Math.min(slideIds.length - 1, slideIds.indexOf(id) + 1)] ?? id);
+  };
+
+  const thumbW = 56;
   const thumbH = Math.round(thumbW / aspectRatio);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/92 backdrop-blur-sm flex flex-col select-none">
-
-      {/* ── Top bar ── */}
-      <div className="flex items-center justify-between px-6 py-3 shrink-0">
+    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex flex-col select-none animate-in fade-in-0 duration-200">
+      {/* ── Верхняя панель ── */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border/40 shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-medium text-white/60 tracking-wide">Preview</span>
+          <span className="text-xs font-medium text-foreground tracking-wide">Предпросмотр</span>
           {rendering && (
-            <span className="flex items-center gap-1.5 text-[11px] text-white/30">
+            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <Loader2 className="w-3 h-3 animate-spin" />
-              Rendering…
+              Подготовка слайдов…
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono text-white/30">
+          <span className="text-xs font-mono text-muted-foreground">
             {activeIdx + 1} / {slides.length}
           </span>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="h-8 w-8 rounded-full text-white/50 hover:text-white hover:bg-white/10"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* ── Main slide ── */}
+      {/* ── Основная область просмотра слайда ── */}
       <div className="flex-1 flex items-center justify-center gap-4 px-8 min-h-0">
-
         <Button
           variant="ghost"
           size="icon"
           onClick={goPrev}
           disabled={activeIdx === 0}
-          className="h-10 w-10 rounded-full text-white/40 hover:text-white hover:bg-white/10 shrink-0 disabled:opacity-10 transition-all"
+          className="h-10 w-10 rounded-full shrink-0 disabled:opacity-20"
         >
           <ChevronLeft className="w-5 h-5" />
         </Button>
 
-        {/* Slide frame — sized to fit screen */}
+        {/* Рамка текущего слайда */}
         <div
-          className="relative rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.6)] ring-1 ring-white/10 transition-all duration-300"
+          className="relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-background transition-all duration-200"
           style={{
             aspectRatio,
-            height: aspectRatio < 1 ? "min(76vh, 700px)" : undefined,
-            width: aspectRatio >= 1 ? "min(72vw, 900px)" : undefined,
-            maxHeight: "76vh",
+            height: aspectRatio < 1 ? "min(72vh, 680px)" : undefined,
+            width: aspectRatio >= 1 ? "min(72vw, 860px)" : undefined,
+            maxHeight: "72vh",
             maxWidth: "88vw",
           }}
         >
           {activeSnap?.loading ? (
-            <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-white/20" />
+            <div className="absolute inset-0 bg-muted/40 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : activeSnap?.thumbnail ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={activeSnap.thumbnail}
-              alt={`Slide ${activeIdx + 1}`}
+              alt={`Слайд ${activeIdx + 1}`}
               className="w-full h-full object-cover"
               draggable={false}
             />
           ) : (
-            <div className="absolute inset-0 bg-white flex items-center justify-center">
-              <span className="text-sm text-zinc-400">Empty slide</span>
+            <div className="absolute inset-0 bg-background flex items-center justify-center border border-dashed border-border/60">
+              <span className="text-xs text-muted-foreground">Пустой слайд</span>
             </div>
           )}
         </div>
@@ -195,51 +249,47 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
           size="icon"
           onClick={goNext}
           disabled={activeIdx === slides.length - 1}
-          className="h-10 w-10 rounded-full text-white/40 hover:text-white hover:bg-white/10 shrink-0 disabled:opacity-10 transition-all"
+          className="h-10 w-10 rounded-full shrink-0 disabled:opacity-20"
         >
           <ChevronRight className="w-5 h-5" />
         </Button>
-
       </div>
 
-      {/* ── Filmstrip ── */}
-      <div className="shrink-0 py-4 px-6 flex items-center justify-center gap-2 overflow-x-auto">
+      {/* ── Нижняя лента миниатюр ── */}
+      <div className="shrink-0 py-4 px-6 flex items-center justify-center gap-2 overflow-x-auto border-t border-border/40">
         {snapshots.map((snap, i) => {
           const isActive = snap.id === activeId;
           return (
             <button
               key={snap.id}
-              onClick={() => goTo(snap.id)}
-              className={`relative shrink-0 rounded-lg overflow-hidden transition-all duration-200 ring-2 ${
+              type="button"
+              onClick={() => setActiveId(snap.id)}
+              className={`relative shrink-0 rounded-md overflow-hidden transition-all duration-150 ring-2 ${
                 isActive
-                  ? "ring-white/80 shadow-[0_0_16px_rgba(255,255,255,0.2)] scale-110"
-                  : "ring-transparent opacity-40 hover:opacity-70 hover:ring-white/20"
+                  ? "ring-primary shadow-sm scale-105"
+                  : "ring-transparent opacity-50 hover:opacity-100 hover:ring-border"
               }`}
               style={{ width: thumbW, height: thumbH }}
             >
               {snap.loading ? (
-                <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                  <Loader2 className="w-3 h-3 animate-spin text-white/30" />
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
                 </div>
               ) : snap.thumbnail ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={snap.thumbnail}
-                  alt={`Slide ${i + 1}`}
+                  alt={`Превью ${i + 1}`}
                   className="w-full h-full object-cover"
                   draggable={false}
                 />
               ) : (
-                <div className="w-full h-full bg-zinc-800" />
-              )}
-              {isActive && (
-                <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-lg pointer-events-none" />
+                <div className="w-full h-full bg-muted" />
               )}
             </button>
           );
         })}
       </div>
-
     </div>
   );
 }

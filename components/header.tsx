@@ -91,7 +91,6 @@ export function Header({
     onProjectNameChange?.(e.target.value);
   };
 
-
   const userEmail = session?.user?.email ?? "";
   const userName = session?.user?.name ?? userEmail;
   const userInitial = userName ? userName[0].toUpperCase() : "?";

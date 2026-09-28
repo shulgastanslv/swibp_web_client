@@ -104,7 +104,7 @@ export function SidebarElements() {
                 title={title}
                 onClick={action}
                 disabled={!manager}
-                className="h-9 justify-start gap-2 rounded-xl bg-muted/50 text-xs"
+                className="h-10 justify-start gap-2 rounded-full bg-muted/50 text-xs"
               >
                 <Icon className={`h-3.5 w-3.5 ${iconClassName ?? ""}`} />
                 <span className="truncate">{label}</span>

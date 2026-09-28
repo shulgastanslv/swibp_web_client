@@ -1,5 +1,5 @@
 import { StateCreator } from "zustand";
-import { RatioKey, CANVAS_RATIOS } from "@/lib/canvas/types";
+import { RatioKey, CANVAS_RATIOS } from "@/lib/types";
 
 export interface ViewportSlice {
   zoom: number;

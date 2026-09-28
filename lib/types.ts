@@ -9,7 +9,14 @@ export interface BackgroundConfig {
   url?: string;
 }
 
-export type RatioKey = '1:1' | '4:5' | '9:16' | '16:9';
+export type RatioKey = "4:5" | "1:1" | "9:16" | "16:9";
+
+export const CANVAS_RATIOS: Record<RatioKey, { width: number; height: number }> = {
+  "4:5": { width: 1080, height: 1350 },
+  "1:1": { width: 1080, height: 1080 },
+  "9:16": { width: 1080, height: 1920 },
+  "16:9": { width: 1920, height: 1080 },
+};
 
 export type FabricCanvasJSON = ReturnType<InstanceType<typeof Canvas>['toJSON']>;
 
@@ -18,7 +25,6 @@ export interface SlideItem {
   canvasJSON: FabricCanvasJSON;
   thumbnail?: string | null;
 }
-
 
 export interface ProjectState {
   id: string;

@@ -6,6 +6,7 @@ import { useCanvas } from "@/hooks/useCanvas";
 import { util, loadSVGFromString } from "fabric";
 import { fetchIconifySvg } from "@/actions/icons";
 import { Input } from "@/components/ui/input";
+import { useCanvasManager } from "@/context/canvas-manager";
 
 interface IconItem {
   id: string;
@@ -24,7 +25,7 @@ const DEFAULT_RECENT: IconItem[] = [
 ];
 
 export function SidebarIcons() {
-  const { managerRef } = useCanvas();
+  const { manager } = useCanvasManager();
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<IconItem[]>([]);
   const [recentIcons, setRecentIcons] = useState<IconItem[]>(DEFAULT_RECENT);
@@ -82,24 +83,21 @@ export function SidebarIcons() {
   }, [search]);
 
   const handleSelectIcon = async (icon: IconItem) => {
-    if (!managerRef) return;
+    if (!manager) return;
     setLoadingIconId(icon.id);
 
     try {
-      // 1. Сохраняем в недавние
       const updatedRecent = [icon, ...recentIcons.filter((i) => i.id !== icon.id)].slice(0, 8);
       setRecentIcons(updatedRecent);
       try {
         localStorage.setItem("canvas_recent_iconify", JSON.stringify(updatedRecent));
       } catch {}
 
-      // 2. Скачиваем чистый SVG
       const svgString = await fetchIconifySvg(icon.id);
       if (!svgString) return;
 
-      const canvas = managerRef.getCanvas();
+      const canvas = manager.getCanvas();
 
-      // 3. Парсим SVG строку в векторные объекты Fabric.js
       const { objects, options } = await loadSVGFromString(svgString);
       const validObjects = objects.filter((o): o is NonNullable<typeof o> => o !== null);
 
