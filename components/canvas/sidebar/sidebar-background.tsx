@@ -8,6 +8,7 @@ import {
   RADIAL_PRESETS,
 } from "@/lib/presets/backgrounds";
 import { cn } from "@/lib/utils";
+import { fileToDataUrl } from "@/lib/image/file-to-data-url";
 import { useCanvasManager } from "@/context/canvas-manager";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,11 +23,16 @@ export function SidebarBackground() {
 
   const applyImageFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
-    const url = URL.createObjectURL(file);
-    void manager?.setBackground({
-      type: "image",
-      url,
-    });
+    void fileToDataUrl(file)
+      .then((dataUrl) =>
+        manager?.setBackground({
+          type: "image",
+          url: dataUrl,
+        }),
+      )
+      .catch((err) => {
+        console.error(err);
+      });
   };
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

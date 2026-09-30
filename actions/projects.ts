@@ -20,6 +20,7 @@ export interface ProjectListItem {
   updatedAt: string;
   isSaved: boolean;
   slideCount: number;
+  previewUrl: string | null;
 }
 
 export interface ProjectDetail {
@@ -98,6 +99,11 @@ export async function getUserProjects(): Promise<
       include: {
         savedBy: { where: { userId }, select: { id: true } },
         _count: { select: { slides: true } },
+        slides: {
+          orderBy: { order: "asc" },
+          take: 1,
+          select: { thumbnail: true },
+        },
       },
     });
 
@@ -108,6 +114,7 @@ export async function getUserProjects(): Promise<
       updatedAt: p.updatedAt.toISOString(),
       isSaved: p.savedBy.length > 0,
       slideCount: p._count.slides,
+      previewUrl: p.slides[0]?.thumbnail ?? null,
     }));
 
     return { success: true, projects };

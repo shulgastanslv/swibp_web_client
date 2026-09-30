@@ -23,6 +23,8 @@ import {
   PanelRightOpen,
   MousePointerClick,
   Upload,
+  WandSparkles,
+  Loader2,
 } from "lucide-react";
 import { useSelectedObject } from "@/hooks/use-selected-object";
 import {
@@ -33,6 +35,13 @@ import {
   Shadow as FabricShadow,
 } from "fabric";
 import { useCanvasManager } from "@/context/canvas-manager";
+import { fileToDataUrl } from "@/lib/image/file-to-data-url";
+import { removeImageBackground } from "@/lib/image/remove-background";
+import { FontSelect } from "@/components/canvas/font-select";
+import {
+  loadGoogleFont,
+  normalizeFontFamily,
+} from "@/lib/fonts/google-fonts";
 
 type TextAlign = "left" | "center" | "right" | "justify";
 
@@ -54,6 +63,7 @@ interface InspectedProperties {
   rx?: number;
   src?: string;
   text?: string;
+  fontFamily?: string;
   fontSize?: number;
   lineHeight?: number;
   textAlign?: TextAlign;
@@ -298,12 +308,18 @@ export function RightSidebar({
     null,
   );
   const [imageUrlInput, setImageUrlInput] = useState("");
+  const [bgRemoving, setBgRemoving] = useState(false);
+  const [bgProgress, setBgProgress] = useState<string | null>(null);
+  const [bgError, setBgError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!selectedObject) {
       setFormValues(null);
       setImageUrlInput("");
+      setBgRemoving(false);
+      setBgProgress(null);
+      setBgError(null);
       return;
     }
 
@@ -347,6 +363,9 @@ export function RightSidebar({
     if (type === "text" || type === "i-text" || type === "textbox") {
       const textObj = selectedObject as unknown as FabricText;
       baseProps.text = textObj.text ?? "";
+      baseProps.fontFamily = normalizeFontFamily(
+        typeof textObj.fontFamily === "string" ? textObj.fontFamily : undefined,
+      );
       baseProps.fontSize = textObj.fontSize ?? 32;
       baseProps.lineHeight = textObj.lineHeight ?? 1.16;
       baseProps.textAlign = (textObj.textAlign as TextAlign) ?? "left";
@@ -358,6 +377,13 @@ export function RightSidebar({
         typeof textObj.backgroundColor === "string"
           ? textObj.backgroundColor
           : "transparent";
+
+      const family = baseProps.fontFamily;
+      if (family) {
+        void loadGoogleFont(family).then(() => {
+          manager?.canvas.requestRenderAll();
+        });
+      }
     }
 
     if (type === "rect") {
@@ -482,16 +508,50 @@ export function RightSidebar({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
+    void fileToDataUrl(file)
+      .then((dataUrl) => {
         changeImageSource(dataUrl);
         setImageUrlInput("");
-      }
-    };
-    reader.readAsDataURL(file);
+      })
+      .catch((err) => console.error(err));
     e.target.value = "";
+  };
+
+  const handleRemoveBackground = async () => {
+    if (!selectedObject || selectedObject.type !== "image") return;
+
+    const imgObj = selectedObject as unknown as FabricImage;
+    const src =
+      (typeof imgObj.getSrc === "function" ? imgObj.getSrc() : "") ||
+      formValues?.src ||
+      "";
+    if (!src) {
+      setBgError("Нет источника изображения");
+      return;
+    }
+
+    setBgRemoving(true);
+    setBgError(null);
+    setBgProgress("Подготовка модели…");
+
+    try {
+      const result = await removeImageBackground(src, {
+        onProgress: ({ key, current, total }) => {
+          const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+          setBgProgress(
+            pct >= 100 ? "Обработка…" : `Загрузка ${key}: ${pct}%`,
+          );
+        },
+      });
+      changeImageSource(result);
+      setBgProgress(null);
+    } catch (err) {
+      console.error(err);
+      setBgError("Не удалось убрать фон. Попробуйте ещё раз.");
+      setBgProgress(null);
+    } finally {
+      setBgRemoving(false);
+    }
   };
 
   const handleCenterH = () => {
@@ -681,6 +741,7 @@ export function RightSidebar({
                     size="sm"
                     className={`h-9 w-full justify-center gap-2 text-sm ${btnRound}`}
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={bgRemoving}
                   >
                     <Upload className="size-4" />
                     Загрузить файл
@@ -691,6 +752,7 @@ export function RightSidebar({
                       onChange={(e) => setImageUrlInput(e.target.value)}
                       placeholder="Ссылка на картинку"
                       className="h-9 border border-border bg-transparent px-3 text-sm dark:bg-transparent"
+                      disabled={bgRemoving}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && imageUrlInput.trim()) {
                           changeImageSource(imageUrlInput.trim());
@@ -702,12 +764,37 @@ export function RightSidebar({
                       variant="secondary"
                       size="sm"
                       className={`h-9 px-3 text-sm ${btnRound}`}
-                      disabled={!imageUrlInput.trim()}
+                      disabled={bgRemoving || !imageUrlInput.trim()}
                       onClick={() => changeImageSource(imageUrlInput.trim())}
                     >
                       ОК
                     </Button>
                   </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className={`h-9 w-full justify-center gap-2 text-sm ${btnRound}`}
+                    onClick={() => void handleRemoveBackground()}
+                    disabled={bgRemoving}
+                  >
+                    {bgRemoving ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <WandSparkles className="size-4" />
+                    )}
+                    {bgRemoving ? "Убираем фон…" : "Убрать фон"}
+                  </Button>
+                  {bgProgress && (
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {bgProgress}
+                    </p>
+                  )}
+                  {bgError && (
+                    <p className="text-[11px] text-destructive leading-snug">
+                      {bgError}
+                    </p>
+                  )}
                 </CollapsibleGroup>
               )}
 
@@ -774,6 +861,19 @@ export function RightSidebar({
                       </Button>
                     </div>
                   </div>
+
+                  <FontSelect
+                    value={formValues.fontFamily ?? "Inter"}
+                    onChange={(family) => {
+                      setFormValues((prev) =>
+                        prev ? { ...prev, fontFamily: family } : null,
+                      );
+                      updateSelected({
+                        fontFamily: family,
+                      } as unknown as Partial<FabricObject>);
+                      canvas?.requestRenderAll();
+                    }}
+                  />
 
                   <NumberField
                     label="Размер шрифта"

@@ -23,3 +23,5 @@ export class Emitter<Events extends object> {
     this.handlers.clear();
   }
 }
+
+
