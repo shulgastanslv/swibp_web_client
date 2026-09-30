@@ -17,39 +17,39 @@ export class ImportExportManager {
   }
 
   async addSVG(svgContent: string) {
-    return new Promise<void>((resolve) => {
-      const objects: FabricObject[] = [];
-      const myReviver = (_element: Element, fabricObject: FabricObject) => {
-        if (fabricObject) objects.push(fabricObject);
-      };
+    const result = await loadSVGFromString(svgContent);
+    const objects = (result.objects ?? []).filter(
+      (o): o is FabricObject => o != null,
+    );
 
-      loadSVGFromString(svgContent, myReviver).then(() => {
-        if (objects.length === 0) {
-          resolve();
-          return;
-        }
+    if (objects.length === 0) {
+      throw new Error("SVG не содержит отрисовываемых элементов");
+    }
 
-        const target: FabricObject =
-          objects.length > 1
-            ? new Group(objects, { originX: "center", originY: "center" })
-            : objects[0];
+    const target: FabricObject =
+      objects.length > 1
+        ? new Group(objects, {
+            originX: "center",
+            originY: "center",
+          })
+        : objects[0];
 
-        target.set({ left: 0, top: 0, originX: "center", originY: "center" });
-
-        const scale = Math.min(
-          200 / (target.width || 1),
-          200 / (target.height || 1),
-          1,
-        );
-        target.scale(scale);
-
-        this.canvas.add(target);
-        this.canvas.centerObject(target);
-        this.canvas.setActiveObject(target);
-        this.canvas.renderAll();
-        resolve();
-      });
+    target.set({
+      originX: "center",
+      originY: "center",
     });
+
+    const scale = Math.min(
+      120 / (target.width || 1),
+      120 / (target.height || 1),
+      1,
+    );
+    target.scale(scale);
+
+    this.canvas.add(target);
+    this.canvas.centerObject(target);
+    this.canvas.setActiveObject(target);
+    this.canvas.requestRenderAll();
   }
 
   async setBackground(config: BackgroundConfig): Promise<void> {
@@ -65,7 +65,11 @@ export class ImportExportManager {
   }
 
   private setImage(url: string): Promise<void> {
-    return FabricImage.fromURL(url).then((img) => {
+    const isRemote = /^https?:\/\//i.test(url);
+    return FabricImage.fromURL(
+      url,
+      isRemote ? { crossOrigin: "anonymous" } : undefined,
+    ).then((img) => {
       const zoom = this.canvas.getZoom() || 1;
       const width = (this.canvas.width || 1080) / zoom;
       const height = (this.canvas.height || 1080) / zoom;

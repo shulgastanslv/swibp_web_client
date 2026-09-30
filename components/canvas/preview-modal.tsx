@@ -15,9 +15,16 @@ interface PreviewModalProps {
 
 interface SlideSnapshot {
   id: number;
+  /** High-res image for the main stage */
+  preview: string | null;
+  /** Compact image for the filmstrip */
   thumbnail: string | null;
   loading: boolean;
 }
+
+/** Target long-edge for the main preview (~retina-friendly on ~860px stage). */
+const PREVIEW_LONG_EDGE = 1600;
+const THUMB_LONG_EDGE = 280;
 
 export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProps) {
   const slides = useCanvasStore((s) => s.slides);
@@ -31,51 +38,63 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
   const [rendering, setRendering] = useState(false);
 
   const isMountedRef = useRef(true);
+  const offscreenRef = useRef<FabricCanvas | null>(null);
 
   const slideIds = slides.map((s) => s.id);
   const activeIdx = Math.max(0, slideIds.indexOf(activeId));
   const aspectRatio = canvasDimensions.width / canvasDimensions.height;
 
-  // Синхронизация текущего состояния и генерация миниатюр
   useEffect(() => {
     if (!open) return;
     isMountedRef.current = true;
 
-    // 1. Сохраняем текущее актуальное состояние активного слайда перед открытием
     slidesController?.saveCurrent();
 
     const freshSlides = useCanvasStore.getState().slides;
+    const { width, height } = canvasDimensions;
+    const longEdge = Math.max(width, height);
 
-    // Инициализируем снапшоты
-    const initialSnapshots: SlideSnapshot[] = freshSlides.map((s) => ({
-      id: s.id,
-      thumbnail: s.thumbnail ?? null,
-      loading: !s.thumbnail && !!s.canvasJSON,
-    }));
-
+    // Always re-render sharp previews for the modal — store thumbs are too small.
     setActiveId(initialSlideId);
-    setSnapshots(initialSnapshots);
+    setSnapshots(
+      freshSlides.map((s) => ({
+        id: s.id,
+        preview: null,
+        thumbnail: s.thumbnail ?? null,
+        loading: !!s.canvasJSON,
+      })),
+    );
 
-    const slidesNeedingRender = freshSlides.filter((s) => !s.thumbnail && s.canvasJSON);
-    if (slidesNeedingRender.length === 0) return;
+    if (freshSlides.length === 0) return;
 
     setRendering(true);
 
-    // 2. Рендерим отсутствующие миниатюры через скрытый offscreen-канвас, не трогая рабочий
     const offscreenEl = document.createElement("canvas");
-    offscreenEl.width = canvasDimensions.width;
-    offscreenEl.height = canvasDimensions.height;
+    offscreenEl.width = width;
+    offscreenEl.height = height;
 
     const offscreenCanvas = new FabricCanvas(offscreenEl, {
-      width: canvasDimensions.width,
-      height: canvasDimensions.height,
+      width,
+      height,
       renderOnAddRemove: false,
+      enableRetinaScaling: false,
     });
+    offscreenRef.current = offscreenCanvas;
+
+    const previewMultiplier = Math.min(2, PREVIEW_LONG_EDGE / longEdge);
+    const thumbMultiplier = Math.min(1, THUMB_LONG_EDGE / longEdge);
 
     (async () => {
-      for (const slide of slidesNeedingRender) {
+      for (const slide of freshSlides) {
         if (!isMountedRef.current) break;
-        if (!slide.canvasJSON) continue;
+        if (!slide.canvasJSON) {
+          if (isMountedRef.current) {
+            setSnapshots((prev) =>
+              prev.map((s) => (s.id === slide.id ? { ...s, loading: false } : s)),
+            );
+          }
+          continue;
+        }
 
         try {
           await offscreenCanvas.loadFromJSON(slide.canvasJSON);
@@ -83,52 +102,56 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
           if (!offscreenCanvas.backgroundColor) {
             offscreenCanvas.backgroundColor = "#ffffff";
           }
-          offscreenCanvas.renderAll();
+          offscreenCanvas.requestRenderAll();
 
-          // Формируем оптимизированное превью
-          const dataURL = offscreenCanvas.toDataURL({
-            format: "png",
-            multiplier: Math.min(1, 300 / canvasDimensions.width),
-            quality: 0.8,
+          const previewURL = offscreenCanvas.toDataURL({
+            format: "jpeg",
+            multiplier: previewMultiplier,
+            quality: 0.92,
           });
 
-          if (isMountedRef.current) {
-            updateSlideThumbnail(slide.id, dataURL);
-            setSnapshots((prev) =>
-              prev.map((s) =>
-                s.id === slide.id ? { ...s, thumbnail: dataURL, loading: false } : s
-              )
-            );
-          }
+          const thumbURL = offscreenCanvas.toDataURL({
+            format: "jpeg",
+            multiplier: thumbMultiplier,
+            quality: 0.72,
+          });
+
+          if (!isMountedRef.current) break;
+
+          updateSlideThumbnail(slide.id, thumbURL);
+          setSnapshots((prev) =>
+            prev.map((s) =>
+              s.id === slide.id
+                ? { ...s, preview: previewURL, thumbnail: thumbURL, loading: false }
+                : s,
+            ),
+          );
         } catch (error) {
           console.error(`Ошибка рендеринга слайда ${slide.id}:`, error);
           if (isMountedRef.current) {
             setSnapshots((prev) =>
-              prev.map((s) => (s.id === slide.id ? { ...s, loading: false } : s))
+              prev.map((s) => (s.id === slide.id ? { ...s, loading: false } : s)),
             );
           }
         }
       }
 
-      offscreenCanvas.dispose();
-      if (isMountedRef.current) {
-        setRendering(false);
+      if (offscreenRef.current === offscreenCanvas) {
+        offscreenCanvas.dispose();
+        offscreenRef.current = null;
       }
+      if (isMountedRef.current) setRendering(false);
     })();
 
     return () => {
       isMountedRef.current = false;
-      offscreenCanvas.dispose();
+      if (offscreenRef.current) {
+        offscreenRef.current.dispose();
+        offscreenRef.current = null;
+      }
     };
-  }, [
-    open,
-    slidesController,
-    initialSlideId,
-    canvasDimensions,
-    updateSlideThumbnail,
-  ]);
+  }, [open, slidesController, initialSlideId, canvasDimensions, updateSlideThumbnail]);
 
-  // Навигация с клавиатуры
   useEffect(() => {
     if (!open) return;
 
@@ -155,6 +178,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
   if (!open) return null;
 
   const activeSnap = snapshots.find((s) => s.id === activeId);
+  const activeImage = activeSnap?.preview ?? activeSnap?.thumbnail ?? null;
 
   const goPrev = () => {
     setActiveId((id) => slideIds[Math.max(0, slideIds.indexOf(id) - 1)] ?? id);
@@ -169,7 +193,6 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
 
   return (
     <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex flex-col select-none animate-in fade-in-0 duration-200">
-      {/* ── Верхняя панель ── */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border/40 shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-xs font-medium text-foreground tracking-wide">Предпросмотр</span>
@@ -195,7 +218,6 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
         </div>
       </div>
 
-      {/* ── Основная область просмотра слайда ── */}
       <div className="flex-1 flex items-center justify-center gap-4 px-8 min-h-0">
         <Button
           variant="ghost"
@@ -207,9 +229,8 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
           <ChevronLeft className="w-5 h-5" />
         </Button>
 
-        {/* Рамка текущего слайда */}
         <div
-          className="relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-background transition-all duration-200"
+          className="relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-muted/20 transition-all duration-200"
           style={{
             aspectRatio,
             height: aspectRatio < 1 ? "min(72vh, 680px)" : undefined,
@@ -218,16 +239,16 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
             maxWidth: "88vw",
           }}
         >
-          {activeSnap?.loading ? (
+          {activeSnap?.loading && !activeImage ? (
             <div className="absolute inset-0 bg-muted/40 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
-          ) : activeSnap?.thumbnail ? (
+          ) : activeImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={activeSnap.thumbnail}
+              src={activeImage}
               alt={`Слайд ${activeIdx + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               draggable={false}
             />
           ) : (
@@ -248,10 +269,10 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
         </Button>
       </div>
 
-      {/* ── Нижняя лента миниатюр ── */}
       <div className="shrink-0 py-4 px-6 flex items-center justify-center gap-2 overflow-x-auto border-t border-border/40">
         {snapshots.map((snap, i) => {
           const isActive = snap.id === activeId;
+          const stripSrc = snap.thumbnail ?? snap.preview;
           return (
             <button
               key={snap.id}
@@ -264,14 +285,14 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
               }`}
               style={{ width: thumbW, height: thumbH }}
             >
-              {snap.loading ? (
+              {snap.loading && !stripSrc ? (
                 <div className="w-full h-full bg-muted flex items-center justify-center">
                   <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
                 </div>
-              ) : snap.thumbnail ? (
+              ) : stripSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={snap.thumbnail}
+                  src={stripSrc}
                   alt={`Превью ${i + 1}`}
                   className="w-full h-full object-cover"
                   draggable={false}

@@ -123,11 +123,19 @@ test("the last slide cannot be removed", async () => {
   assert.equal(store.getState().slides.length, 1);
 });
 
-test("saving a slide invalidates its thumbnail", () => {
-  const { store, controller } = setup(["a"]);
-  store.getState().updateSlideThumbnail(1, "data:image/png;base64,old");
+test("dispose cancels pending loads without changing the current slide", async () => {
+  const { store, canvas, controller } = setup(["a", "b"]);
+  let release!: () => void;
+  canvas.loadState = () =>
+    new Promise<void>((resolve) => {
+      release = resolve;
+    });
 
-  controller.saveCurrent();
+  const pending = controller.switchTo(2);
+  await Promise.resolve();
+  controller.dispose();
+  release();
+  await pending;
 
-  assert.equal(store.getState().slides[0].thumbnail, null);
+  assert.equal(store.getState().currentSlideId, 1);
 });

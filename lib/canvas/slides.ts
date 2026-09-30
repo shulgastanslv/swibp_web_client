@@ -5,6 +5,7 @@ import type { SlideItem } from "../types";
 export interface SlideCanvas {
   getState(): CanvasState;
   loadState(state: CanvasState | null): Promise<void>;
+  readonly isDisposed?: boolean;
 }
 
 export interface SlidesState {
@@ -28,13 +29,19 @@ export interface SlidesStore {
  */
 export class SlidesController {
   private queue: Promise<void> = Promise.resolve();
+  private disposed = false;
 
   constructor(
     private readonly canvas: SlideCanvas,
     private readonly store: SlidesStore,
   ) {}
 
+  dispose(): void {
+    this.disposed = true;
+  }
+
   saveCurrent(): void {
+    if (this.disposed || this.canvas.isDisposed) return;
     const { currentSlideId, updateSlideJSONById } = this.store.getState();
     updateSlideJSONById(currentSlideId, this.canvas.getState());
   }
@@ -95,15 +102,22 @@ export class SlidesController {
   }
 
   private async load(id: number): Promise<void> {
+    if (this.disposed || this.canvas.isDisposed) return;
     const slide = this.store.getState().slides.find((s) => s.id === id);
     if (!slide) return;
     await this.canvas.loadState(slide.canvasJSON ?? null);
+    if (this.disposed || this.canvas.isDisposed) return;
     this.store.getState().setCurrentSlideId(id);
   }
 
   private enqueue(task: () => Promise<void>): Promise<void> {
-    const run = this.queue.then(task);
+    const run = this.queue.then(async () => {
+      if (this.disposed || this.canvas.isDisposed) return;
+      await task();
+    });
     this.queue = run.catch((error) => {
+      if (this.disposed || this.canvas.isDisposed) return;
+      if (error instanceof DOMException && error.name === "AbortError") return;
       console.error("Slide operation failed:", error);
     });
     return run;

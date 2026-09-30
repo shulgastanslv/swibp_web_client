@@ -37,7 +37,7 @@ export interface ProjectState {
   width: number;
   height: number;
   slides: SlideItem[];
-  currentSlideId: string | null;
+  currentSlideId: number;
 }
 
 export interface EditorUIState {

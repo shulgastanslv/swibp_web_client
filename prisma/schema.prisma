@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -15,7 +13,8 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password     String
+  /// Null for OAuth-only accounts (e.g. Google).
+  password  String?
   name      String?
   image     String?
   createdAt DateTime @default(now())
@@ -28,9 +27,9 @@ model User {
 model Project {
   id          String   @id @default(cuid())
   title       String   @default("Untitled Carousel")
-  aspectRatio String   @default("1:1")
+  aspectRatio String   @default("4:5")
   width       Int      @default(1080)
-  height      Int      @default(1080)
+  height      Int      @default(1350)
   isPublic    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -38,20 +37,23 @@ model Project {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  slides Slide[]
+  slides  Slide[]
   savedBy SavedProject[]
 
   @@index([userId])
+  @@index([userId, updatedAt])
 }
 
+/// One Fabric canvas snapshot in a carousel project.
+/// Client uses ephemeral numeric ids; persistence key is `id` + `order`.
 model Slide {
-  id        String   @id @default(cuid())
-  order     Int
+  id         String  @id @default(cuid())
+  order      Int
   canvasJSON Json
-  thumbnail String?  @db.Text
+  thumbnail  String? @db.Text
 
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId, order])
 }
@@ -62,20 +64,23 @@ model Template {
   category    String
   badge       String?
   previewUrl  String?
-  aspectRatio String   @default("1:1")
+  aspectRatio String   @default("4:5")
   canvasJSON  Json
   createdAt   DateTime @default(now())
+
+  @@index([category])
 }
 
+/// Bookmarks / "saved" projects for a user (not ownership).
 model SavedProject {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([userId, projectId])
   @@index([userId])

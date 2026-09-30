@@ -20,59 +20,73 @@ const createEmptyCanvasJSON = (): FabricCanvasJSON => ({
   background: "#ffffff",
 });
 
-export const createSlidesSlice: StateCreator<SlidesSlice, [], [], SlidesSlice> = (set, get) => ({
-  slides: [{ id: 1, canvasJSON: createEmptyCanvasJSON(), thumbnail: null }],
-  currentSlideId: 1,
+type SlidesStore = SlidesSlice & { setDirty?: (dirty: boolean) => void };
 
-  setSlides: (slides) => set({ slides }),
-  setCurrentSlideId: (id: number) => set({ currentSlideId: id }),
+export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> = (set, get) => {
+  const markDirty = () => get().setDirty?.(true);
 
-  addSlide: (afterId) => {
-    const { slides } = get();
-    const newId = Math.max(0, ...slides.map((s) => s.id)) + 1;
-    const newSlide: SlideItem = { id: newId, canvasJSON: createEmptyCanvasJSON(), thumbnail: null };
+  return {
+    slides: [{ id: 1, canvasJSON: createEmptyCanvasJSON(), thumbnail: null }],
+    currentSlideId: 1,
 
-    const afterIndex = slides.findIndex((s) => s.id === afterId);
-    const insertAt = afterIndex === -1 ? slides.length : afterIndex + 1;
-    set({ slides: [...slides.slice(0, insertAt), newSlide, ...slides.slice(insertAt)] });
-    return newId;
-  },
+    setSlides: (slides) => set({ slides }),
+    setCurrentSlideId: (id: number) => set({ currentSlideId: id }),
 
-  removeSlide: (id: number) => {
-    const { slides, currentSlideId } = get();
-    if (slides.length <= 1) return;
+    addSlide: (afterId) => {
+      const { slides } = get();
+      const newId = Math.max(0, ...slides.map((s) => s.id)) + 1;
+      const newSlide: SlideItem = {
+        id: newId,
+        canvasJSON: createEmptyCanvasJSON(),
+        thumbnail: null,
+      };
 
-    const nextSlides = slides.filter((s) => s.id !== id);
-    const nextCurrentId = currentSlideId === id ? nextSlides[0].id : currentSlideId;
-    set({ slides: nextSlides, currentSlideId: nextCurrentId });
-  },
+      const afterIndex = slides.findIndex((s) => s.id === afterId);
+      const insertAt = afterIndex === -1 ? slides.length : afterIndex + 1;
+      set({ slides: [...slides.slice(0, insertAt), newSlide, ...slides.slice(insertAt)] });
+      markDirty();
+      return newId;
+    },
 
-  moveSlide: (direction: "left" | "right") => {
-    const { slides, currentSlideId } = get();
-    const index = slides.findIndex((s) => s.id === currentSlideId);
-    if (index === -1) return;
+    removeSlide: (id: number) => {
+      const { slides, currentSlideId } = get();
+      if (slides.length <= 1) return;
 
-    const targetIndex = direction === "left" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= slides.length) return;
+      const nextSlides = slides.filter((s) => s.id !== id);
+      const nextCurrentId = currentSlideId === id ? nextSlides[0].id : currentSlideId;
+      set({ slides: nextSlides, currentSlideId: nextCurrentId });
+      markDirty();
+    },
 
-    const newSlides = [...slides];
-    const [moved] = newSlides.splice(index, 1);
-    newSlides.splice(targetIndex, 0, moved);
+    moveSlide: (direction: "left" | "right") => {
+      const { slides, currentSlideId } = get();
+      const index = slides.findIndex((s) => s.id === currentSlideId);
+      if (index === -1) return;
 
-    set({ slides: newSlides });
-  },
+      const targetIndex = direction === "left" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= slides.length) return;
 
-  updateSlideJSONById: (id: number, json: FabricCanvasJSON) => {
-    set({
-      slides: get().slides.map((s) =>
-        s.id === id ? { ...s, canvasJSON: json, thumbnail: null } : s,
-      ),
-    });
-  },
+      const newSlides = [...slides];
+      const [moved] = newSlides.splice(index, 1);
+      newSlides.splice(targetIndex, 0, moved);
 
-  updateSlideThumbnail: (id: number, thumbnail: string) => {
-    set({
-      slides: get().slides.map((s) => (s.id === id ? { ...s, thumbnail } : s)),
-    });
-  },
-});
+      set({ slides: newSlides });
+      markDirty();
+    },
+
+    updateSlideJSONById: (id: number, json: FabricCanvasJSON) => {
+      set({
+        slides: get().slides.map((s) =>
+          s.id === id ? { ...s, canvasJSON: json, thumbnail: null } : s,
+        ),
+      });
+      markDirty();
+    },
+
+    updateSlideThumbnail: (id: number, thumbnail: string) => {
+      set({
+        slides: get().slides.map((s) => (s.id === id ? { ...s, thumbnail } : s)),
+      });
+    },
+  };
+};

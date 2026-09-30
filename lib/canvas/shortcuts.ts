@@ -2,10 +2,17 @@ import type { CanvasManager } from "./manager";
 
 function isTypingTarget(el: Element | null): boolean {
   if (!el) return false;
-  return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || (el as HTMLElement).isContentEditable;
+  return (
+    el.tagName === "INPUT" ||
+    el.tagName === "TEXTAREA" ||
+    (el as HTMLElement).isContentEditable
+  );
 }
 
-export function bindKeyboardShortcuts(manager: CanvasManager, target: Window = window): () => void {
+export function bindKeyboardShortcuts(
+  manager: CanvasManager,
+  target: Window = window,
+): () => void {
   const handleKeyDown = (e: KeyboardEvent) => {
     if (isTypingTarget(document.activeElement)) return;
 
@@ -26,6 +33,21 @@ export function bindKeyboardShortcuts(manager: CanvasManager, target: Window = w
     } else if (mod && (key === "y" || (key === "z" && e.shiftKey))) {
       e.preventDefault();
       void manager.redo();
+    } else if (mod && e.altKey && key === "h" && active) {
+      // Ctrl/⌘+Alt+H — center horizontally
+      e.preventDefault();
+      manager.grid.centerObject(active, "horizontal");
+      manager.commit();
+    } else if (mod && e.altKey && key === "v" && active) {
+      // Ctrl/⌘+Alt+V — center vertically
+      e.preventDefault();
+      manager.grid.centerObject(active, "vertical");
+      manager.commit();
+    } else if (mod && e.altKey && key === "c" && active) {
+      // Ctrl/⌘+Alt+C — center both axes
+      e.preventDefault();
+      manager.grid.centerObject(active, "both");
+      manager.commit();
     }
   };
 

@@ -8,12 +8,11 @@ import {
   getUserProjects,
   toggleSaveProject,
   deleteProject,
-  getProjectById,
   type ProjectListItem,
 } from "@/actions/projects";
+import { useProject } from "@/hooks/use-project";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProjectActionsDropdown } from "./project_actions_dropdown";
 
@@ -26,26 +25,23 @@ export function SidebarProjects() {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const { currentProjectId } = useCanvasStore();
-  const userId = (session?.user as { id?: string })?.id;
+  const currentProjectId = useCanvasStore((s) => s.currentProjectId);
+  const { loadProject } = useProject();
+  const userId = session?.user?.id;
 
   const fetchProjects = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     try {
-      const res = await getUserProjects(userId);
-      if (res.success && res.projects) {
-        setProjects(res.projects);
-      }
+      const res = await getUserProjects();
+      if (res.success) setProjects(res.projects);
     } finally {
       setLoading(false);
     }
   }, [userId]);
 
   useEffect(() => {
-    if (userId) {
-      fetchProjects();
-    }
+    if (userId) void fetchProjects();
   }, [userId, fetchProjects]);
 
   const handleToggleSave = async (e: React.MouseEvent, projectId: string) => {
@@ -53,23 +49,35 @@ export function SidebarProjects() {
     if (!userId) return;
 
     setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, isSaved: !p.isSaved } : p))
+      prev.map((p) => (p.id === projectId ? { ...p, isSaved: !p.isSaved } : p)),
     );
 
-    await toggleSaveProject(userId, projectId);
+    const res = await toggleSaveProject(projectId);
+    if (!res.success) {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, isSaved: !p.isSaved } : p)),
+      );
+    }
   };
 
   const handleSelectProject = async (id: string) => {
     if (id === currentProjectId) return;
-    const res = await getProjectById(id);
-    if (res?.project) {
-      // Инициализация выбранного проекта
+    const res = await loadProject(id);
+    if (!res.success) {
+      console.error("loadProject failed:", res.error);
     }
   };
 
   const handleDelete = async (id: string) => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
-    await deleteProject(id);
+    const res = await deleteProject(id);
+    if (!res.success) {
+      void fetchProjects();
+      return;
+    }
+    if (id === currentProjectId) {
+      useCanvasStore.getState().resetToBlankProject();
+    }
   };
 
   const visibleProjects = useMemo(() => {
@@ -111,7 +119,7 @@ export function SidebarProjects() {
               "px-3 py-0.5 rounded-full text-[11px] transition-all",
               filter === tab
                 ? "bg-background text-foreground shadow-xs font-medium"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {tab === "all" ? "Все" : "Сохранённые"}
@@ -134,17 +142,17 @@ export function SidebarProjects() {
             return (
               <div
                 key={p.id}
-                onClick={() => handleSelectProject(p.id)}
+                onClick={() => void handleSelectProject(p.id)}
                 className={cn(
                   "group flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl cursor-pointer transition-colors",
                   isActive
                     ? "bg-accent text-accent-foreground font-medium"
-                    : "hover:bg-muted/50 text-foreground"
+                    : "hover:bg-muted/50 text-foreground",
                 )}
               >
                 <button
                   type="button"
-                  onClick={(e) => handleToggleSave(e, p.id)}
+                  onClick={(e) => void handleToggleSave(e, p.id)}
                   className="shrink-0 transition-transform active:scale-90"
                 >
                   <Bookmark
@@ -152,7 +160,7 @@ export function SidebarProjects() {
                       "h-3.5 w-3.5 transition-colors",
                       p.isSaved
                         ? "fill-primary text-primary"
-                        : "text-muted-foreground/40 hover:text-muted-foreground"
+                        : "text-muted-foreground/40 hover:text-muted-foreground",
                     )}
                   />
                 </button>
@@ -163,7 +171,7 @@ export function SidebarProjects() {
                   {p.slideCount} сл.
                 </span>
 
-                <ProjectActionsDropdown onDelete={() => handleDelete(p.id)} />
+                <ProjectActionsDropdown onDelete={() => void handleDelete(p.id)} />
               </div>
             );
           })}

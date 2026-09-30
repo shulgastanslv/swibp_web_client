@@ -50,9 +50,14 @@ export class ObjectFactory {
   }
 
   async addImage(url: string): Promise<void> {
-    const img = await Image.fromURL(url);
-    const width = this.canvas.width || 1080;
-    const height = this.canvas.height || 1080;
+    const isRemote = /^https?:\/\//i.test(url);
+    const img = await Image.fromURL(
+      url,
+      isRemote ? { crossOrigin: "anonymous" } : undefined,
+    );
+    const zoom = this.canvas.getZoom() || 1;
+    const width = (this.canvas.width || 1080) / zoom;
+    const height = (this.canvas.height || 1080) / zoom;
     const scale = Math.min(
       (width * 0.8) / (img.width || 1),
       (height * 0.8) / (img.height || 1),

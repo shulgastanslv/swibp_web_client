@@ -14,6 +14,8 @@ import {
   LightbulbIcon,
   BoxIcon,
   FilterIcon,
+  PaletteIcon,
+  Folder,
 } from "lucide-react";
 import { Object as FabricObject } from "fabric";
 
@@ -92,8 +94,8 @@ export function LeftSidebar({
   };
 
   const navItems: { id: NavId; icon: React.ElementType; label: string }[] = [
-    { id: "projects", icon: FolderKanban, label: "Projects" },
-    { id: "elements", icon: BoxIcon, label: "Elements" },
+    { id: "elements", icon: PaletteIcon, label: "Elements" },
+    { id: "projects", icon: Folder, label: "Projects" },
     { id: "layers", icon: Layers, label: "Layers" },
     { id: "templates", icon: LayoutTemplate, label: "Templates" },
     { id: "background", icon: ImageIcon, label: "Background" },

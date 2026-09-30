@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Clock, Loader2, Sparkles } from "lucide-react";
-import { util, loadSVGFromString } from "fabric";
+import { Search, Clock, Loader2 } from "lucide-react";
 import { fetchIconifySvg } from "@/actions/icons";
 import { Input } from "@/components/ui/input";
 import { useCanvasManager } from "@/context/canvas-manager";
@@ -93,23 +92,14 @@ export function SidebarIcons() {
       } catch {}
 
       const svgString = await fetchIconifySvg(icon.id);
-      if (!svgString) return;
+      if (!svgString) {
+        console.error("Пустой SVG для", icon.id);
+        return;
+      }
 
-      const canvas = manager.canvas;
-
-      const { objects, options } = await loadSVGFromString(svgString);
-      const validObjects = objects.filter((o): o is NonNullable<typeof o> => o !== null);
-
-      if (validObjects.length === 0) return;
-
-      // 4. Группируем элементы и центрируем
-      const svgGroup = util.groupSVGElements(validObjects, options);
-      svgGroup.scaleToWidth(120);
-      canvas.centerObject(svgGroup);
-
-      canvas.add(svgGroup);
-      canvas.setActiveObject(svgGroup);
-      canvas.renderAll();
+      // Use the shared importer — handles multi-path / emoji SVGs reliably.
+      await manager.io.addSVG(svgString);
+      manager.commit();
     } catch (error) {
       console.error("Не удалось добавить иконку на холст:", error);
     } finally {

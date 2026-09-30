@@ -42,6 +42,8 @@ export class CanvasManager {
   private readonly history = new HistoryStack<CanvasState>();
   private readonly events = new Emitter<CanvasManagerEvents>();
   private silentDepth = 0;
+  private disposed = false;
+  private loadAbort: AbortController | null = null;
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.core = new CanvasCore(canvasElement);
@@ -58,6 +60,10 @@ export class CanvasManager {
     this.bindCanvasEvents();
   }
 
+  get isDisposed(): boolean {
+    return this.disposed;
+  }
+
   on<K extends keyof CanvasManagerEvents>(
     event: K,
     handler: (payload: CanvasManagerEvents[K]) => void,
@@ -71,7 +77,9 @@ export class CanvasManager {
 
   /** Replaces the document without recording history or emitting `change`. */
   async loadState(state: CanvasState | null): Promise<void> {
+    if (this.disposed) return;
     await this.replaceContent(state);
+    if (this.disposed) return;
     const loaded = this.getState();
     this.history.reset(loaded);
     this.events.emit("load", loaded);
@@ -150,6 +158,7 @@ export class CanvasManager {
   /** Fits the logical canvas (nativeW × nativeH) into the screen at `scale`. */
   setViewportScale(scale: number, nativeW: number, nativeH: number): void {
     this.core.setZoom(scale, nativeW, nativeH);
+    this.effects.onCanvasResize();
   }
 
   exportThumbnail(multiplier = 1): string {
@@ -187,34 +196,54 @@ export class CanvasManager {
   }
 
   dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.loadAbort?.abort();
+    this.loadAbort = null;
     this.events.clear();
+    this.grid.dispose();
     this.core.dispose();
   }
 
   private async restoreFromHistory(state: CanvasState): Promise<void> {
+    if (this.disposed) return;
     await this.replaceContent(state);
+    if (this.disposed) return;
     this.events.emit("change", this.getState());
   }
 
   private async replaceContent(state: CanvasState | null): Promise<void> {
+    // Fabric's InteractiveCanvas.clear() calls clearContext(contextTop). After dispose
+    // (or while upper.ctx is temporarily unset) that throws "clearRect of undefined".
+    if (this.disposed || !this.canvas.contextTop) return;
+
+    this.loadAbort?.abort();
+    const abort = new AbortController();
+    this.loadAbort = abort;
+
     this.silentDepth++;
     try {
       this.canvas.discardActiveObject();
-      this.arrows.clear();
       if (state) {
-        await this.canvas.loadFromJSON(state);
-      } else {
+        await this.canvas.loadFromJSON(state, undefined, { signal: abort.signal });
+      } else if (this.canvas.contextTop) {
         this.canvas.clear();
       }
+      if (this.disposed || abort.signal.aborted || !this.canvas.contextTop) return;
       if (!this.canvas.backgroundColor) {
         this.canvas.backgroundColor = DEFAULT_BACKGROUND;
       }
       this.grid.redraw();
       this.canvas.requestRenderAll();
+      this.events.emit("selection", null);
+    } catch (error) {
+      if (this.disposed || abort.signal.aborted) return;
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      throw error;
     } finally {
+      if (this.loadAbort === abort) this.loadAbort = null;
       this.silentDepth--;
     }
-    this.events.emit("selection", null);
   }
 
   private bindCanvasEvents(): void {

@@ -11,6 +11,15 @@ export class EffectsManager {
     this.generateNoisePattern();
   }
 
+  /** Logical (unzoomed) canvas size — objects live in this space. */
+  private getLogicalSize() {
+    const zoom = this.canvas.getZoom() || 1;
+    return {
+      width: (this.canvas.getWidth() || 1080) / zoom,
+      height: (this.canvas.getHeight() || 1080) / zoom,
+    };
+  }
+
   private async generateNoisePattern() {
     if (EffectsManager.noisePattern) return;
 
@@ -36,7 +45,6 @@ export class EffectsManager {
   }
 
   public setVignette(intensity: number) {
-    // intensity от 0 до 1
     if (intensity <= 0.01) {
       if (this.vignetteRect) {
         this.canvas.remove(this.vignetteRect);
@@ -45,10 +53,10 @@ export class EffectsManager {
       return;
     }
 
-    const width = this.canvas.getWidth();
-    const height = this.canvas.getHeight();
+    const { width, height } = this.getLogicalSize();
+    // Reach the corners of the rectangle, not just the shorter half-side.
+    const cornerRadius = Math.sqrt((width / 2) ** 2 + (height / 2) ** 2);
 
-    // Создаем прямоугольник, если его нет
     if (!this.vignetteRect) {
       this.vignetteRect = new Rect({
         left: 0,
@@ -58,40 +66,39 @@ export class EffectsManager {
         selectable: false,
         evented: false,
         hoverCursor: "default",
-        // Важно: прозрачность самого объекта будет контролировать силу виньетки
+        excludeFromExport: true,
         opacity: intensity,
       });
+      // @ts-expect-error custom flag for effect layers
+      this.vignetteRect.isEffectLayer = true;
       this.canvas.add(this.vignetteRect);
       this.canvas.bringObjectToFront(this.vignetteRect);
     } else {
-      // Обновляем размеры при ресайзе канваса
       this.vignetteRect.set({
         width,
         height,
-        opacity: intensity // Обновляем интенсивность через прозрачность слоя
+        opacity: intensity,
       });
     }
 
-    // Настраиваем градиент
-    // Мы делаем градиент от Прозрачного (центр) к Черному (края)
-    const gradient = {
-      type: "radial",
-      coords: {
-        r1: 0, // Центр
-        r2: Math.max(width, height) / 2, // Радиус до угла
-        x1: width / 2,
-        y1: height / 2,
-        x2: width / 2,
-        y2: height / 2,
+    this.vignetteRect.set({
+      fill: {
+        type: "radial",
+        coords: {
+          r1: 0,
+          r2: cornerRadius,
+          x1: width / 2,
+          y1: height / 2,
+          x2: width / 2,
+          y2: height / 2,
+        },
+        colorStops: [
+          { offset: 0, color: "rgba(0,0,0,0)" },
+          { offset: 0.55, color: "rgba(0,0,0,0)" },
+          { offset: 1, color: "rgb(0,0,0)" },
+        ],
       },
-      colorStops: [
-        { offset: 0, color: "rgba(0,0,0,0)" },   // Центр полностью прозрачный
-        { offset: 0.6, color: "rgba(0,0,0,0)" }, // Плавное начало затемнения
-        { offset: 1, color: "rgb(0,0,0)" },      // Края черные (но видны только на уровень opacity объекта)
-      ],
-    };
-
-    this.vignetteRect.set({ fill: gradient });
+    });
     this.canvas.requestRenderAll();
   }
 
@@ -105,8 +112,7 @@ export class EffectsManager {
     }
 
     await this.generateNoisePattern();
-    const width = this.canvas.getWidth();
-    const height = this.canvas.getHeight();
+    const { width, height } = this.getLogicalSize();
 
     if (!this.noiseRect) {
       this.noiseRect = new Rect({
@@ -117,8 +123,11 @@ export class EffectsManager {
         selectable: false,
         evented: false,
         hoverCursor: "default",
-        globalCompositeOperation: "overlay", // Режим наложения для реалистичного шума
+        excludeFromExport: true,
+        globalCompositeOperation: "overlay",
       });
+      // @ts-expect-error custom flag for effect layers
+      this.noiseRect.isEffectLayer = true;
       this.canvas.add(this.noiseRect);
       this.canvas.bringObjectToFront(this.noiseRect);
     } else {
@@ -133,7 +142,8 @@ export class EffectsManager {
   }
 
   public setBlur(amount: number) {
-    // Размытие применяем к активному объекту (если это изображение) или к фону
+    // amount from UI is px 0–40; Fabric Blur expects ~0–1
+    const blurValue = Math.min(1, Math.max(0, amount / 40));
     const activeObject = this.canvas.getActiveObject();
     let target = activeObject;
 
@@ -143,12 +153,10 @@ export class EffectsManager {
 
     if (target && target instanceof Image) {
       target.filters = target.filters || [];
-      // Удаляем старый фильтр размытия
       target.filters = target.filters.filter((f) => !(f instanceof filters.Blur));
 
-      if (amount > 0) {
-        // amount от 0 до 1 (в Fabric blur принимает значения примерно до 1 для сильного эффекта)
-        target.filters.push(new filters.Blur({ blur: amount }));
+      if (blurValue > 0) {
+        target.filters.push(new filters.Blur({ blur: blurValue }));
       }
 
       target.applyFilters();
@@ -158,13 +166,12 @@ export class EffectsManager {
 
   public clearAll() {
     this.setVignette(0);
-    this.setNoise(0);
+    void this.setNoise(0);
     this.setBlur(0);
   }
 
-  // Вызывать при изменении размера канваса
   public onCanvasResize() {
-    if (this.vignetteRect) this.setVignette(this.vignetteRect.opacity || 0.5); // триггер обновления
-    if (this.noiseRect) this.setNoise(this.noiseRect.opacity || 0.5);
+    if (this.vignetteRect) this.setVignette(this.vignetteRect.opacity || 0.5);
+    if (this.noiseRect) void this.setNoise(this.noiseRect.opacity || 0.5);
   }
 }

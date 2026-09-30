@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { UploadCloud, Plus } from "lucide-react";
+import { UploadCloud, Plus, Link2, Loader2 } from "lucide-react";
 import {
   SOLID_PRESETS,
   GRADIENT_PRESETS,
@@ -9,11 +9,16 @@ import {
 } from "@/lib/presets/backgrounds";
 import { cn } from "@/lib/utils";
 import { useCanvasManager } from "@/context/canvas-manager";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function SidebarBackground() {
   const manager = useCanvasManager();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [urlLoading, setUrlLoading] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   const applyImageFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -48,6 +53,34 @@ export function SidebarBackground() {
 
   const handleDragLeave = () => {
     setIsDragging(false);
+  };
+
+  const applyImageFromUrl = async () => {
+    const trimmed = imageUrl.trim();
+    if (!trimmed) return;
+
+    let parsed: URL;
+    try {
+      parsed = new URL(trimmed);
+      if (!/^https?:$/i.test(parsed.protocol)) {
+        setUrlError("Нужна ссылка http(s)");
+        return;
+      }
+    } catch {
+      setUrlError("Некорректная ссылка");
+      return;
+    }
+
+    setUrlError(null);
+    setUrlLoading(true);
+    try {
+      await manager?.setBackground({ type: "image", url: parsed.toString() });
+    } catch (err) {
+      console.error(err);
+      setUrlError("Не удалось загрузить изображение (CORS?)");
+    } finally {
+      setUrlLoading(false);
+    }
   };
 
   return (
@@ -98,6 +131,47 @@ export function SidebarBackground() {
               Перетащите файл или нажмите для выбора
             </span>
           </div>
+        </div>
+
+        <div className="mt-2.5 flex flex-col gap-1.5">
+          <p className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+            <Link2 className="w-3 h-3" />
+            По ссылке
+          </p>
+          <div className="flex gap-1.5">
+            <Input
+              type="url"
+              placeholder="https://…"
+              value={imageUrl}
+              onChange={(e) => {
+                setImageUrl(e.target.value);
+                setUrlError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void applyImageFromUrl();
+                }
+              }}
+              className="h-8 text-xs rounded-xl bg-muted/30 border-border/60"
+            />
+            <Button
+              type="button"
+              size="sm"
+              disabled={urlLoading || !imageUrl.trim()}
+              onClick={() => void applyImageFromUrl()}
+              className="h-8 px-3 rounded-xl shrink-0 text-xs"
+            >
+              {urlLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                "Применить"
+              )}
+            </Button>
+          </div>
+          {urlError && (
+            <p className="text-[10px] text-destructive">{urlError}</p>
+          )}
         </div>
       </section>
 

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 
@@ -15,44 +14,35 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createProject } from "@/actions/projects";
+import { useProject } from "@/hooks/use-project";
 
 interface NewProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId?: string;
 }
 
-export function NewProjectModal({
-  open,
-  onOpenChange,
-  userId: propsUserId,
-}: NewProjectModalProps) {
-  const router = useRouter();
-  const { data: session } = useSession();
+export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
+  const { status } = useSession();
+  const { newProject } = useProject();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const currentUserId = propsUserId || (session?.user as { id?: string })?.id;
 
   const handleCreate = async () => {
     if (!name.trim() || loading) return;
 
-    if (!currentUserId) {
+    if (status !== "authenticated") {
       alert("Сначала авторизуйтесь, чтобы создать проект");
       return;
     }
 
     setLoading(true);
+    const res = await newProject(name.trim());
 
-    const res = await createProject(currentUserId, name);
-
-    if (res.success && res.projectId) {
+    if (res.success) {
       setName("");
       onOpenChange(false);
-      router.push(`/?project=${res.projectId}`);
     } else {
-      alert(res.error || "Ошибка при создании");
+      alert("Ошибка при создании");
     }
 
     setLoading(false);
@@ -75,7 +65,7 @@ export function NewProjectModal({
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            onKeyDown={(e) => e.key === "Enter" && void handleCreate()}
             placeholder="Например: AI Tools Carousel"
             className="h-9 rounded-xl border-border/70 bg-muted/30 px-3 text-xs"
           />
@@ -94,7 +84,7 @@ export function NewProjectModal({
           <Button
             type="button"
             size="sm"
-            onClick={handleCreate}
+            onClick={() => void handleCreate()}
             disabled={!name.trim() || loading}
             className="h-7 rounded-full px-4 text-xs font-medium"
           >

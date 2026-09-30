@@ -1,34 +1,57 @@
-"use server"
+"use server";
 
-export async function fetchIconifySvg(iconName: string, color?: string): Promise<string | null> {
+/**
+ * Fetch an Iconify SVG and normalize it so Fabric can parse every collection
+ * (currentColor monochromes, multi-path solar icons, emoji sets, etc.).
+ */
+export async function fetchIconifySvg(
+  iconName: string,
+  color = "#000000",
+): Promise<string | null> {
   try {
     const [prefix, name] = iconName.split(":");
     if (!prefix || !name) return null;
 
-    let url = `https://api.iconify.design/${prefix}/${name}.svg`;
-    if (color) {
-      url += `?color=${encodeURIComponent(color)}`;
-    }
+    const url = `https://api.iconify.design/${prefix}/${name}.svg?height=128`;
 
     const response = await fetch(url, {
       method: "GET",
-      mode: "cors", // Явно указываем CORS-режим
       headers: {
         Accept: "image/svg+xml, text/plain, */*",
       },
+      next: { revalidate: 86400 },
     });
 
     if (!response.ok) {
-      console.error(`Ошибка Iconify HTTP: ${response.status}`);
+      console.error(`Iconify HTTP ${response.status} for ${iconName}`);
       return null;
     }
 
-    const svgText = await response.text();
+    let svgText = await response.text();
 
-    // Проверка, что пришел именно SVG, а не HTML-страница ошибки
     if (!svgText.includes("<svg")) {
-      console.error("Ответ не является корректным SVG");
+      console.error("Iconify response is not SVG:", iconName);
       return null;
+    }
+
+    // Ensure root has xmlns (some parsers need it).
+    if (!svgText.includes("xmlns=")) {
+      svgText = svgText.replace(
+        "<svg",
+        '<svg xmlns="http://www.w3.org/2000/svg"',
+      );
+    }
+
+    // Replace currentColor so monochrome icons are visible on the canvas.
+    svgText = svgText
+      .replace(/currentColor/gi, color)
+      .replace(/fill="none"/gi, 'fill="none"') // keep intentional none
+      ;
+
+    // Paths without fill inherit currentColor in browsers but Fabric often
+    // leaves them empty — give a default fill when missing.
+    if (!/fill=/i.test(svgText) && !/<style/i.test(svgText)) {
+      svgText = svgText.replace("<svg", `<svg fill="${color}"`);
     }
 
     return svgText;

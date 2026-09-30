@@ -1,0 +1,112 @@
+"use client";
+
+import React, { useRef } from "react";
+import { UploadCloud, X, ImageIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useCanvasStore } from "@/store/useCanvasStore";
+import { cn } from "@/lib/utils";
+
+/** Side panel opened from the split-screen toolbar button — load a reference image. */
+export function ReferencePanel() {
+  const isOpen = useCanvasStore((s) => s.isReferenceOpen);
+  const imageUrl = useCanvasStore((s) => s.referenceImageUrl);
+  const setOpen = useCanvasStore((s) => s.setReferenceOpen);
+  const setImageUrl = useCanvasStore((s) => s.setReferenceImageUrl);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  if (!isOpen) return null;
+
+  const onFile = (file: File | undefined) => {
+    if (!file?.type.startsWith("image/")) return;
+    if (imageUrl?.startsWith("blob:")) URL.revokeObjectURL(imageUrl);
+    setImageUrl(URL.createObjectURL(file));
+  };
+
+  return (
+    <aside
+      className={cn(
+        "flex w-lg shrink-0 flex-col border-l border-border/50 bg-background/80 backdrop-blur-md",
+      )}
+    >
+      <div className="flex h-10 items-center justify-between px-3 border-b border-border/40">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Reference
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-full"
+          onClick={() => setOpen(false)}
+          title="Закрыть"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-3 min-h-0">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            onFile(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+
+        {imageUrl ? (
+          <div className="relative flex-1 min-h-[160px] rounded-xl overflow-hidden border border-border/50 bg-muted/30">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageUrl}
+              alt="Reference"
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+            <div className="absolute bottom-2 right-2 flex gap-1">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-7 text-[10px] rounded-lg"
+                onClick={() => fileRef.current?.click()}
+              >
+                Заменить
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-7 text-[10px] rounded-lg"
+                onClick={() => {
+                  if (imageUrl.startsWith("blob:")) URL.revokeObjectURL(imageUrl);
+                  setImageUrl(null);
+                }}
+              >
+                Убрать
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              onFile(e.dataTransfer.files?.[0]);
+            }}
+            className="flex flex-1 min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/80 bg-muted/20 px-3 text-center hover:bg-muted/40 hover:border-primary/40 transition-colors"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-background shadow-xs">
+              <UploadCloud className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="space-y-0.5">
+              <p className="text-[10px] text-muted-foreground">
+                Перетащите картинку или выберите файл
+              </p>
+            </div>
+          </button>
+        )}
+      </div>
+    </aside>
+  );
+}

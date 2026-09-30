@@ -33,6 +33,7 @@ export function createEditor(element: HTMLCanvasElement, store: EditorStore): Ed
     manager,
     slides,
     dispose: () => {
+      slides.dispose();
       unsubscribers.forEach((unsubscribe) => unsubscribe());
       store.getState().setSelectedObject(null);
       manager.dispose();
