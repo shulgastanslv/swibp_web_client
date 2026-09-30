@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Grid3X3,
   SplitSquareVertical,
   ZoomIn,
   ZoomOut,
@@ -14,6 +13,7 @@ import {
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { CANVAS_RATIOS, type RatioKey } from "@/lib/types";
 import { useCanvasManager } from "@/context/canvas-manager";
+import { GridControls } from "@/components/canvas/grid-controls";
 
 const QUICK_RATIOS: { ratio: RatioKey; iconClass: string }[] = [
   { ratio: "4:5", iconClass: "w-2.5 h-3" },
@@ -28,8 +28,6 @@ export function CanvasToolbar() {
   const currentRatio = useCanvasStore((s) => s.currentRatio);
   const setCurrentRatio = useCanvasStore((s) => s.setCurrentRatio);
   const setCanvasDimensions = useCanvasStore((s) => s.setCanvasDimensions);
-  const isGridVisible = useCanvasStore((s) => s.isGridVisible);
-  const toggleGrid = useCanvasStore((s) => s.toggleGrid);
   const zoom = useCanvasStore((s) => s.zoom);
   const setZoom = useCanvasStore((s) => s.setZoom);
   const isReferenceOpen = useCanvasStore((s) => s.isReferenceOpen);
@@ -44,15 +42,6 @@ export function CanvasToolbar() {
 
     setCanvasDimensions(dimensions);
     setCurrentRatio(ratio);
-  };
-
-  const handleToggleGrid = () => {
-    const next = !isGridVisible;
-    const { gridSize, gridColor } = useCanvasStore.getState();
-    manager?.grid.setGridSize(gridSize);
-    manager?.grid.setGridColor(gridColor);
-    manager?.grid.setVisible(next);
-    toggleGrid();
   };
 
   const handleCopyJSON = async () => {
@@ -84,16 +73,18 @@ export function CanvasToolbar() {
                 key={ratio}
                 type="button"
                 onClick={() => handleRatioChange(ratio)}
-                className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-full transition-all duration-150 ${isActive
-                  ? "bg-background text-foreground shadow-xs font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-medium"
-                  }`}
+                className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-full transition-all duration-150 ${
+                  isActive
+                    ? "bg-background text-foreground shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-medium"
+                }`}
               >
                 <span
-                  className={`rounded-[2px] border ${iconClass} transition-colors ${isActive
-                    ? "border-foreground bg-foreground/20"
-                    : "border-muted-foreground/60"
-                    }`}
+                  className={`rounded-[2px] border ${iconClass} transition-colors ${
+                    isActive
+                      ? "border-foreground bg-foreground/20"
+                      : "border-muted-foreground/60"
+                  }`}
                 />
                 {ratio}
               </button>
@@ -103,28 +94,18 @@ export function CanvasToolbar() {
 
         <div className="h-4 w-px bg-border/60 mx-1" />
 
+        <GridControls />
+
         <div className="flex items-center bg-muted/50 p-0.5 rounded-full">
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleToggleGrid}
-            className={`h-8 w-8 rounded-full transition-colors ${isGridVisible
-              ? "bg-background text-foreground shadow-2xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-              }`}
-            title={isGridVisible ? "Hide grid" : "Show grid"}
-          >
-            <Grid3X3 className="w-3.5 h-3.5" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
             onClick={toggleReferenceOpen}
-            className={`h-8 w-8 rounded-full transition-colors ${isReferenceOpen
-              ? "bg-background text-foreground shadow-2xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-              }`}
+            className={`h-8 w-8 rounded-full transition-colors ${
+              isReferenceOpen
+                ? "bg-background text-foreground shadow-2xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+            }`}
             title="Split: reference panel"
           >
             <SplitSquareVertical className="w-3.5 h-3.5" />
@@ -134,10 +115,11 @@ export function CanvasToolbar() {
             variant="ghost"
             size="sm"
             onClick={toggleAutoFlow}
-            className={`h-8 px-2 text-xs gap-1 rounded-full transition-colors ${autoFlowEnabled
-              ? "bg-background text-foreground shadow-2xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-              }`}
+            className={`h-8 px-2 text-xs gap-1 rounded-full transition-colors ${
+              autoFlowEnabled
+                ? "bg-background text-foreground shadow-2xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+            }`}
             title={
               autoFlowEnabled
                 ? "Auto Flow: on — предложит новый слайд при выходе за край"

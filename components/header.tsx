@@ -202,8 +202,6 @@ export function Header({ onPreview }: HeaderProps) {
             </Button>
           </div>
           <CommandsKbd />
-          <div className="h-4 w-px bg-border/60 mx-0.5 hidden sm:block" />
-
           <Button
             variant="ghost"
             size="icon"
@@ -213,18 +211,8 @@ export function Header({ onPreview }: HeaderProps) {
           >
             <BookOpen className="w-3.5 h-3.5" />
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onPreview}
-            className="h-8 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
-          >
-            <Layers2 className="w-3 h-3 fill-current text-muted-foreground" />
-            <span className="hidden sm:inline">Preview</span>
-          </Button>
-        </div>
+          <div className="h-4 w-px bg-border/60 mx-0.5 hidden sm:block" />
 
-        <div className="flex items-center gap-1">
           <Button
             variant={isDirty ? "default" : "secondary"}
             size="sm"
@@ -240,6 +228,19 @@ export function Header({ onPreview }: HeaderProps) {
             )}
             <span className="hidden sm:inline">Save</span>
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onPreview}
+            className="h-8 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
+          >
+            <Layers2 className="w-3 h-3 fill-current text-muted-foreground" />
+            <span className="hidden sm:inline">Preview</span>
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-1">
+         
           <Button
             variant="ghost"
             onClick={() => setShowShare(true)}
@@ -280,6 +281,47 @@ export function Header({ onPreview }: HeaderProps) {
             <Globe className="w-3.5 h-3.5" />
             <span>Publish</span>
           </Button>
+
+
+          <div className="flex items-center h-7 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full pl-2.5 pr-0.5 shadow-2xs transition-all gap-1">
+            <button
+              type="button"
+              onClick={() => setShowExport(true)}
+              className="flex items-center gap-1.5 text-xs font-medium hover:opacity-90 transition-opacity"
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+              <span>Export</span>
+              <span className="text-[11px] font-normal text-primary-foreground/70">
+                [{slideCount}] · PNG
+              </span>
+            </button>
+            <button
+              type="button"
+              title="Copy current slide"
+              onClick={() => void handleCopySlide()}
+              disabled={copying}
+              className="h-6 w-6 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground flex items-center justify-center transition-colors active:scale-95 disabled:opacity-60"
+            >
+              {copying ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : copied ? (
+                <Check className="w-3 h-3" />
+              ) : (
+                <Copy className="w-3 h-3" />
+              )}
+            </button>
+            <button
+              type="button"
+              title="Export settings"
+              onClick={() => setShowExport(true)}
+              className="h-6 w-6 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground flex items-center justify-center transition-colors active:scale-95"
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="h-4 w-px bg-border/60 mx-0.5" />
+
 
           {status === "authenticated" ? (
             <DropdownMenu>
@@ -379,44 +421,7 @@ export function Header({ onPreview }: HeaderProps) {
             </DropdownMenu>
           )}
 
-          <div className="h-4 w-px bg-border/60 mx-0.5" />
 
-          <div className="flex items-center h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full pl-2.5 pr-0.5 shadow-2xs transition-all gap-1">
-            <button
-              type="button"
-              onClick={() => setShowExport(true)}
-              className="flex items-center gap-1.5 text-xs font-medium hover:opacity-90 transition-opacity"
-            >
-              <ArrowUp className="w-3.5 h-3.5" />
-              <span>Export</span>
-              <span className="text-[11px] font-normal text-primary-foreground/70">
-                [{slideCount}] · PNG
-              </span>
-            </button>
-            <button
-              type="button"
-              title="Copy current slide"
-              onClick={() => void handleCopySlide()}
-              disabled={copying}
-              className="h-6 w-6 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground flex items-center justify-center transition-colors active:scale-95 disabled:opacity-60"
-            >
-              {copying ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : copied ? (
-                <Check className="w-3 h-3" />
-              ) : (
-                <Copy className="w-3 h-3" />
-              )}
-            </button>
-            <button
-              type="button"
-              title="Export settings"
-              onClick={() => setShowExport(true)}
-              className="h-6 w-6 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground flex items-center justify-center transition-colors active:scale-95"
-            >
-              <SlidersHorizontal className="w-3 h-3" />
-            </button>
-          </div>
         </div>
       </header>
 

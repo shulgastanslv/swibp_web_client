@@ -16,7 +16,7 @@ export class ImportExportManager {
     this.canvas = canvas;
   }
 
-  async addSVG(svgContent: string) {
+  async addSVG(svgContent: string, options?: { maxSize?: number }) {
     const result = await loadSVGFromString(svgContent);
     const objects = (result.objects ?? []).filter(
       (o): o is FabricObject => o != null,
@@ -39,9 +39,10 @@ export class ImportExportManager {
       originY: "center",
     });
 
+    const maxSize = options?.maxSize ?? 120;
     const scale = Math.min(
-      120 / (target.width || 1),
-      120 / (target.height || 1),
+      maxSize / (target.width || 1),
+      maxSize / (target.height || 1),
       1,
     );
     target.scale(scale);

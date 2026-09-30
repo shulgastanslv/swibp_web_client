@@ -1,5 +1,14 @@
-import { Canvas, Line, Group, Object as FabricObject, Point } from "fabric";
+import {
+  Canvas,
+  Line,
+  Rect,
+  Pattern,
+  Object as FabricObject,
+  Point,
+} from "fabric";
 import { LayoutManager } from "./layouts";
+
+export type GridStyle = "lines" | "dots";
 
 type Bounds = {
   left: number;
@@ -12,16 +21,28 @@ type Bounds = {
   centerY: number;
 };
 
+export interface GridSettings {
+  size: number;
+  color: string;
+  opacity: number;
+  style: GridStyle;
+  snapToGrid: boolean;
+}
+
 /**
  * Visual grid + smart guides.
  * Hold Ctrl/⌘ while dragging to snap to canvas center, edges, and other objects.
+ * When snapToGrid is on and the grid is visible, objects also snap to the grid.
  */
 export class GridManager {
   private canvas: Canvas;
   public isGridVisible = false;
-  private gridSize = 50;
-  private gridColor = "rgba(128,128,128,0.15)";
-  private gridGroup: Group | null = null;
+  private gridSize = 20;
+  private gridColor = "#000000";
+  private gridOpacity = 0.12;
+  private gridStyle: GridStyle = "lines";
+  private snapToGrid = true;
+  private gridOverlay: Rect | null = null;
   private guideLines: Line[] = [];
   private snapThreshold = 8;
   private layoutManager: LayoutManager | null = null;
@@ -67,14 +88,35 @@ export class GridManager {
     this.layoutManager = manager;
   }
 
-  public setGridSize(size: number) {
-    this.gridSize = Math.max(4, size);
+  public applySettings(settings: Partial<GridSettings>) {
+    if (settings.size != null) this.gridSize = Math.max(4, Math.round(settings.size));
+    if (settings.color != null) this.gridColor = settings.color;
+    if (settings.opacity != null) {
+      this.gridOpacity = Math.min(1, Math.max(0, settings.opacity));
+    }
+    if (settings.style != null) this.gridStyle = settings.style;
+    if (settings.snapToGrid != null) this.snapToGrid = settings.snapToGrid;
     if (this.isGridVisible) this.refreshGrid();
   }
 
+  public setGridSize(size: number) {
+    this.applySettings({ size });
+  }
+
   public setGridColor(color: string) {
-    this.gridColor = color;
-    if (this.isGridVisible) this.refreshGrid();
+    this.applySettings({ color });
+  }
+
+  public setGridOpacity(opacity: number) {
+    this.applySettings({ opacity });
+  }
+
+  public setGridStyle(style: GridStyle) {
+    this.applySettings({ style });
+  }
+
+  public setSnapToGrid(enabled: boolean) {
+    this.snapToGrid = enabled;
   }
 
   public setSnapThreshold(px: number) {
@@ -96,16 +138,16 @@ export class GridManager {
     else this.hideGrid();
   }
 
-  /** Canvas content was replaced (loadFromJSON/clear) and the grid group is gone. */
+  /** Canvas content was replaced (loadFromJSON/clear) and the grid overlay is gone. */
   public redraw() {
     if (this.isGridVisible) this.refreshGrid();
   }
 
   public hideGrid() {
     this.isGridVisible = false;
-    if (this.gridGroup) {
-      this.canvas.remove(this.gridGroup);
-      this.gridGroup = null;
+    if (this.gridOverlay) {
+      this.canvas.remove(this.gridOverlay);
+      this.gridOverlay = null;
     }
     this.canvas.requestRenderAll();
   }
@@ -157,50 +199,82 @@ export class GridManager {
   }
 
   private isSnapTarget(obj: FabricObject): boolean {
-    if (obj === this.gridGroup) return false;
+    if (obj === this.gridOverlay) return false;
     if (obj.excludeFromExport) return false;
     if (obj.selectable === false && obj.evented === false) return false;
     return true;
   }
 
+  private resolvedColor(): string {
+    const hex = this.gridColor.replace("#", "");
+    const full =
+      hex.length === 3
+        ? hex
+            .split("")
+            .map((c) => c + c)
+            .join("")
+        : hex.slice(0, 6);
+    const r = parseInt(full.slice(0, 2), 16) || 0;
+    const g = parseInt(full.slice(2, 4), 16) || 0;
+    const b = parseInt(full.slice(4, 6), 16) || 0;
+    return `rgba(${r},${g},${b},${this.gridOpacity})`;
+  }
+
+  private createPatternSource(): HTMLCanvasElement {
+    const size = Math.max(4, this.gridSize);
+    const tile = document.createElement("canvas");
+    tile.width = size;
+    tile.height = size;
+    const ctx = tile.getContext("2d");
+    if (!ctx) return tile;
+
+    const color = this.resolvedColor();
+
+    if (this.gridStyle === "dots") {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(0.5, 0.5, 1.15, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, 0.5);
+      ctx.lineTo(size, 0.5);
+      ctx.moveTo(0.5, 0);
+      ctx.lineTo(0.5, size);
+      ctx.stroke();
+    }
+
+    return tile;
+  }
+
   private refreshGrid() {
-    if (this.gridGroup) {
-      this.canvas.remove(this.gridGroup);
-      this.gridGroup = null;
+    if (this.gridOverlay) {
+      this.canvas.remove(this.gridOverlay);
+      this.gridOverlay = null;
     }
 
     const { width, height } = this.getLogicalSize();
-    const lines: Line[] = [];
+    const pattern = new Pattern({
+      source: this.createPatternSource(),
+      repeat: "repeat",
+    });
 
-    for (let x = 0; x <= width; x += this.gridSize) {
-      lines.push(
-        new Line([x, 0, x, height], {
-          stroke: this.gridColor,
-          strokeWidth: 1 / (this.canvas.getZoom() || 1),
-          selectable: false,
-          evented: false,
-        }),
-      );
-    }
-    for (let y = 0; y <= height; y += this.gridSize) {
-      lines.push(
-        new Line([0, y, width, y], {
-          stroke: this.gridColor,
-          strokeWidth: 1 / (this.canvas.getZoom() || 1),
-          selectable: false,
-          evented: false,
-        }),
-      );
-    }
-
-    this.gridGroup = new Group(lines, {
+    this.gridOverlay = new Rect({
+      left: 0,
+      top: 0,
+      width,
+      height,
+      fill: pattern,
       selectable: false,
       evented: false,
       excludeFromExport: true,
       objectCaching: false,
     });
-    this.canvas.add(this.gridGroup);
-    this.canvas.sendObjectToBack(this.gridGroup);
+
+    this.canvas.add(this.gridOverlay);
+    this.canvas.sendObjectToBack(this.gridOverlay);
     this.canvas.requestRenderAll();
   }
 
@@ -209,23 +283,31 @@ export class GridManager {
       const obj = e.target;
       if (!obj || obj.excludeFromExport) return;
 
-      const fromEvent = !!(e.e && ((e.e as MouseEvent).ctrlKey || (e.e as MouseEvent).metaKey));
-      const active = this.ctrlHeld || fromEvent;
+      const fromEvent = !!(
+        e.e &&
+        ((e.e as MouseEvent).ctrlKey || (e.e as MouseEvent).metaKey)
+      );
+      const guidesActive = this.ctrlHeld || fromEvent;
+      const gridSnapActive = this.snapToGrid && this.isGridVisible;
 
-      if (!active) {
+      if (!guidesActive && !gridSnapActive) {
         this.clearGuides();
         return;
       }
 
       this.clearGuides();
-      this.snapWhileMoving(obj);
+      this.snapWhileMoving(obj, guidesActive, gridSnapActive);
     });
 
     this.canvas.on("mouse:up", () => this.clearGuides());
     this.canvas.on("selection:cleared", () => this.clearGuides());
   }
 
-  private snapWhileMoving(obj: FabricObject) {
+  private snapWhileMoving(
+    obj: FabricObject,
+    guidesActive: boolean,
+    gridSnapActive: boolean,
+  ) {
     const { width, height, zoom } = this.getLogicalSize();
     const threshold = this.snapThreshold / zoom;
     let bounds = this.getBounds(obj);
@@ -235,127 +317,175 @@ export class GridManager {
     let snappedX = false;
     let snappedY = false;
 
-    // ── Canvas center ─────────────────────────────────────────────
-    const canvasCX = width / 2;
-    const canvasCY = height / 2;
+    if (guidesActive) {
+      const canvasCX = width / 2;
+      const canvasCY = height / 2;
 
-    if (Math.abs(bounds.centerX - canvasCX) < threshold) {
-      nextCX = canvasCX;
-      snappedX = true;
-      this.drawVerticalGuide(canvasCX);
-    }
-    if (Math.abs(bounds.centerY - canvasCY) < threshold) {
-      nextCY = canvasCY;
-      snappedY = true;
-      this.drawHorizontalGuide(canvasCY);
-    }
-
-    // ── Canvas edges ──────────────────────────────────────────────
-    if (!snappedX) {
-      if (Math.abs(bounds.left) < threshold) {
-        nextCX = bounds.width / 2;
+      if (Math.abs(bounds.centerX - canvasCX) < threshold) {
+        nextCX = canvasCX;
         snappedX = true;
-        this.drawVerticalGuide(0);
-      } else if (Math.abs(bounds.right - width) < threshold) {
-        nextCX = width - bounds.width / 2;
-        snappedX = true;
-        this.drawVerticalGuide(width);
+        this.drawVerticalGuide(canvasCX);
       }
-    }
-    if (!snappedY) {
-      if (Math.abs(bounds.top) < threshold) {
-        nextCY = bounds.height / 2;
+      if (Math.abs(bounds.centerY - canvasCY) < threshold) {
+        nextCY = canvasCY;
         snappedY = true;
-        this.drawHorizontalGuide(0);
-      } else if (Math.abs(bounds.bottom - height) < threshold) {
-        nextCY = height - bounds.height / 2;
-        snappedY = true;
-        this.drawHorizontalGuide(height);
+        this.drawHorizontalGuide(canvasCY);
       }
-    }
-
-    // ── Other objects ─────────────────────────────────────────────
-    const others = this.canvas.getObjects().filter((o) => o !== obj && this.isSnapTarget(o));
-
-    for (const other of others) {
-      const o = this.getBounds(other);
 
       if (!snappedX) {
-        if (Math.abs(bounds.centerX - o.centerX) < threshold) {
-          nextCX = o.centerX;
+        if (Math.abs(bounds.left) < threshold) {
+          nextCX = bounds.width / 2;
           snappedX = true;
-          this.drawVerticalGuide(o.centerX);
-        } else if (Math.abs(bounds.left - o.left) < threshold) {
-          nextCX = o.left + bounds.width / 2;
+          this.drawVerticalGuide(0);
+        } else if (Math.abs(bounds.right - width) < threshold) {
+          nextCX = width - bounds.width / 2;
           snappedX = true;
-          this.drawVerticalGuide(o.left);
-        } else if (Math.abs(bounds.right - o.right) < threshold) {
-          nextCX = o.right - bounds.width / 2;
+          this.drawVerticalGuide(width);
+        }
+      }
+      if (!snappedY) {
+        if (Math.abs(bounds.top) < threshold) {
+          nextCY = bounds.height / 2;
+          snappedY = true;
+          this.drawHorizontalGuide(0);
+        } else if (Math.abs(bounds.bottom - height) < threshold) {
+          nextCY = height - bounds.height / 2;
+          snappedY = true;
+          this.drawHorizontalGuide(height);
+        }
+      }
+
+      const others = this.canvas
+        .getObjects()
+        .filter((o) => o !== obj && this.isSnapTarget(o));
+
+      for (const other of others) {
+        const o = this.getBounds(other);
+
+        if (!snappedX) {
+          if (Math.abs(bounds.centerX - o.centerX) < threshold) {
+            nextCX = o.centerX;
+            snappedX = true;
+            this.drawVerticalGuide(o.centerX);
+          } else if (Math.abs(bounds.left - o.left) < threshold) {
+            nextCX = o.left + bounds.width / 2;
+            snappedX = true;
+            this.drawVerticalGuide(o.left);
+          } else if (Math.abs(bounds.right - o.right) < threshold) {
+            nextCX = o.right - bounds.width / 2;
+            snappedX = true;
+            this.drawVerticalGuide(o.right);
+          } else if (Math.abs(bounds.left - o.right) < threshold) {
+            nextCX = o.right + bounds.width / 2;
+            snappedX = true;
+            this.drawVerticalGuide(o.right);
+          } else if (Math.abs(bounds.right - o.left) < threshold) {
+            nextCX = o.left - bounds.width / 2;
+            snappedX = true;
+            this.drawVerticalGuide(o.left);
+          }
+        }
+
+        if (!snappedY) {
+          if (Math.abs(bounds.centerY - o.centerY) < threshold) {
+            nextCY = o.centerY;
+            snappedY = true;
+            this.drawHorizontalGuide(o.centerY);
+          } else if (Math.abs(bounds.top - o.top) < threshold) {
+            nextCY = o.top + bounds.height / 2;
+            snappedY = true;
+            this.drawHorizontalGuide(o.top);
+          } else if (Math.abs(bounds.bottom - o.bottom) < threshold) {
+            nextCY = o.bottom - bounds.height / 2;
+            snappedY = true;
+            this.drawHorizontalGuide(o.bottom);
+          } else if (Math.abs(bounds.top - o.bottom) < threshold) {
+            nextCY = o.bottom + bounds.height / 2;
+            snappedY = true;
+            this.drawHorizontalGuide(o.bottom);
+          } else if (Math.abs(bounds.bottom - o.top) < threshold) {
+            nextCY = o.top - bounds.height / 2;
+            snappedY = true;
+            this.drawHorizontalGuide(o.top);
+          }
+        }
+      }
+
+      if (this.layoutManager?.getIsLayoutActive()) {
+        const result = this.snapToLayoutFrames(
+          obj,
+          bounds,
+          threshold,
+          nextCX,
+          nextCY,
+          snappedX,
+          snappedY,
+        );
+        nextCX = result.nextCX;
+        nextCY = result.nextCY;
+        snappedX = result.snappedX;
+        snappedY = result.snappedY;
+      }
+    }
+
+    if (gridSnapActive) {
+      bounds = {
+        ...this.getBounds(obj),
+        // Use tentative center if we already snapped via guides
+        centerX: snappedX ? nextCX : this.getBounds(obj).centerX,
+        centerY: snappedY ? nextCY : this.getBounds(obj).centerY,
+      };
+      // Recompute edges from tentative center
+      bounds.left = nextCX - bounds.width / 2;
+      bounds.right = nextCX + bounds.width / 2;
+      bounds.top = nextCY - bounds.height / 2;
+      bounds.bottom = nextCY + bounds.height / 2;
+      bounds.centerX = nextCX;
+      bounds.centerY = nextCY;
+
+      if (!snappedX) {
+        const leftGrid = Math.round(bounds.left / this.gridSize) * this.gridSize;
+        const centerGrid =
+          Math.round(bounds.centerX / this.gridSize) * this.gridSize;
+        const rightGrid =
+          Math.round(bounds.right / this.gridSize) * this.gridSize;
+
+        if (Math.abs(bounds.left - leftGrid) < threshold) {
+          nextCX = leftGrid + bounds.width / 2;
           snappedX = true;
-          this.drawVerticalGuide(o.right);
-        } else if (Math.abs(bounds.left - o.right) < threshold) {
-          nextCX = o.right + bounds.width / 2;
+          this.drawVerticalGuide(leftGrid);
+        } else if (Math.abs(bounds.centerX - centerGrid) < threshold) {
+          nextCX = centerGrid;
           snappedX = true;
-          this.drawVerticalGuide(o.right);
-        } else if (Math.abs(bounds.right - o.left) < threshold) {
-          nextCX = o.left - bounds.width / 2;
+          this.drawVerticalGuide(centerGrid);
+        } else if (Math.abs(bounds.right - rightGrid) < threshold) {
+          nextCX = rightGrid - bounds.width / 2;
           snappedX = true;
-          this.drawVerticalGuide(o.left);
+          this.drawVerticalGuide(rightGrid);
         }
       }
 
       if (!snappedY) {
-        if (Math.abs(bounds.centerY - o.centerY) < threshold) {
-          nextCY = o.centerY;
-          snappedY = true;
-          this.drawHorizontalGuide(o.centerY);
-        } else if (Math.abs(bounds.top - o.top) < threshold) {
-          nextCY = o.top + bounds.height / 2;
-          snappedY = true;
-          this.drawHorizontalGuide(o.top);
-        } else if (Math.abs(bounds.bottom - o.bottom) < threshold) {
-          nextCY = o.bottom - bounds.height / 2;
-          snappedY = true;
-          this.drawHorizontalGuide(o.bottom);
-        } else if (Math.abs(bounds.top - o.bottom) < threshold) {
-          nextCY = o.bottom + bounds.height / 2;
-          snappedY = true;
-          this.drawHorizontalGuide(o.bottom);
-        } else if (Math.abs(bounds.bottom - o.top) < threshold) {
-          nextCY = o.top - bounds.height / 2;
-          snappedY = true;
-          this.drawHorizontalGuide(o.top);
-        }
-      }
-    }
+        const topGrid = Math.round(bounds.top / this.gridSize) * this.gridSize;
+        const centerGrid =
+          Math.round(bounds.centerY / this.gridSize) * this.gridSize;
+        const bottomGrid =
+          Math.round(bounds.bottom / this.gridSize) * this.gridSize;
 
-    // ── Grid lines (when visible) ─────────────────────────────────
-    if (this.isGridVisible) {
-      if (!snappedX) {
-        const gx = Math.round(bounds.centerX / this.gridSize) * this.gridSize;
-        if (Math.abs(bounds.centerX - gx) < threshold) {
-          nextCX = gx;
-          snappedX = true;
-          this.drawVerticalGuide(gx);
-        }
-      }
-      if (!snappedY) {
-        const gy = Math.round(bounds.centerY / this.gridSize) * this.gridSize;
-        if (Math.abs(bounds.centerY - gy) < threshold) {
-          nextCY = gy;
+        if (Math.abs(bounds.top - topGrid) < threshold) {
+          nextCY = topGrid + bounds.height / 2;
           snappedY = true;
-          this.drawHorizontalGuide(gy);
+          this.drawHorizontalGuide(topGrid);
+        } else if (Math.abs(bounds.centerY - centerGrid) < threshold) {
+          nextCY = centerGrid;
+          snappedY = true;
+          this.drawHorizontalGuide(centerGrid);
+        } else if (Math.abs(bounds.bottom - bottomGrid) < threshold) {
+          nextCY = bottomGrid - bounds.height / 2;
+          snappedY = true;
+          this.drawHorizontalGuide(bottomGrid);
         }
       }
-    }
-
-    // ── Layout frames ─────────────────────────────────────────────
-    if (this.layoutManager?.getIsLayoutActive()) {
-      const result = this.snapToLayoutFrames(obj, bounds, threshold, nextCX, nextCY, snappedX, snappedY);
-      nextCX = result.nextCX;
-      nextCY = result.nextCY;
-      snappedX = result.snappedX;
-      snappedY = result.snappedY;
     }
 
     if (snappedX || snappedY) {

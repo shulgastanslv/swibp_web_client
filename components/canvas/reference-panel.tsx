@@ -56,7 +56,7 @@ export function ReferencePanel() {
         />
 
         {imageUrl ? (
-          <div className="relative flex-1 min-h-[160px] rounded-xl overflow-hidden border border-border/50 bg-muted/30">
+          <div className="relative flex-1 min-h-[160px] rounded-xl overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
@@ -94,9 +94,9 @@ export function ReferencePanel() {
               e.preventDefault();
               onFile(e.dataTransfer.files?.[0]);
             }}
-            className="flex flex-1 min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/80 bg-muted/20 px-3 text-center hover:bg-muted/40 hover:border-primary/40 transition-colors"
+            className="flex flex-1 min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl  transition-colors"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-background shadow-xs">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted/30 shadow-xs hover:scale-105 transition-transform cursor-pointer">
               <UploadCloud className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="space-y-0.5">

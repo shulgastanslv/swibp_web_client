@@ -213,9 +213,9 @@ export function SidebarBackground() {
 
       <section>
         <p className="mb-2 text-[11px] font-medium text-muted-foreground">
-          Линейные градиенты
+           Градиенты
         </p>
-        <div className="grid grid-cols-6 gap-1.5">
+        <div className="grid grid-cols-8 gap-1.5">
           {GRADIENT_PRESETS.map((g, i) => (
             <button
               key={i}
@@ -231,31 +231,6 @@ export function SidebarBackground() {
                 background: `linear-gradient(135deg, ${g.colors[0]}, ${g.colors[1]})`,
               }}
               aria-label={`Градиент ${i + 1}`}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <p className="mb-2 text-[11px] font-medium text-muted-foreground">
-          Радиальные градиенты
-        </p>
-        <div className="grid grid-cols-6 gap-1.5">
-          {RADIAL_PRESETS.map((r, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() =>
-                void manager?.setBackground({
-                  type: "gradient",
-                  colors: r.colors as [string, string],
-                })
-              }
-              className="aspect-square rounded-full border border-border/30 shadow-xs hover:scale-105 hover:ring-2 hover:ring-primary/40 transition-all cursor-pointer focus-visible:outline-hidden"
-              style={{
-                background: `radial-gradient(circle at center, ${r.colors[0]}, ${r.colors[1]})`,
-              }}
-              aria-label={`Радиальный градиент ${i + 1}`}
             />
           ))}
         </div>

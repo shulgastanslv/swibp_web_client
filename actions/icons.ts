@@ -1,8 +1,9 @@
 "use server";
 
 /**
- * Fetch an Iconify SVG and normalize it so Fabric can parse every collection
- * (currentColor monochromes, multi-path solar icons, emoji sets, etc.).
+ * @deprecated Prefer client-side `lib/icons/fetch-svg.ts` — Iconify JSON API
+ * is more reliable in the browser and avoids Server Action round-trips.
+ * Kept for any older callers.
  */
 export async function fetchIconifySvg(
   iconName: string,
@@ -12,13 +13,8 @@ export async function fetchIconifySvg(
     const [prefix, name] = iconName.split(":");
     if (!prefix || !name) return null;
 
-    const url = `https://api.iconify.design/${prefix}/${name}.svg?height=128`;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "image/svg+xml, text/plain, */*",
-      },
+    const dataUrl = `https://api.iconify.design/${prefix}.json?icons=${encodeURIComponent(name)}`;
+    const response = await fetch(dataUrl, {
       next: { revalidate: 86400 },
     });
 
@@ -27,34 +23,24 @@ export async function fetchIconifySvg(
       return null;
     }
 
-    let svgText = await response.text();
+    const data = (await response.json()) as {
+      width?: number;
+      height?: number;
+      icons?: Record<string, { body?: string; width?: number; height?: number }>;
+    };
 
-    if (!svgText.includes("<svg")) {
-      console.error("Iconify response is not SVG:", iconName);
+    const icon = data.icons?.[name];
+    const body = icon?.body?.trim();
+    if (!body) {
+      console.error("Пустой SVG для", iconName);
       return null;
     }
 
-    // Ensure root has xmlns (some parsers need it).
-    if (!svgText.includes("xmlns=")) {
-      svgText = svgText.replace(
-        "<svg",
-        '<svg xmlns="http://www.w3.org/2000/svg"',
-      );
-    }
+    const width = icon?.width ?? data.width ?? 24;
+    const height = icon?.height ?? data.height ?? 24;
+    const painted = body.replace(/currentColor/gi, color);
 
-    // Replace currentColor so monochrome icons are visible on the canvas.
-    svgText = svgText
-      .replace(/currentColor/gi, color)
-      .replace(/fill="none"/gi, 'fill="none"') // keep intentional none
-      ;
-
-    // Paths without fill inherit currentColor in browsers but Fabric often
-    // leaves them empty — give a default fill when missing.
-    if (!/fill=/i.test(svgText) && !/<style/i.test(svgText)) {
-      svgText = svgText.replace("<svg", `<svg fill="${color}"`);
-    }
-
-    return svgText;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" fill="${color}">${painted}</svg>`;
   } catch (error) {
     console.error("Ошибка загрузки SVG из Iconify:", error);
     return null;

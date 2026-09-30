@@ -212,7 +212,7 @@ export function SidebarProjects() {
                       <Loader2 className="h-4 w-4 animate-spin" />
                     </div>
                   )}
-                  <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5">
+                  <div className="absolute top-1.5 left-1.5 flex items-start gap-0.5">
                     <button
                       type="button"
                       onClick={(e) => void handleToggleSave(e, p.id)}
@@ -227,7 +227,6 @@ export function SidebarProjects() {
                       />
                     </button>
                     <div
-                      className="rounded-full bg-background/80"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <ProjectActionsDropdown

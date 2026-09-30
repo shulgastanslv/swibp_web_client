@@ -46,4 +46,7 @@ export interface EditorUIState {
   isGridVisible: boolean;
   gridSize: number;
   gridColor: string;
+  gridOpacity: number;
+  gridStyle: "lines" | "dots";
+  snapToGrid: boolean;
 }
