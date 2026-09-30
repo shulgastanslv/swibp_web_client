@@ -24,7 +24,7 @@ import {
   Upload,
   RotateCw,
 } from "lucide-react";
-import { useCanvas } from "@/hooks/useCanvas";
+import { useSelectedObject } from "@/hooks/use-selected-object";
 import {
   FabricImage,
   type FabricObject,
@@ -32,7 +32,7 @@ import {
   Rect,
   Shadow as FabricShadow,
 } from "fabric";
-import { useCanvasManager } from "../../context/canvas-manager";
+import { useCanvasManager } from "@/context/canvas-manager";
 
 type TextAlign = "left" | "center" | "right" | "justify";
 
@@ -75,8 +75,8 @@ export function RightSidebar({
   isRightCollapsed,
   setIsRightCollapsed,
 }: RightSidebarProps) {
-  const { selectedObject, handleUpdateObject } = useCanvas();
-  const { manager } = useCanvasManager();
+  const { selectedObject, updateSelected } = useSelectedObject();
+  const manager = useCanvasManager();
   const [formValues, setFormValues] = useState<InspectedProperties | null>(
     null,
   );
@@ -159,7 +159,7 @@ export function RightSidebar({
     setFormValues(baseProps);
   }, [selectedObject]);
 
-  const canvas = manager?.getCanvas();
+  const canvas = manager?.canvas;
 
   const updateProp = (
     key: keyof InspectedProperties,
@@ -167,7 +167,7 @@ export function RightSidebar({
     fabricKey: string = key,
   ) => {
     setFormValues((prev) => (prev ? { ...prev, [key]: value } : null));
-    handleUpdateObject({
+    updateSelected({
       [fabricKey]: value,
     } as unknown as Partial<FabricObject>);
   };
@@ -178,7 +178,7 @@ export function RightSidebar({
     setFormValues((prev) => (prev ? { ...prev, rx: radius } : null));
 
     if (selectedObject.type === "rect") {
-      handleUpdateObject({
+      updateSelected({
         rx: radius,
         ry: radius,
       } as unknown as Partial<FabricObject>);
@@ -284,6 +284,7 @@ export function RightSidebar({
       canvas.centerObjectH(active);
       active.setCoords();
       canvas.requestRenderAll();
+      manager?.commit();
     }
   };
 
@@ -293,6 +294,7 @@ export function RightSidebar({
       canvas.centerObjectV(active);
       active.setCoords();
       canvas.requestRenderAll();
+      manager?.commit();
     }
   };
 
@@ -301,6 +303,7 @@ export function RightSidebar({
     if (active && canvas) {
       canvas.bringObjectForward(active);
       canvas.requestRenderAll();
+      manager?.commit();
     }
   };
 
@@ -309,6 +312,7 @@ export function RightSidebar({
     if (active && canvas) {
       canvas.sendObjectBackwards(active);
       canvas.requestRenderAll();
+      manager?.commit();
     }
   };
 
@@ -485,7 +489,7 @@ export function RightSidebar({
                         onClick={() => {
                           const next = !formValues.isBold;
                           updateProp("isBold", next, "fontWeight");
-                          handleUpdateObject({
+                          updateSelected({
                             fontWeight: next ? "bold" : "normal",
                           } as unknown as Partial<FabricObject>);
                         }}
@@ -500,7 +504,7 @@ export function RightSidebar({
                         onClick={() => {
                           const next = !formValues.isItalic;
                           updateProp("isItalic", next, "fontStyle");
-                          handleUpdateObject({
+                          updateSelected({
                             fontStyle: next ? "italic" : "normal",
                           } as unknown as Partial<FabricObject>);
                         }}

@@ -6,36 +6,36 @@ export interface SlidesSlice {
   currentSlideId: number;
   setSlides: (slides: SlideItem[]) => void;
   setCurrentSlideId: (id: number) => void;
-  addSlide: () => void;
+  /** Inserts an empty slide after `afterId` (or at the end) and returns its id. */
+  addSlide: (afterId?: number) => number;
   removeSlide: (id: number) => void;
   moveSlide: (direction: "left" | "right") => void;
-  updateCurrentSlideJSON: (json: FabricCanvasJSON) => void;
   updateSlideJSONById: (id: number, json: FabricCanvasJSON) => void;
   updateSlideThumbnail: (id: number, thumbnail: string) => void;
 }
 
-const DEFAULT_CANVAS_JSON: FabricCanvasJSON = {
+const createEmptyCanvasJSON = (): FabricCanvasJSON => ({
   version: "6.0.0",
   objects: [],
   background: "#ffffff",
-};
+});
 
 export const createSlidesSlice: StateCreator<SlidesSlice, [], [], SlidesSlice> = (set, get) => ({
-  slides: [{ id: 1, canvasJSON: DEFAULT_CANVAS_JSON, thumbnail: null }],
+  slides: [{ id: 1, canvasJSON: createEmptyCanvasJSON(), thumbnail: null }],
   currentSlideId: 1,
 
   setSlides: (slides) => set({ slides }),
   setCurrentSlideId: (id: number) => set({ currentSlideId: id }),
 
-  addSlide: () => {
+  addSlide: (afterId) => {
     const { slides } = get();
-    const newId = (slides[slides.length - 1]?.id ?? 0) + 1;
-    const newSlide: SlideItem = {
-      id: newId,
-      canvasJSON: { ...DEFAULT_CANVAS_JSON, objects: [] },
-      thumbnail: null,
-    };
-    set({ slides: [...slides, newSlide] });
+    const newId = Math.max(0, ...slides.map((s) => s.id)) + 1;
+    const newSlide: SlideItem = { id: newId, canvasJSON: createEmptyCanvasJSON(), thumbnail: null };
+
+    const afterIndex = slides.findIndex((s) => s.id === afterId);
+    const insertAt = afterIndex === -1 ? slides.length : afterIndex + 1;
+    set({ slides: [...slides.slice(0, insertAt), newSlide, ...slides.slice(insertAt)] });
+    return newId;
   },
 
   removeSlide: (id: number) => {
@@ -62,25 +62,17 @@ export const createSlidesSlice: StateCreator<SlidesSlice, [], [], SlidesSlice> =
     set({ slides: newSlides });
   },
 
-  updateCurrentSlideJSON: (json: FabricCanvasJSON) => {
-    const { slides, currentSlideId } = get();
-    set({
-      slides: slides.map((s) => (s.id === currentSlideId ? { ...s, canvasJSON: json } : s)),
-    });
-  },
-
-  // Точечное сохранение по ID предотвращает перезапись чужих слайдов
   updateSlideJSONById: (id: number, json: FabricCanvasJSON) => {
-    const { slides } = get();
     set({
-      slides: slides.map((s) => (s.id === id ? { ...s, canvasJSON: json } : s)),
+      slides: get().slides.map((s) =>
+        s.id === id ? { ...s, canvasJSON: json, thumbnail: null } : s,
+      ),
     });
   },
 
   updateSlideThumbnail: (id: number, thumbnail: string) => {
-    const { slides } = get();
     set({
-      slides: slides.map((s) => (s.id === id ? { ...s, thumbnail } : s)),
+      slides: get().slides.map((s) => (s.id === id ? { ...s, thumbnail } : s)),
     });
   },
 });

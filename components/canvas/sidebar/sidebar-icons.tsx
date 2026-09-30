@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Search, Clock, Loader2, Sparkles } from "lucide-react";
-import { useCanvas } from "@/hooks/useCanvas";
 import { util, loadSVGFromString } from "fabric";
 import { fetchIconifySvg } from "@/actions/icons";
 import { Input } from "@/components/ui/input";
@@ -25,7 +24,7 @@ const DEFAULT_RECENT: IconItem[] = [
 ];
 
 export function SidebarIcons() {
-  const { manager } = useCanvasManager();
+  const manager = useCanvasManager();
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<IconItem[]>([]);
   const [recentIcons, setRecentIcons] = useState<IconItem[]>(DEFAULT_RECENT);
@@ -96,7 +95,7 @@ export function SidebarIcons() {
       const svgString = await fetchIconifySvg(icon.id);
       if (!svgString) return;
 
-      const canvas = manager.getCanvas();
+      const canvas = manager.canvas;
 
       const { objects, options } = await loadSVGFromString(svgString);
       const validObjects = objects.filter((o): o is NonNullable<typeof o> => o !== null);

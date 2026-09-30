@@ -44,6 +44,16 @@ export class GridManager {
     this.refreshGrid();
   }
 
+  public setVisible(visible: boolean) {
+    if (visible) this.showGrid();
+    else this.hideGrid();
+  }
+
+  /** Canvas content was replaced (loadFromJSON/clear) and the grid group is gone. */
+  public redraw() {
+    if (this.isGridVisible) this.refreshGrid();
+  }
+
   public hideGrid() {
     this.isGridVisible = false;
     if (this.gridGroup) {
@@ -84,7 +94,11 @@ export class GridManager {
       );
     }
 
-    this.gridGroup = new Group(lines, { selectable: false, evented: false });
+    this.gridGroup = new Group(lines, {
+      selectable: false,
+      evented: false,
+      excludeFromExport: true,
+    });
     this.canvas.add(this.gridGroup);
     this.canvas.sendObjectToBack(this.gridGroup);
     this.canvas.requestRenderAll();
@@ -126,6 +140,7 @@ export class GridManager {
       strokeWidth: 1,
       selectable: false,
       evented: false,
+      excludeFromExport: true,
     });
     this.guideLines.push(line);
     this.canvas.add(line);
@@ -138,6 +153,7 @@ export class GridManager {
       strokeWidth: 1,
       selectable: false,
       evented: false,
+      excludeFromExport: true,
     });
     this.guideLines.push(line);
     this.canvas.add(line);

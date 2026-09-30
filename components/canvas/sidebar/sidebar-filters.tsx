@@ -8,10 +8,37 @@ import { useCanvasManager } from "@/context/canvas-manager";
 import { useCanvasStore } from "@/store/useCanvasStore";
 
 export function SidebarFilters() {
-  const { manager } = useCanvasManager();
-  const { vignette, noise, blur } = useCanvasStore();
+  const manager = useCanvasManager();
+  const vignette = useCanvasStore((s) => s.vignette);
+  const noise = useCanvasStore((s) => s.noise);
+  const blur = useCanvasStore((s) => s.blur);
+  const setVignette = useCanvasStore((s) => s.setVignette);
+  const setNoise = useCanvasStore((s) => s.setNoise);
+  const setBlur = useCanvasStore((s) => s.setBlur);
 
   const hasActiveEffects = vignette > 0 || noise > 0 || blur > 0;
+
+  const handleVignette = (value: number) => {
+    setVignette(value);
+    manager?.effects.setVignette(value);
+  };
+
+  const handleNoise = (value: number) => {
+    setNoise(value);
+    void manager?.effects.setNoise(value);
+  };
+
+  const handleBlur = (value: number) => {
+    setBlur(value);
+    manager?.effects.setBlur(value);
+  };
+
+  const handleReset = () => {
+    setVignette(0);
+    setNoise(0);
+    setBlur(0);
+    manager?.effects.clearAll();
+  };
 
   return (
     <div className="flex flex-col gap-4 p-2 text-xs">
@@ -19,7 +46,7 @@ export function SidebarFilters() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={manager.clearEffects}
+          onClick={handleReset}
           className="h-6 p-4 text-[10px] text-muted-foreground hover:text-foreground gap-1"
         >
           <RotateCcw className="w-3 h-3" />
@@ -39,7 +66,7 @@ export function SidebarFilters() {
         min={0}
         max={100}
         step={1}
-        onValueChange={([val]) => manager.setVignette((val ?? 0) / 100)}
+        onValueChange={([val]) => handleVignette((val ?? 0) / 100)}
         className="py-1"
       />
 
@@ -55,7 +82,7 @@ export function SidebarFilters() {
         min={0}
         max={100}
         step={1}
-        onValueChange={([val]) => manager.setNoise((val ?? 0) / 100)}
+        onValueChange={([val]) => handleNoise((val ?? 0) / 100)}
         className="py-1"
       />
 
@@ -71,7 +98,7 @@ export function SidebarFilters() {
         min={0}
         max={40}
         step={1}
-        onValueChange={([val]) => manager.setBlur(val ?? 0)}
+        onValueChange={([val]) => handleBlur(val ?? 0)}
         className="py-1"
       />
 

@@ -36,33 +36,33 @@ interface ElementSection {
 }
 
 export function SidebarElements() {
-  const { manager } = useCanvasManager();
+  const manager = useCanvasManager();
 
   const sections: ElementSection[] = useMemo(
     () => [
       {
         title: "Text & Typography",
         items: [
-          { label: "Heading", icon: Type, action: () => manager?.addHeading() },
+          { label: "Heading", icon: Type, action: () => manager?.objects.addHeading() },
           {
             label: "Subtitle",
             icon: Type,
             iconClassName: "opacity-50",
-            action: () => manager?.addSubtitle(),
+            action: () => manager?.objects.addSubtitle(),
           },
-          { label: "Paragraph", icon: AlignLeft, action: () => manager?.addParagraph() },
-          { label: "Text", icon: Pencil, action: () => manager?.addText("Новый текст") },
-          { label: "Quote Block", icon: Quote, action: () => manager?.addQuote() },
-          { label: "Code Snippet", icon: Code, action: () => manager?.addCodeBlock() },
+          { label: "Paragraph", icon: AlignLeft, action: () => manager?.objects.addParagraph() },
+          { label: "Text", icon: Pencil, action: () => manager?.objects.addText("Новый текст") },
+          { label: "Quote Block", icon: Quote, action: () => manager?.objects.addQuote() },
+          { label: "Code Snippet", icon: Code, action: () => manager?.objects.addCodeBlock() },
         ],
       },
       {
         title: "Shapes",
         items: [
-          { label: "Rectangle", icon: Square, action: () => manager?.addRectangle() },
-          { label: "Circle", icon: Circle, action: () => manager?.addCircle() },
-          { label: "Triangle", icon: Triangle, action: () => manager?.addTriangle() },
-          { label: "Line", icon: Minus, action: () => manager?.addLine() },
+          { label: "Rectangle", icon: Square, action: () => manager?.objects.addRectangle() },
+          { label: "Circle", icon: Circle, action: () => manager?.objects.addCircle() },
+          { label: "Triangle", icon: Triangle, action: () => manager?.objects.addTriangle() },
+          { label: "Line", icon: Minus, action: () => manager?.objects.addLine() },
           {
             label: "Connect Arrow",
             icon: Waypoints,
@@ -70,18 +70,18 @@ export function SidebarElements() {
             title: "Выделите 2 объекта через Shift и нажмите",
             action: () => manager?.connectSelectedObjects(),
           },
-          { label: "Divider", icon: Minus, action: () => manager?.addDividerLine() },
+          { label: "Divider", icon: Minus, action: () => manager?.objects.addDividerLine() },
         ],
       },
       {
         title: "Badges & Blocks",
         items: [
-          { label: "Tag Chip", icon: Tag, action: () => manager?.addTag() },
-          { label: "Badge", icon: Tag, action: () => manager?.addBadge() },
-          { label: "Star Rating", icon: Star, action: () => manager?.addStarRating() },
-          { label: "Handle", icon: User, action: () => manager?.addHandle() },
-          { label: "Swipe Tag", icon: ArrowRight, action: () => manager?.addSwipeTag() },
-          { label: "CTA Button", icon: MousePointerClick, action: () => manager?.addCTAButton() },
+          { label: "Tag Chip", icon: Tag, action: () => manager?.objects.addTag() },
+          { label: "Badge", icon: Tag, action: () => manager?.objects.addBadge() },
+          { label: "Star Rating", icon: Star, action: () => manager?.objects.addStarRating() },
+          { label: "Handle", icon: User, action: () => manager?.objects.addHandle() },
+          { label: "Swipe Tag", icon: ArrowRight, action: () => manager?.objects.addSwipeTag() },
+          { label: "CTA Button", icon: MousePointerClick, action: () => manager?.objects.addCTAButton() },
         ],
       },
     ],

@@ -27,6 +27,7 @@ import Link from "next/link";
 import { SidebarFilters } from "./sidebar/sidebar-filters";
 import { SidebarIcons } from "./sidebar/sidebar-icons";
 import { useCanvasManager } from "@/context/canvas-manager";
+import { useCanvasObjects } from "@/hooks/use-canvas-objects";
 
 export type NavId =
   | "projects"
@@ -69,39 +70,16 @@ export function LeftSidebar({
   setShowDotGrid,
 }: LeftSidebarProps) {
 
-  const {manager} = useCanvasManager();
+  const manager = useCanvasManager();
+  const canvasObjects = useCanvasObjects();
 
-  const canvasObjects = React.useMemo<FabricObject[]>(() => {
-    if (!manager) return [];
-    return manager
-      .getCanvas()
-      .getObjects()
-      .filter((o) => o.selectable !== false);
-  }, [manager]);
+  const selectObject = (obj: FabricObject) => manager?.selectObject(obj);
 
-  const selectObject = (obj: FabricObject) => {
-    const canvas = manager?.getCanvas();
-    if (!canvas) return;
-    canvas.setActiveObject(obj);
-    canvas.renderAll();
-  };
-
-  const deleteObject = (obj: FabricObject) => {
-    const canvas = manager?.getCanvas();
-    if (!canvas) return;
-    canvas.remove(obj);
-    canvas.discardActiveObject();
-    canvas.renderAll();
-  };
+  const deleteObject = (obj: FabricObject) => manager?.removeObject(obj);
 
   const reorderObjects = (fromIndex: number, toIndex: number) => {
-    const canvas = manager?.getCanvas();
-    if (!canvas) return;
-    const objs = canvas.getObjects().filter((o) => o.selectable !== false);
-    const obj = objs[fromIndex];
-    if (!obj) return;
-    canvas.moveObjectTo(obj, toIndex);
-    canvas.renderAll();
+    const obj = canvasObjects[fromIndex];
+    if (obj) manager?.moveObjectTo(obj, toIndex);
   };
 
   const getObjectLabel = (obj: FabricObject): string => {

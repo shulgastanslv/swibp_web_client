@@ -1,54 +1,40 @@
-import { Canvas } from "fabric";
-import type { CanvasState } from "./types"; // Ваш тип
+export class HistoryStack<T> {
+  private states: T[] = [];
+  private index = -1;
 
-export class HistoryManager {
-  private history: CanvasState[] = [];
-  private historyIndex = -1;
-  private maxHistory = 50;
-  private canvas: Canvas;
-  private isLocked = false;
+  constructor(private readonly limit = 50) {}
 
-  constructor(canvas: Canvas) {
-    this.canvas = canvas;
-
-    this.canvas.on("object:added", () => this.saveState());
-    this.canvas.on("object:modified", () => this.saveState());
-    this.canvas.on("object:removed", () => this.saveState());
+  reset(initial: T): void {
+    this.states = [initial];
+    this.index = 0;
   }
 
-  saveState() {
-    if (this.isLocked) return;
-
-    const json = this.canvas.toJSON() as unknown as CanvasState;
-
-    this.history = this.history.slice(0, this.historyIndex + 1);
-    this.history.push(json);
-
-    if (this.history.length > this.maxHistory) {
-      this.history.shift();
-    } else {
-      this.historyIndex++;
+  push(state: T): void {
+    this.states = this.states.slice(0, this.index + 1);
+    this.states.push(state);
+    if (this.states.length > this.limit) {
+      this.states.shift();
     }
+    this.index = this.states.length - 1;
   }
 
-  async undo() {
-    if (this.historyIndex > 0) {
-      this.historyIndex--;
-      await this.loadState(this.history[this.historyIndex]);
-    }
+  undo(): T | null {
+    if (!this.canUndo) return null;
+    this.index--;
+    return this.states[this.index];
   }
 
-  async redo() {
-    if (this.historyIndex < this.history.length - 1) {
-      this.historyIndex++;
-      await this.loadState(this.history[this.historyIndex]);
-    }
+  redo(): T | null {
+    if (!this.canRedo) return null;
+    this.index++;
+    return this.states[this.index];
   }
 
-  private async loadState(state: CanvasState) {
-    this.isLocked = true;
-    await this.canvas.loadFromJSON(state);
-    this.canvas.renderAll();
-    this.isLocked = false;
+  get canUndo(): boolean {
+    return this.index > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.index < this.states.length - 1;
   }
 }

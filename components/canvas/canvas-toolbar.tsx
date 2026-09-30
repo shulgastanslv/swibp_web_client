@@ -39,7 +39,7 @@ export function CanvasToolbar({
   onPhonePreview,
   onAutoFlow,
 }: CanvasToolbarProps) {
-  const { manager } = useCanvasManager();
+  const manager = useCanvasManager();
 
   const currentRatio = useCanvasStore((s) => s.currentRatio);
   const setCurrentRatio = useCanvasStore((s) => s.setCurrentRatio);
@@ -57,31 +57,21 @@ export function CanvasToolbar({
     const dimensions = CANVAS_RATIOS[ratio];
     if (!dimensions) return;
 
-    const { width, height } = dimensions;
-    if (manager) {
-      manager.core.resize(width, height);
-    }
-    setCanvasDimensions({ width, height });
+    setCanvasDimensions(dimensions);
     setCurrentRatio(ratio);
   };
 
   const handleToggleGrid = () => {
-    if (manager) {
-      manager.grid.toggleGrid();
-    }
+    manager?.grid.setVisible(!isGridVisible);
     toggleGrid();
   };
 
   const handleUndo = () => {
-    if (manager) {
-      manager.history.undo();
-    }
+    void manager?.undo();
   };
 
   const handleRedo = () => {
-    if (manager) {
-      manager.history.redo();
-    }
+    void manager?.redo();
   };
 
   const handleCopyJSON = async () => {

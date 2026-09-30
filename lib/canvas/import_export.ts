@@ -7,7 +7,7 @@ import {
   Rect,
   Gradient,
 } from "fabric";
-import type { BackgroundConfig, ExportOptions } from "./types";
+import type { BackgroundConfig, CanvasState, ExportOptions } from "./types";
 
 export class ImportExportManager {
   private canvas: Canvas;
@@ -52,19 +52,20 @@ export class ImportExportManager {
     });
   }
 
-  setBackground(config: BackgroundConfig): void {
+  async setBackground(config: BackgroundConfig): Promise<void> {
     if (config.type === "solid" && config.color) {
+      this.canvas.backgroundImage = undefined;
       this.canvas.backgroundColor = config.color;
       this.canvas.renderAll();
     } else if (config.type === "gradient" && config.colors) {
       this.setGradient(config.colors);
     } else if (config.type === "image" && config.url) {
-      this.setImage(config.url);
+      await this.setImage(config.url);
     }
   }
 
-  private setImage(url: string): void {
-    FabricImage.fromURL(url).then((img) => {
+  private setImage(url: string): Promise<void> {
+    return FabricImage.fromURL(url).then((img) => {
       const zoom = this.canvas.getZoom() || 1;
       const width = (this.canvas.width || 1080) / zoom;
       const height = (this.canvas.height || 1080) / zoom;
@@ -121,7 +122,7 @@ export class ImportExportManager {
 
 
   toJSON(): CanvasState {
-    return this.canvas.toJSON() as unknown as CanvasState;
+    return this.canvas.toJSON() as CanvasState;
   }
   exportAsJSON(): string {
     return JSON.stringify(this.toJSON(), null, 2);

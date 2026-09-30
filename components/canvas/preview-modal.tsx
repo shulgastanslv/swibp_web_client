@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import { useCanvasManager } from "@/context/canvas-manager";
+import { useSlidesController } from "@/context/canvas-manager";
 import { Canvas as FabricCanvas } from "fabric";
 
 interface PreviewModalProps {
@@ -22,11 +22,9 @@ interface SlideSnapshot {
 export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProps) {
   const slides = useCanvasStore((s) => s.slides);
   const canvasDimensions = useCanvasStore((s) => s.canvasDimensions);
-  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
-  const updateSlideJSONById = useCanvasStore((s) => s.updateSlideJSONById);
   const updateSlideThumbnail = useCanvasStore((s) => s.updateSlideThumbnail);
 
-  const { manager } = useCanvasManager();
+  const slidesController = useSlidesController();
 
   const [activeId, setActiveId] = useState(initialSlideId);
   const [snapshots, setSnapshots] = useState<SlideSnapshot[]>([]);
@@ -44,10 +42,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
     isMountedRef.current = true;
 
     // 1. Сохраняем текущее актуальное состояние активного слайда перед открытием
-    if (manager) {
-      const currentJson = manager.io.exportAsJSON();
-      updateSlideJSONById(currentSlideId, currentJson);
-    }
+    slidesController?.saveCurrent();
 
     const freshSlides = useCanvasStore.getState().slides;
 
@@ -127,11 +122,9 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
     };
   }, [
     open,
-    manager,
+    slidesController,
     initialSlideId,
-    currentSlideId,
     canvasDimensions,
-    updateSlideJSONById,
     updateSlideThumbnail,
   ]);
 
