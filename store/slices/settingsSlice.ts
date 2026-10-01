@@ -1,22 +1,23 @@
 import { StateCreator } from "zustand";
-import type { GridStyle } from "@/lib/canvas/grid";
 
 export interface SettingsSlice {
   isGridVisible: boolean;
-  gridSize: number;
+  gridColumns: number;
+  gridRows: number;
+  gridMargin: number;
   gridColor: string;
   gridOpacity: number;
-  gridStyle: GridStyle;
   snapToGrid: boolean;
   vignette: number;
   noise: number;
   blur: number;
   toggleGrid: () => void;
   setGridVisible: (visible: boolean) => void;
-  setGridSize: (size: number) => void;
+  setGridColumns: (columns: number) => void;
+  setGridRows: (rows: number) => void;
+  setGridMargin: (margin: number) => void;
   setGridColor: (color: string) => void;
   setGridOpacity: (opacity: number) => void;
-  setGridStyle: (style: GridStyle) => void;
   setSnapToGrid: (enabled: boolean) => void;
   setVignette: (vignette: number) => void;
   setNoise: (noise: number) => void;
@@ -30,10 +31,11 @@ export const createSettingsSlice: StateCreator<
   SettingsSlice
 > = (set) => ({
   isGridVisible: false,
-  gridSize: 8,
+  gridColumns: 4,
+  gridRows: 4,
+  gridMargin: 64,
   gridColor: "#9747FF",
   gridOpacity: 0.16,
-  gridStyle: "lines",
   snapToGrid: true,
   vignette: 0,
   noise: 0,
@@ -41,11 +43,15 @@ export const createSettingsSlice: StateCreator<
 
   toggleGrid: () => set((s) => ({ isGridVisible: !s.isGridVisible })),
   setGridVisible: (isGridVisible) => set({ isGridVisible }),
-  setGridSize: (gridSize) => set({ gridSize: Math.max(4, Math.round(gridSize)) }),
+  setGridColumns: (gridColumns) =>
+    set({ gridColumns: Math.max(0, Math.min(24, Math.round(gridColumns))) }),
+  setGridRows: (gridRows) =>
+    set({ gridRows: Math.max(0, Math.min(24, Math.round(gridRows))) }),
+  setGridMargin: (gridMargin) =>
+    set({ gridMargin: Math.max(0, Math.round(gridMargin)) }),
   setGridColor: (gridColor) => set({ gridColor }),
   setGridOpacity: (gridOpacity) =>
     set({ gridOpacity: Math.min(1, Math.max(0, gridOpacity)) }),
-  setGridStyle: (gridStyle) => set({ gridStyle }),
   setSnapToGrid: (snapToGrid) => set({ snapToGrid }),
   setVignette: (vignette) => set({ vignette }),
   setNoise: (noise) => set({ noise }),

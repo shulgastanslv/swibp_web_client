@@ -20,9 +20,15 @@ type View = "login" | "register" | "forgot-password";
 interface AuthModalProps {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** When true, modal cannot be dismissed until the user signs in. */
+  required?: boolean;
 }
 
-export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
+export function AuthModal({
+  isOpen,
+  onOpenChange,
+  required = false,
+}: AuthModalProps) {
   const [view, setView] = useState<View>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +52,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
   };
 
   const handleOpenChange = (open: boolean) => {
+    if (!open && required) return;
     if (!open) {
       setView("login");
       resetForm();
@@ -125,7 +132,13 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-full max-w-md rounded-3xl p-0 gap-0 border border-border">
+      <DialogContent
+        showCloseButton={!required}
+        className="w-full max-w-md rounded-3xl p-0 gap-0 border border-border"
+        onPointerDownOutside={required ? (e) => e.preventDefault() : undefined}
+        onEscapeKeyDown={required ? (e) => e.preventDefault() : undefined}
+        onInteractOutside={required ? (e) => e.preventDefault() : undefined}
+      >
         <div className="p-8 flex flex-col justify-center">
 
           {/* Плашка ошибки */}

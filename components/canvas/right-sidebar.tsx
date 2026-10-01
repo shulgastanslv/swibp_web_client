@@ -25,6 +25,8 @@ import {
   Upload,
   WandSparkles,
   Loader2,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { useSelectedObject } from "@/hooks/use-selected-object";
 import {
@@ -71,6 +73,7 @@ interface InspectedProperties {
   isItalic?: boolean;
   isUnderline?: boolean;
   backgroundColor?: string;
+  isLocked?: boolean;
   hasShadow: boolean;
   shadowColor: string;
   shadowBlur: number;
@@ -353,6 +356,9 @@ export function RightSidebar({
       angle,
       width,
       height,
+      isLocked: Boolean(
+        selectedObject.lockMovementX && selectedObject.lockMovementY,
+      ),
       hasShadow: !!shadow,
       shadowColor: shadow?.color ?? "#00000040",
       shadowBlur: shadow?.blur ?? 12,
@@ -588,6 +594,24 @@ export function RightSidebar({
     }
   };
 
+  const handleToggleLock = () => {
+    if (!selectedObject || !formValues) return;
+    const next = !formValues.isLocked;
+    setFormValues((prev) => (prev ? { ...prev, isLocked: next } : null));
+    selectedObject.set({
+      lockMovementX: next,
+      lockMovementY: next,
+      lockRotation: next,
+      lockScalingX: next,
+      lockScalingY: next,
+      lockSkewingX: next,
+      lockSkewingY: next,
+      hasControls: !next,
+    });
+    canvas?.requestRenderAll();
+    manager?.commit();
+  };
+
   const setWidth = (val: number) => {
     setFormValues((p) => (p ? { ...p, width: val } : null));
     if (selectedObject && val > 0) {
@@ -642,10 +666,10 @@ export function RightSidebar({
         }`}
       >
         <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-3.5">
-          <span className="truncate text-sm font-semibold text-foreground">
+          <span className="truncate text-xs font-semibold text-foreground">
             {formValues
               ? (typeLabel[formValues.type] ?? formValues.type)
-              : "Свойства"}
+              : "Properties"}
           </span>
         </div>
 
@@ -654,7 +678,7 @@ export function RightSidebar({
             <div className="flex flex-col items-center justify-center gap-3 px-5 py-16 text-center text-muted-foreground">
               <MousePointerClick className="size-7 stroke-[1.5] text-muted-foreground/60" />
               <p className="text-sm leading-snug">
-                Выберите объект на холсте, чтобы изменить его свойства
+                Select an object on the canvas to change its properties
               </p>
             </div>
           ) : (
@@ -666,7 +690,7 @@ export function RightSidebar({
                   size="icon"
                   className={`size-8 ${btnRound}`}
                   onClick={handleCenterH}
-                  title="По центру горизонтально"
+                  title="Center horizontally"
                 >
                   <AlignHorizontalDistributeCenter className="size-4" />
                 </Button>
@@ -676,7 +700,7 @@ export function RightSidebar({
                   size="icon"
                   className={`size-8 ${btnRound}`}
                   onClick={handleCenterV}
-                  title="По центру вертикально"
+                  title="Center vertically"
                 >
                   <AlignVerticalDistributeCenter className="size-4" />
                 </Button>
@@ -687,7 +711,7 @@ export function RightSidebar({
                   size="icon"
                   className={`size-8 ${btnRound}`}
                   onClick={handleBringForward}
-                  title="На слой выше"
+                  title="Bring forward"
                 >
                   <BringToFront className="size-4" />
                 </Button>
@@ -697,27 +721,42 @@ export function RightSidebar({
                   size="icon"
                   className={`size-8 ${btnRound}`}
                   onClick={handleSendBackwards}
-                  title="На слой ниже"
+                  title="Send backwards"
                 >
                   <SendToBack className="size-4" />
                 </Button>
+                <div className="mx-1.5 h-5 w-px bg-border/70" />
+                <Button
+                  type="button"
+                  variant={formValues.isLocked ? "secondary" : "ghost"}
+                  size="icon"
+                  className={`size-8 ${btnRound}`}
+                  onClick={handleToggleLock}
+                  title={formValues.isLocked ? "Unlock" : "Lock"}
+                >
+                  {formValues.isLocked ? (
+                    <Lock className="size-4" />
+                  ) : (
+                    <Unlock className="size-4" />
+                  )}
+                </Button>
               </div>
 
-              <CollapsibleGroup id="rs-position" title="Размер и угол">
+              <CollapsibleGroup id="rs-position" title="Size and angle">
                 <div className="grid grid-cols-2 gap-2.5">
                   <DimInput
-                    label="Ширина"
+                    label="Width"
                     value={formValues.width}
                     onChange={setWidth}
                   />
                   <DimInput
-                    label="Высота"
+                    label="Height"
                     value={formValues.height}
                     onChange={setHeight}
                   />
                 </div>
                 <NumberField
-                  label="Поворот"
+                  label="Rotation"
                   value={formValues.angle}
                   onChange={(v) => updateProp("angle", v)}
                   min={-180}
@@ -727,7 +766,7 @@ export function RightSidebar({
               </CollapsibleGroup>
 
               {isImage && (
-                <CollapsibleGroup id="rs-image" title="Изображение">
+                <CollapsibleGroup id="rs-image" title="Image">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -744,13 +783,13 @@ export function RightSidebar({
                     disabled={bgRemoving}
                   >
                     <Upload className="size-4" />
-                    Загрузить файл
+                    Upload file
                   </Button>
                   <div className="flex gap-2">
                     <Input
                       value={imageUrlInput}
                       onChange={(e) => setImageUrlInput(e.target.value)}
-                      placeholder="Ссылка на картинку"
+                      placeholder="Image URL"
                       className="h-9 border border-border bg-transparent px-3 text-sm dark:bg-transparent"
                       disabled={bgRemoving}
                       onKeyDown={(e) => {
@@ -767,7 +806,7 @@ export function RightSidebar({
                       disabled={bgRemoving || !imageUrlInput.trim()}
                       onClick={() => changeImageSource(imageUrlInput.trim())}
                     >
-                      ОК
+                      OK
                     </Button>
                   </div>
                   <Button
@@ -783,7 +822,7 @@ export function RightSidebar({
                     ) : (
                       <WandSparkles className="size-4" />
                     )}
-                    {bgRemoving ? "Убираем фон…" : "Убрать фон"}
+                    {bgRemoving ? "Removing background…" : "Remove background"}
                   </Button>
                   {bgProgress && (
                     <p className="text-[11px] text-muted-foreground leading-snug">
@@ -799,10 +838,10 @@ export function RightSidebar({
               )}
 
               {isText && (
-                <CollapsibleGroup id="rs-text" title="Текст">
+                <CollapsibleGroup id="rs-text" title="Text">
                   <div className="flex flex-col gap-1.5">
                     <span className="text-xs text-muted-foreground">
-                      Содержимое
+                      Content
                     </span>
                     <textarea
                       rows={3}
@@ -813,7 +852,7 @@ export function RightSidebar({
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-xs text-muted-foreground">Стиль</span>
+                    <span className="text-xs text-muted-foreground">Style</span>
                     <div className="flex gap-1.5">
                       <Button
                         type="button"
@@ -871,12 +910,34 @@ export function RightSidebar({
                       updateSelected({
                         fontFamily: family,
                       } as unknown as Partial<FabricObject>);
-                      canvas?.requestRenderAll();
+                      // After the webfont finishes painting, force one more
+                      // layout pass so metrics match the newly loaded face.
+                      void document.fonts.ready.then(() => {
+                        const active = manager?.getActiveObject() as
+                          | (FabricObject & {
+                              initDimensions?: () => void;
+                              dirty?: boolean;
+                            })
+                          | null
+                          | undefined;
+                        if (!active) return;
+                        const type = active.type;
+                        if (
+                          type === "textbox" ||
+                          type === "text" ||
+                          type === "i-text"
+                        ) {
+                          active.initDimensions?.();
+                          active.dirty = true;
+                          active.setCoords();
+                          manager?.canvas.requestRenderAll();
+                        }
+                      });
                     }}
                   />
 
                   <NumberField
-                    label="Размер шрифта"
+                    label="Font size"
                     value={formValues.fontSize ?? 32}
                     onChange={(v) => updateProp("fontSize", v)}
                     min={10}
@@ -885,7 +946,7 @@ export function RightSidebar({
                   />
 
                   <NumberField
-                    label="Межстрочный интервал"
+                    label="Line height"
                     value={formValues.lineHeight ?? 1.16}
                     onChange={(v) => updateProp("lineHeight", v)}
                     min={0.8}
@@ -896,7 +957,7 @@ export function RightSidebar({
 
                   <div className="flex flex-col gap-1.5">
                     <span className="text-xs text-muted-foreground">
-                      Выравнивание
+                      Alignment
                     </span>
                     <div className="flex rounded-full border border-border bg-transparent p-1">
                       {(
@@ -923,21 +984,21 @@ export function RightSidebar({
                 </CollapsibleGroup>
               )}
 
-              <CollapsibleGroup id="rs-fill" title="Заливка">
+              <CollapsibleGroup id="rs-fill" title="Fill">
                 {!isImage ? (
                   <ColorField
-                    label={isText ? "Цвет текста" : "Цвет заливки"}
+                    label={isText ? "Text color" : "Fill color"}
                     value={formValues.fill}
                     onChange={(hex) => updateProp("fill", hex)}
                   />
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    У изображения нет заливки — замените файл в секции выше.
+                    The image has no fill — replace the file in the section above.
                   </p>
                 )}
                 {isText && (
                   <ColorField
-                    label="Фон текста"
+                    label="Text background"
                     value={
                       formValues.backgroundColor === "transparent"
                         ? ""
@@ -954,21 +1015,21 @@ export function RightSidebar({
                           updateProp("backgroundColor", "transparent")
                         }
                       >
-                        Сброс
+                        Reset
                       </Button>
                     }
                   />
                 )}
               </CollapsibleGroup>
 
-              <CollapsibleGroup id="rs-stroke" title="Обводка">
+              <CollapsibleGroup id="rs-stroke" title="Stroke">
                 <ColorField
-                  label="Цвет обводки"
+                  label="Stroke color"
                   value={formValues.stroke}
                   onChange={(hex) => updateProp("stroke", hex)}
                 />
                 <NumberField
-                  label="Толщина"
+                  label="Thickness"
                   value={formValues.strokeWidth}
                   onChange={(v) => updateProp("strokeWidth", v)}
                   min={0}
@@ -977,9 +1038,9 @@ export function RightSidebar({
                 />
               </CollapsibleGroup>
 
-              <CollapsibleGroup id="rs-appearance" title="Внешний вид">
+              <CollapsibleGroup id="rs-appearance" title="Appearance">
                 <NumberField
-                  label="Непрозрачность"
+                  label="Opacity"
                   value={Math.round(formValues.opacity * 100)}
                   onChange={(v) => updateProp("opacity", v / 100)}
                   min={0}
@@ -989,7 +1050,7 @@ export function RightSidebar({
 
                 {canHaveRadius && (
                   <NumberField
-                    label="Скругление углов"
+                    label="Corner radius"
                     value={formValues.rx ?? 0}
                     onChange={updateCornerRadius}
                     min={0}
@@ -999,7 +1060,7 @@ export function RightSidebar({
                 )}
 
                 <NumberField
-                  label="Внутренний отступ"
+                  label="Padding"
                   value={formValues.padding}
                   onChange={(v) => updateProp("padding", v)}
                   min={0}
@@ -1010,25 +1071,25 @@ export function RightSidebar({
 
               <CollapsibleGroup
                 id="rs-effects"
-                title="Тень"
+                title="Shadow"
                 headerRight={
                   <Switch
                     size="sm"
                     checked={formValues.hasShadow}
                     onCheckedChange={toggleShadow}
-                    aria-label="Включить тень"
+                    aria-label="Enable shadow"
                   />
                 }
               >
                 {formValues.hasShadow ? (
                   <div className="flex flex-col gap-3">
                     <ColorField
-                      label="Цвет тени"
+                      label="Shadow color"
                       value={formValues.shadowColor.slice(0, 7)}
                       onChange={(hex) => updateShadowProp("shadowColor", hex)}
                     />
                     <NumberField
-                      label="Размытие"
+                      label="Blur"
                       value={formValues.shadowBlur}
                       onChange={(v) => updateShadowProp("shadowBlur", v)}
                       min={0}
@@ -1036,7 +1097,7 @@ export function RightSidebar({
                       unit="px"
                     />
                     <NumberField
-                      label="Смещение по вертикали"
+                      label="Vertical offset"
                       value={formValues.shadowOffsetY}
                       onChange={(v) => updateShadowProp("shadowOffsetY", v)}
                       min={-30}
@@ -1046,7 +1107,7 @@ export function RightSidebar({
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Включите переключатель справа, чтобы добавить тень.
+                    Enable the switch on the right to add a shadow.
                   </p>
                 )}
               </CollapsibleGroup>
@@ -1061,7 +1122,7 @@ export function RightSidebar({
           size="icon"
           className={`size-8 text-muted-foreground hover:text-foreground ${btnRound}`}
           onClick={() => setIsRightCollapsed(!isRightCollapsed)}
-          title={isRightCollapsed ? "Развернуть панель" : "Свернуть панель"}
+          title={isRightCollapsed ? "Expand panel" : "Collapse panel"}
         >
           {isRightCollapsed ? (
             <PanelRightOpen className="size-4" />

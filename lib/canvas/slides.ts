@@ -14,6 +14,7 @@ export interface SlidesState {
   setCurrentSlideId: (id: number) => void;
   updateSlideJSONById: (id: number, json: CanvasState) => void;
   addSlide: (afterId?: number) => number;
+  duplicateSlide: (id?: number) => number | null;
   removeSlide: (id: number) => void;
 }
 
@@ -67,6 +68,18 @@ export class SlidesController {
       this.saveCurrent();
       const state = this.store.getState();
       const newId = state.addSlide(state.currentSlideId);
+      await this.load(newId);
+    });
+  }
+
+  /** Saves the current slide, clones `id` (defaults to current), and opens the copy. */
+  duplicate(id?: number): Promise<void> {
+    return this.enqueue(async () => {
+      this.saveCurrent();
+      const state = this.store.getState();
+      const sourceId = id ?? state.currentSlideId;
+      const newId = state.duplicateSlide(sourceId);
+      if (newId == null) return;
       await this.load(newId);
     });
   }

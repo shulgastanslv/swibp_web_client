@@ -1,20 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Globe, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { publishTemplate } from "@/actions/templates";
 import { useSlidesController } from "@/context/canvas-manager";
 import { useCanvasStore } from "@/store/useCanvasStore";
@@ -26,7 +23,15 @@ interface PublishTemplateDialogProps {
   onAuthRequired?: () => void;
 }
 
-const CATEGORIES = ["Cover", "Tips", "Promo", "Education", "Community"] as const;
+const CATEGORIES = [
+  "Threads",
+  "Insta",
+  "LinkedIn",
+  "TikTok",
+  "Other",
+] as const;
+
+type Category = (typeof CATEGORIES)[number];
 
 export function PublishTemplateDialog({
   open,
@@ -41,25 +46,18 @@ export function PublishTemplateDialog({
   const slides = useCanvasStore((s) => s.slides);
 
   const [title, setTitle] = useState(projectTitle);
-  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("Community");
-  const [badge, setBadge] = useState("");
+  const [category, setCategory] = useState<Category>("Other");
   const [loading, setLoading] = useState(false);
-  const [doneId, setDoneId] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const slideCount = slides.length;
-
-  const previewHint = useMemo(
-    () => `${slideCount} сл. · ${currentRatio}`,
-    [slideCount, currentRatio],
-  );
 
   const handleOpenChange = (next: boolean) => {
     if (next) {
       setTitle(useCanvasStore.getState().projectTitle);
-      setBadge("");
-      setDoneId(null);
+      setCategory("Other");
+      setDone(false);
       setError(null);
+      setLoading(false);
     }
     onOpenChange(next);
   };
@@ -78,7 +76,6 @@ export function PublishTemplateDialog({
     const res = await publishTemplate({
       title: title.trim() || state.projectTitle,
       category,
-      badge: badge.trim() || undefined,
       aspectRatio: state.currentRatio,
       canvasJSON: {
         slides: state.slides.map((s) => s.canvasJSON),
@@ -93,110 +90,77 @@ export function PublishTemplateDialog({
       return;
     }
 
-    setDoneId(res.templateId);
+    setDone(true);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("swibp:templates-changed"));
     }
+    setTimeout(() => onOpenChange(false), 700);
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[420px] rounded-2xl border-border/70 p-4 gap-0 overflow-hidden">
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/40 text-left space-y-1">
-          <DialogTitle className="text-sm font-semibold tracking-tight flex items-center gap-2">
-            <Globe className="w-4 h-4 text-muted-foreground" />
-            Publish as template
+      <DialogContent className="sm:max-w-[360px] rounded-2xl border-none p-5 gap-5 shadow-xl">
+        <DialogHeader className="space-y-1 text-left">
+          <DialogTitle className="text-base font-semibold tracking-tight">
+            Publish
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Опубликуйте карусель в библиотеку шаблонов ({previewHint}).
-          </DialogDescription>
+          <p className="text-xs text-muted-foreground">
+            {slides.length} slide{slides.length === 1 ? "" : "s"} · {currentRatio}
+          </p>
         </DialogHeader>
 
-        {doneId ? (
-          <div className="px-5 py-8 text-center space-y-3">
-            <p className="text-sm font-medium text-foreground">Шаблон опубликован</p>
-            <p className="text-[11px] text-muted-foreground font-mono break-all">{doneId}</p>
-            <Button
-              size="sm"
-              className="h-8 rounded-full px-4 text-xs"
-              onClick={() => onOpenChange(false)}
-            >
-              Готово
-            </Button>
+        {done ? (
+          <div className="flex flex-col items-center gap-3 py-4 text-center">
+            <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+              <Check className="size-4" />
+            </div>
+            <p className="text-sm font-medium">Published</p>
           </div>
         ) : (
           <>
-            <div className="px-5 py-4 space-y-3.5">
-              <div className="space-y-1.5">
-                <Label className="text-[11px] text-muted-foreground">Название</Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Например: AI Tools Carousel"
-                  className="h-9 rounded-xl text-xs bg-muted/30"
-                />
-              </div>
+            <div className="space-y-3">
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Template name"
+                disabled={loading}
+                className="h-8 rounded-full border-0 bg-muted/50 px-4 text-sm shadow-none"
+              />
 
-              <div className="space-y-1.5">
-                <Label className="text-[11px] text-muted-foreground">Категория</Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {CATEGORIES.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCategory(c)}
-                      className={cn(
-                        "h-7 px-2.5 rounded-full text-[11px] border transition-colors",
-                        category === c
-                          ? "bg-foreground text-background border-foreground"
-                          : "bg-muted/30 text-muted-foreground border-border/50 hover:text-foreground",
-                      )}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex flex-wrap gap-1.5">
+                {CATEGORIES.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setCategory(c)}
+                    className={cn(
+                      "h-8 rounded-full px-3 text-xs transition-colors",
+                      category === c
+                        ? "bg-foreground text-background"
+                        : "bg-muted/50 text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {c}
+                  </button>
+                ))}
               </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-[11px] text-muted-foreground">Badge (опционально)</Label>
-                <Input
-                  value={badge}
-                  onChange={(e) => setBadge(e.target.value)}
-                  placeholder="Cover • 01"
-                  className="h-9 rounded-xl text-xs bg-muted/30"
-                />
-              </div>
-
-              {error && (
-                <p className="text-[11px] text-destructive">{error}</p>
-              )}
             </div>
 
-            <DialogFooter className="flex items-center justify-end gap-2 border-t border-border/40 bg-muted/15 px-4 py-3">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 rounded-full px-3 text-xs"
-                onClick={() => onOpenChange(false)}
-              >
-                Отмена
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                className="h-7 rounded-full px-4 text-xs gap-1.5"
-                disabled={!title.trim() || loading}
-                onClick={() => void handlePublish()}
-              >
-                {loading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <span className="hidden sm:inline">Опубликовать</span>
-                )}
-              </Button>
-            </DialogFooter>
+            {error && <p className="text-[11px] text-destructive">{error}</p>}
+
+            <Button
+              type="button"
+              className="h-8 w-full rounded-full gap-2"
+              disabled={!title.trim() || loading}
+              onClick={() => void handlePublish()}
+            >
+              {loading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                "Publish template"
+              )}
+            </Button>
           </>
         )}
       </DialogContent>

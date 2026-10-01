@@ -23,6 +23,7 @@ import {
   Layers2,
   Loader2,
   Save,
+  CloudOff,
 } from "lucide-react";
 import Logo from "@/components/logo";
 import { useSession, signOut } from "next-auth/react";
@@ -166,7 +167,7 @@ export function Header({ onPreview }: HeaderProps) {
           />
           {isDirty && (
             <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
-              не сохранено
+              <CloudOff className="w-3.5 h-3.5" />
             </span>
           )}
           <Button
@@ -240,7 +241,7 @@ export function Header({ onPreview }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-1">
-         
+
           <Button
             variant="ghost"
             onClick={() => setShowShare(true)}
@@ -334,8 +335,10 @@ export function Header({ onPreview }: HeaderProps) {
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage
-                      src={session.user?.image ?? undefined}
-                      alt={userName}
+                      src={
+                        session.user?.image ??
+                        `https://api.dicebear.com/9.x/glass/svg?seed=${session.user?.id}`
+                      } alt={userName}
                     />
                     <AvatarFallback className="text-[14px]">
                       {userInitial}

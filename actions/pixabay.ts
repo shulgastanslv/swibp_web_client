@@ -19,6 +19,15 @@ type PixabayHit = {
   largeImageURL?: string;
 };
 
+/** Prefer CDN (_640) — avoids pixabay.com/get rate limits and CORS. */
+function resolveImageUrl(hit: PixabayHit): string | null {
+  if (hit.previewURL) {
+    const cdnLarger = hit.previewURL.replace(/_150(\.\w+)(?:\?.*)?$/, "_640$1");
+    if (cdnLarger !== hit.previewURL) return cdnLarger;
+  }
+  return hit.webformatURL || hit.largeImageURL || hit.previewURL || null;
+}
+
 /**
  * Search Pixabay vectors for the icons sidebar.
  * https://pixabay.com/api/docs/
@@ -34,7 +43,7 @@ export async function searchPixabayIcons(
   }
 
   const q = query.trim() || "icon";
-  const perPage = Math.min(Math.max(options?.perPage ?? 40, 3), 200);
+  const perPage = Math.min(Math.max(options?.perPage ?? 100, 3), 200);
 
   try {
     const url = new URL("https://pixabay.com/api/");
@@ -56,7 +65,7 @@ export async function searchPixabayIcons(
     const data = (await res.json()) as { hits?: PixabayHit[] };
     const items: PixabayIcon[] = (data.hits ?? [])
       .map((hit) => {
-        const imageUrl = hit.largeImageURL || hit.webformatURL;
+        const imageUrl = resolveImageUrl(hit);
         const previewUrl = hit.previewURL || hit.webformatURL;
         if (!imageUrl || !previewUrl) return null;
         const name = (hit.tags ?? "icon").split(",")[0]?.trim() || "icon";

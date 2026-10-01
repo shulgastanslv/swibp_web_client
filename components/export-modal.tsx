@@ -4,22 +4,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Label } from "@/components/ui/label";
-import {
-  Check,
-  Download,
-  FileImage,
-  FolderArchive,
-  Image as ImageIcon,
-  Loader2,
-} from "lucide-react";
+import { Check, Download, Loader2 } from "lucide-react";
 import { useSlidesController } from "@/context/canvas-manager";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { cn } from "@/lib/utils";
@@ -38,15 +27,42 @@ interface ExportModalProps {
 type PackMode = "zip" | "files";
 type ScaleOption = 1 | 2;
 
-const SCALE_OPTIONS: { value: ScaleOption; label: string; hint: string }[] = [
-  { value: 1, label: "1×", hint: "1080 / native" },
-  { value: 2, label: "2×", hint: "Retina / ads" },
-];
+function Segmented<T extends string | number>({
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  disabled?: boolean;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex rounded-full bg-muted/50 p-0.5">
+      {options.map((opt) => (
+        <button
+          key={String(opt.value)}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            "h-8 flex-1 rounded-full text-xs transition-colors",
+            value === opt.value
+              ? "bg-background text-foreground shadow-xs font-medium"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const slidesController = useSlidesController();
   const slides = useCanvasStore((s) => s.slides);
-  const projectTitle = useCanvasStore((s) => s.projectTitle);
   const canvasDimensions = useCanvasStore((s) => s.canvasDimensions);
 
   const [format, setFormat] = useState<ExportFormat>("png");
@@ -70,11 +86,11 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     }
   }, [open]);
 
-  const summary = useMemo(() => {
+  const sizeLabel = useMemo(() => {
     const w = canvasDimensions.width * scale;
     const h = canvasDimensions.height * scale;
-    return `${slides.length} слайд${slides.length === 1 ? "" : "ов"} · ${w}×${h} · ${format.toUpperCase()}`;
-  }, [slides.length, canvasDimensions, scale, format]);
+    return `${w}×${h}`;
+  }, [canvasDimensions, scale]);
 
   const handleExport = async () => {
     if (exporting) return;
@@ -111,11 +127,11 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
       }
 
       setDone(true);
-      setTimeout(() => onOpenChange(false), 700);
+      setTimeout(() => onOpenChange(false), 600);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       console.error(err);
-      setError(err instanceof Error ? err.message : "Ошибка экспорта");
+      setError(err instanceof Error ? err.message : "Export failed");
     } finally {
       setExporting(false);
       abortRef.current = null;
@@ -124,159 +140,78 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px] rounded-2xl border-border/70 p-4 gap-0 overflow-hidden">
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/40 text-left space-y-1">
-          <DialogTitle className="text-sm font-semibold tracking-tight">
-            Export carousel
+      <DialogContent className="sm:max-w-[360px] rounded-2xl border-none p-5 gap-5 shadow-xl">
+        <DialogHeader className="space-y-1 text-left">
+          <DialogTitle className="text-base font-semibold tracking-tight">
+            Export
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Скачайте все слайды в полном разрешении. {summary}
-          </DialogDescription>
+          <p className="text-xs text-muted-foreground">
+            {slides.length} slide{slides.length === 1 ? "" : "s"} · {sizeLabel}
+          </p>
         </DialogHeader>
 
-        <div className="px-5 py-4 space-y-4">
-          <div className="space-y-2">
-            <Label className="text-[11px] text-muted-foreground">Формат</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  { id: "png" as const, title: "PNG", desc: "Без потерь, прозрачность" },
-                  { id: "jpeg" as const, title: "JPEG", desc: "Меньше вес, для ленты" },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  disabled={exporting}
-                  onClick={() => setFormat(opt.id)}
-                  className={cn(
-                    "rounded-xl border px-3 py-2.5 text-left transition-colors",
-                    format === opt.id
-                      ? "border-foreground/40 bg-muted/50 ring-1 ring-foreground/10"
-                      : "border-border/50 hover:bg-muted/30",
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <FileImage className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-xs font-medium">{opt.title}</span>
-                  </div>
-                  <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
-                    {opt.desc}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[11px] text-muted-foreground">Упаковка</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={exporting}
-                onClick={() => setPack("zip")}
-                className={cn(
-                  "rounded-xl border px-3 py-2.5 text-left transition-colors",
-                  pack === "zip"
-                    ? "border-foreground/40 bg-muted/50 ring-1 ring-foreground/10"
-                    : "border-border/50 hover:bg-muted/30",
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <FolderArchive className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs font-medium">ZIP архив</span>
-                </div>
-                <p className="mt-1 text-[10px] text-muted-foreground">Один файл со всеми слайдами</p>
-              </button>
-              <button
-                type="button"
-                disabled={exporting}
-                onClick={() => setPack("files")}
-                className={cn(
-                  "rounded-xl border px-3 py-2.5 text-left transition-colors",
-                  pack === "files"
-                    ? "border-foreground/40 bg-muted/50 ring-1 ring-foreground/10"
-                    : "border-border/50 hover:bg-muted/30",
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs font-medium">Файлы</span>
-                </div>
-                <p className="mt-1 text-[10px] text-muted-foreground">Скачать каждый слайд отдельно</p>
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[11px] text-muted-foreground">Масштаб</Label>
-            <div className="flex gap-1.5 p-0.5 rounded-full bg-muted/40 border border-border/40 w-fit">
-              {SCALE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  disabled={exporting}
-                  onClick={() => setScale(opt.value)}
-                  className={cn(
-                    "h-7 px-3 rounded-full text-[11px] transition-colors",
-                    scale === opt.value
-                      ? "bg-background text-foreground shadow-xs font-medium"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                  title={opt.hint}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {(exporting || done) && (
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>{done ? "Готово" : "Рендер слайдов…"}</span>
-                <span className="font-mono">{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-1.5" />
-            </div>
-          )}
-
-          {error && <p className="text-[11px] text-destructive">{error}</p>}
+        <div className="space-y-3">
+          <Segmented
+            value={format}
+            disabled={exporting}
+            onChange={(v) => setFormat(v as ExportFormat)}
+            options={[
+              { value: "png", label: "PNG" },
+              { value: "jpeg", label: "JPEG" },
+            ]}
+          />
+          <Segmented
+            value={scale}
+            disabled={exporting}
+            onChange={(v) => setScale(v as ScaleOption)}
+            options={[
+              { value: 1, label: "1×" },
+              { value: 2, label: "2×" },
+            ]}
+          />
+          <Segmented
+            value={pack}
+            disabled={exporting}
+            onChange={(v) => setPack(v as PackMode)}
+            options={[
+              { value: "zip", label: "ZIP" },
+              { value: "files", label: "Files" },
+            ]}
+          />
         </div>
 
-        <DialogFooter className="flex items-center justify-between gap-2 border-t border-border/40 bg-muted/15 px-4 py-3 sm:justify-between">
-          <p className="text-[10px] text-muted-foreground truncate min-w-0 hidden sm:block">
-            {projectTitle}
-          </p>
-          <div className="flex items-center gap-2 ml-auto">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 rounded-full px-3 text-xs"
-              disabled={exporting}
-              onClick={() => onOpenChange(false)}
-            >
-              Отмена
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="h-7 rounded-full px-4 text-xs gap-1.5"
-              disabled={exporting || slides.length === 0}
-              onClick={() => void handleExport()}
-            >
-              {exporting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : done ? (
-                <Check className="w-3.5 h-3.5" />
-              ) : (
-                <Download className="w-3.5 h-3.5" />
-              )}
-              {exporting ? "Экспорт…" : done ? "Скачано" : "Скачать"}
-            </Button>
+        {(exporting || done) && (
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-[11px] text-muted-foreground">
+              <span>{done ? "Done" : "Rendering…"}</span>
+              <span className="tabular-nums">{progress}%</span>
+            </div>
+            <div className="h-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-foreground transition-[width] duration-200"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
-        </DialogFooter>
+        )}
+
+        {error && <p className="text-[11px] text-destructive">{error}</p>}
+
+        <Button
+          type="button"
+          className="h-8 w-full rounded-full gap-2"
+          disabled={exporting || slides.length === 0}
+          onClick={() => void handleExport()}
+        >
+          {exporting ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : done ? (
+            <Check className="size-4" />
+          ) : (
+            <Download className="size-4" />
+          )}
+          {exporting ? "Exporting…" : done ? "Downloaded" : "Download"}
+        </Button>
       </DialogContent>
     </Dialog>
   );

@@ -120,6 +120,28 @@ export class CanvasManager {
     if (!active) return null;
 
     active.set(updates);
+
+    // Typography changes need an explicit layout pass — otherwise Fabric keeps
+    // the previous font metrics until another property forces a reflow.
+    if (
+      "fontFamily" in updates ||
+      "fontSize" in updates ||
+      "fontWeight" in updates ||
+      "fontStyle" in updates ||
+      "lineHeight" in updates ||
+      "charSpacing" in updates
+    ) {
+      const textLike = active as FabricObject & {
+        initDimensions?: () => void;
+        dirty?: boolean;
+      };
+      const type = active.type;
+      if (type === "textbox" || type === "text" || type === "i-text") {
+        textLike.initDimensions?.();
+        textLike.dirty = true;
+      }
+    }
+
     active.setCoords();
     this.canvas.requestRenderAll();
     this.commit();

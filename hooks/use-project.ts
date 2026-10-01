@@ -126,12 +126,13 @@ export function useProject() {
   }, [slidesController, status]);
 
   const newProject = useCallback(
-    async (title?: string) => {
+    async (title?: string, aspectRatio?: RatioKey) => {
       if (status !== "authenticated") {
         return { success: false as const, error: "Войдите в аккаунт" };
       }
 
-      const ratio = useCanvasStore.getState().currentRatio;
+      const ratio =
+        aspectRatio ?? useCanvasStore.getState().currentRatio;
       const res = await createProject({ title, aspectRatio: ratio });
       if (!res.success) return res;
 

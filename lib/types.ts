@@ -44,9 +44,10 @@ export interface EditorUIState {
   selectedObjectId: string | null;
   zoom: number;
   isGridVisible: boolean;
-  gridSize: number;
+  gridColumns: number;
+  gridRows: number;
+  gridMargin: number;
   gridColor: string;
   gridOpacity: number;
-  gridStyle: "lines" | "dots";
   snapToGrid: boolean;
 }

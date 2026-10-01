@@ -18,12 +18,13 @@ import {
   AlignLeft,
   Pencil,
   Waypoints,
-  UploadCloud,
+  ImagePlus,
   Link2,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CollapsibleGroup } from "@/components/ui/collapsible-group";
 import { cn } from "@/lib/utils";
 import { fileToDataUrl } from "@/lib/image/file-to-data-url";
 import { useCanvasManager } from "@/context/canvas-manager";
@@ -32,11 +33,11 @@ interface ElementItem {
   label: string;
   icon: LucideIcon;
   action: () => void;
-  iconClassName?: string;
   title?: string;
 }
 
 interface ElementSection {
+  id: string;
   title: string;
   items: ElementItem[];
 }
@@ -103,22 +104,19 @@ export function SidebarElements() {
   const sections: ElementSection[] = useMemo(
     () => [
       {
-        title: "Text & Typography",
+        id: "elements-text",
+        title: "Text",
         items: [
           { label: "Heading", icon: Type, action: () => manager?.objects.addHeading() },
-          {
-            label: "Subtitle",
-            icon: Type,
-            iconClassName: "opacity-50",
-            action: () => manager?.objects.addSubtitle(),
-          },
+          { label: "Subtitle", icon: Type, action: () => manager?.objects.addSubtitle() },
           { label: "Paragraph", icon: AlignLeft, action: () => manager?.objects.addParagraph() },
           { label: "Text", icon: Pencil, action: () => manager?.objects.addText("Новый текст") },
-          { label: "Quote Block", icon: Quote, action: () => manager?.objects.addQuote() },
-          { label: "Code Snippet", icon: Code, action: () => manager?.objects.addCodeBlock() },
+          { label: "Quote", icon: Quote, action: () => manager?.objects.addQuote() },
+          { label: "Code", icon: Code, action: () => manager?.objects.addCodeBlock() },
         ],
       },
       {
+        id: "elements-shapes",
         title: "Shapes",
         items: [
           { label: "Rectangle", icon: Square, action: () => manager?.objects.addRectangle() },
@@ -126,9 +124,8 @@ export function SidebarElements() {
           { label: "Triangle", icon: Triangle, action: () => manager?.objects.addTriangle() },
           { label: "Line", icon: Minus, action: () => manager?.objects.addLine() },
           {
-            label: "Connect Arrow",
+            label: "Connect",
             icon: Waypoints,
-            iconClassName: "text-blue-500",
             title: "Выделите 2 объекта через Shift и нажмите",
             action: () => manager?.connectSelectedObjects(),
           },
@@ -136,27 +133,24 @@ export function SidebarElements() {
         ],
       },
       {
-        title: "Badges & Blocks",
+        id: "elements-blocks",
+        title: "Blocks",
         items: [
-          { label: "Tag Chip", icon: Tag, action: () => manager?.objects.addTag() },
-          { label: "Badge", icon: Tag, action: () => manager?.objects.addBadge() },
-          { label: "Star Rating", icon: Star, action: () => manager?.objects.addStarRating() },
+          { label: "Topic", icon: Tag, action: () => manager?.objects.addTag() },
+          { label: "Step", icon: Tag, action: () => manager?.objects.addBadge() },
+          { label: "Rating", icon: Star, action: () => manager?.objects.addStarRating() },
           { label: "Handle", icon: User, action: () => manager?.objects.addHandle() },
-          { label: "Swipe Tag", icon: ArrowRight, action: () => manager?.objects.addSwipeTag() },
-          { label: "CTA Button", icon: MousePointerClick, action: () => manager?.objects.addCTAButton() },
+          { label: "Swipe", icon: ArrowRight, action: () => manager?.objects.addSwipeTag() },
+          { label: "CTA", icon: MousePointerClick, action: () => manager?.objects.addCTAButton() },
         ],
       },
     ],
-    [manager]
+    [manager],
   );
 
   return (
-    <div className="flex flex-col gap-5 p-2 text-xs">
-      <section>
-        <p className="mb-2 text-[11px] font-medium text-muted-foreground">
-          Изображение
-        </p>
-
+    <div className="flex flex-col text-[11px] text-foreground">
+      <CollapsibleGroup id="elements-image" title="Image">
         <input
           type="file"
           ref={fileInputRef}
@@ -166,45 +160,33 @@ export function SidebarElements() {
           disabled={!manager}
         />
 
-        <div
-          role="button"
-          tabIndex={manager ? 0 : -1}
-          onClick={() => manager && fileInputRef.current?.click()}
-          onKeyDown={(e) => {
-            if (!manager) return;
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              fileInputRef.current?.click();
-            }
-          }}
+        <button
+          type="button"
+          disabled={!manager}
+          onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
             if (manager) setIsDragging(true);
           }}
           onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
           className={cn(
-            "group relative flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed p-4 text-center transition-all",
-            !manager && "opacity-50 pointer-events-none",
+            "flex h-9 w-full items-center gap-2 rounded-xl border border-dashed px-3 text-left transition-colors disabled:opacity-40",
             isDragging
-              ? "border-primary bg-primary/10 ring-2 ring-primary/20 cursor-pointer"
-              : "border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40 cursor-pointer"
+              ? "border-foreground/30 bg-muted"
+              : "border-border/70 hover:border-foreground/20 hover:bg-muted/60",
           )}
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/30 shadow-xs border border-border/50 group-hover:scale-105 transition-transform">
-            <UploadCloud className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          </div>
-        </div>
+          <ImagePlus className="size-4 shrink-0 text-muted-foreground" />
+          <span className="flex-1 truncate text-foreground/80">Upload or drop</span>
+          <span className="text-xs text-muted-foreground">PNG, JPG</span>
+        </button>
 
-        <div className="mt-2.5 flex flex-col gap-1.5">
-          <p className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
-            <Link2 className="w-3 h-3" />
-            По ссылке
-          </p>
-          <div className="flex gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="relative min-w-0 flex-1">
+            <Link2 className="pointer-events-none absolute left-3 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="url"
-              placeholder="https://…"
+              placeholder="Paste image URL"
               value={imageUrl}
               disabled={!manager}
               onChange={(e) => {
@@ -217,50 +199,43 @@ export function SidebarElements() {
                   void addImageFromUrl();
                 }
               }}
-              className="h-8 text-xs rounded-xl bg-muted/30 border-border/60"
+              className="h-8 rounded-full border-border/50 bg-muted/30 pl-8 text-xs shadow-none"
             />
-            <Button
-              type="button"
-              size="sm"
-              disabled={!manager || urlLoading || !imageUrl.trim()}
-              onClick={() => void addImageFromUrl()}
-              className="h-8 px-3 rounded-xl shrink-0 text-xs"
-            >
-              {urlLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                "Добавить"
-              )}
-            </Button>
           </div>
-          {urlError && (
-            <p className="text-[10px] text-destructive">{urlError}</p>
-          )}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={!manager || urlLoading || !imageUrl.trim()}
+            onClick={() => void addImageFromUrl()}
+            className="h-8 shrink-0 rounded-full px-3 text-xs"
+          >
+            {urlLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Add"}
+          </Button>
         </div>
-      </section>
+        {urlError && <p className="text-xs text-destructive">{urlError}</p>}
+      </CollapsibleGroup>
 
       {sections.map((section) => (
-        <section key={section.title}>
-          <p className="mb-2 text-[11px] font-medium text-muted-foreground">
-            {section.title}
-          </p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {section.items.map(({ label, icon: Icon, action, iconClassName, title }) => (
-              <Button
+        <CollapsibleGroup key={section.id} id={section.id} title={section.title}>
+          <div className="grid grid-cols-4 gap-1">
+            {section.items.map(({ label, icon: Icon, action, title }) => (
+              <button
                 key={label}
-                variant="secondary"
-                size="sm"
-                title={title}
+                type="button"
+                title={title ?? label}
                 onClick={action}
                 disabled={!manager}
-                className="h-10 justify-start gap-2 rounded-full bg-muted/50 text-xs"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               >
-                <Icon className={`h-3.5 w-3.5 ${iconClassName ?? ""}`} />
-                <span className="truncate">{label}</span>
-              </Button>
+                <Icon className="h-4 w-4" strokeWidth={1.5} />
+                <span className="max-w-full truncate text-xs leading-none">
+                  {label}
+                </span>
+              </button>
             ))}
           </div>
-        </section>
+        </CollapsibleGroup>
       ))}
     </div>
   );

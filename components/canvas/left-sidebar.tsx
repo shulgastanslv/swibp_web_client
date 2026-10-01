@@ -16,7 +16,9 @@ import {
   FilterIcon,
   PaletteIcon,
   Folder,
-} from "lucide-react";
+  Shapes,
+  StickerIcon,
+  } from "lucide-react";
 import { Object as FabricObject } from "fabric";
 
 import { SidebarProjects } from "@/components/canvas/sidebar/projects/sidebar-projects";
@@ -94,13 +96,13 @@ export function LeftSidebar({
   };
 
   const navItems: { id: NavId; icon: React.ElementType; label: string }[] = [
-    { id: "elements", icon: PaletteIcon, label: "Elements" },
+    { id: "elements", icon: Shapes, label: "Elements" },
     { id: "projects", icon: Folder, label: "Projects" },
     { id: "layers", icon: Layers, label: "Layers" },
     { id: "templates", icon: LayoutTemplate, label: "Templates" },
     { id: "background", icon: ImageIcon, label: "Background" },
     { id: "filters", icon: FilterIcon, label: "Filter" },
-    { id: "icons", icon: LightbulbIcon, label: "Icons" },
+    { id: "icons", icon: StickerIcon, label: "Icons" },
   ];
 
   return (

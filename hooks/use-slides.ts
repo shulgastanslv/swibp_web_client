@@ -20,6 +20,7 @@ export function useSlides() {
     next: () => controller?.next(),
     prev: () => controller?.prev(),
     add: () => controller?.add(),
+    duplicate: (id?: number) => controller?.duplicate(id),
     remove: (id: number) => controller?.remove(id),
     move,
   };

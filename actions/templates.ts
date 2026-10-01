@@ -154,7 +154,7 @@ export async function publishTemplate(
     }
 
     const title = input.title.trim();
-    const category = input.category.trim() || "Community";
+    const category = input.category.trim() || "Other";
     if (!title) return { success: false, error: "Укажите название шаблона" };
 
     const template = await prisma.template.create({

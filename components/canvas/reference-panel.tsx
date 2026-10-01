@@ -5,6 +5,7 @@ import { UploadCloud, X, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 /** Side panel opened from the split-screen toolbar button — load a reference image. */
 export function ReferencePanel() {
@@ -29,17 +30,17 @@ export function ReferencePanel() {
       )}
     >
       <div className="flex h-10 items-center justify-between px-3 border-b border-border/40">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Reference
+        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Image
         </span>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 rounded-full"
+          className="size-7 rounded-full"
           onClick={() => setOpen(false)}
-          title="Закрыть"
+          title="Close"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="size-4" />
         </Button>
       </div>
 
@@ -57,31 +58,34 @@ export function ReferencePanel() {
 
         {imageUrl ? (
           <div className="relative flex-1 min-h-[160px] rounded-xl overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={imageUrl}
               alt="Reference"
-              className="absolute inset-0 h-full w-full object-contain"
+              className="absolute inset-0 size-full object-contain"
+              width={100}
+              height={100}
             />
             <div className="absolute bottom-2 right-2 flex gap-1">
               <Button
                 size="sm"
                 variant="secondary"
-                className="h-7 text-[10px] rounded-lg"
+                className="h-7 text-xs rounded-full"
                 onClick={() => fileRef.current?.click()}
+                title="Replace"
               >
-                Заменить
+                Replace
               </Button>
               <Button
                 size="sm"
                 variant="secondary"
-                className="h-7 text-[10px] rounded-lg"
+                className="h-7 text-xs rounded-full"
                 onClick={() => {
                   if (imageUrl.startsWith("blob:")) URL.revokeObjectURL(imageUrl);
                   setImageUrl(null);
                 }}
+                title="Remove"
               >
-                Убрать
+                Remove
               </Button>
             </div>
           </div>
@@ -95,13 +99,14 @@ export function ReferencePanel() {
               onFile(e.dataTransfer.files?.[0]);
             }}
             className="flex flex-1 min-h-[160px] flex-col items-center justify-center gap-2 rounded-xl  transition-colors"
+            title="Drag and drop an image or select a file"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted/30 shadow-xs hover:scale-105 transition-transform cursor-pointer">
-              <UploadCloud className="h-4 w-4 text-muted-foreground" />
+            <div className="flex size-10 items-center justify-center rounded-full bg-muted/50 hover:bg-muted/70 shadow-xs hover:scale-105 transition-transform cursor-pointer">
+              <UploadCloud className="size-4 text-muted-foreground" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-[10px] text-muted-foreground">
-                Перетащите картинку или выберите файл
+              <p className="text-xs text-muted-foreground">
+                Drag and drop an image or select a file
               </p>
             </div>
           </button>

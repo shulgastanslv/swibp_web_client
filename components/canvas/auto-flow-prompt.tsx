@@ -6,33 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Layers, X } from "lucide-react";
 import { useCanvasManager, useSlidesController } from "@/context/canvas-manager";
 import { useCanvasStore } from "@/store/useCanvasStore";
-
-const EDGE_TOLERANCE = 8;
-
-function isOutOfBounds(
-  obj: FabricObject,
-  width: number,
-  height: number,
-  zoom: number,
-): boolean {
-  // @ts-expect-error custom effect flag
-  if (obj.isEffectLayer || obj.excludeFromExport) return false;
-
-  obj.setCoords();
-  // getBoundingRect includes viewport zoom — convert back to logical slide space.
-  const rect = obj.getBoundingRect();
-  const left = rect.left / zoom;
-  const top = rect.top / zoom;
-  const w = rect.width / zoom;
-  const h = rect.height / zoom;
-
-  return (
-    left < -EDGE_TOLERANCE ||
-    top < -EDGE_TOLERANCE ||
-    left + w > width + EDGE_TOLERANCE ||
-    top + h > height + EDGE_TOLERANCE
-  );
-}
+import {
+  isObjectOutOfBounds,
+  placeObjectOnNewSlide,
+  resolveAutoFlowTargets,
+} from "@/lib/canvas/auto-flow";
 
 /**
  * When Auto Flow is on and an object leaves the slide, offer to create
@@ -57,13 +35,14 @@ export function AutoFlowPrompt() {
     const onModified = (e?: { target?: FabricObject }) => {
       const target = e?.target ?? manager.getActiveObject();
       if (!target || busy.current) return;
-      if (dismissedFor.current.has(target)) return;
 
       const { width, height } = canvasDimensions;
-      const zoom = manager.canvas.getZoom() || 1;
-      if (isOutOfBounds(target, width, height, zoom)) {
+      if (isObjectOutOfBounds(target, width, height)) {
+        if (dismissedFor.current.has(target)) return;
         setPending(target);
       } else {
+        // Allow prompting again on the next excursion past the edge.
+        dismissedFor.current.delete(target);
         setPending((prev) => (prev === target ? null : prev));
       }
     };
@@ -85,27 +64,33 @@ export function AutoFlowPrompt() {
     if (!manager || !slidesController || busy.current) return;
     busy.current = true;
     try {
-      const obj = pending;
+      const source = pending;
       setPending(null);
 
-      // Clone before removing from the current slide.
-      const cloned = await obj.clone();
-      manager.canvas.remove(obj);
+      // Expand multi-select and restore scene coords before cloning.
+      const targets = resolveAutoFlowTargets(source);
+      if (targets.length === 0) return;
+
       manager.canvas.discardActiveObject();
+      const clones = await Promise.all(targets.map((obj) => obj.clone()));
+
+      for (const obj of targets) {
+        manager.canvas.remove(obj);
+      }
       manager.canvas.requestRenderAll();
       manager.commit();
 
       await slidesController.add();
 
-      const w = canvasDimensions.width;
-      const h = canvasDimensions.height;
-      const left = Math.max(40, Math.min(Number(cloned.left) || 40, w - 80));
-      const top = Math.max(40, Math.min(Number(cloned.top) || 40, h - 80));
-      cloned.set({ left, top });
-      cloned.setCoords();
+      const { width: w, height: h } = canvasDimensions;
+      for (const cloned of clones) {
+        placeObjectOnNewSlide(cloned, w, h);
+        manager.canvas.add(cloned);
+      }
 
-      manager.canvas.add(cloned);
-      manager.canvas.setActiveObject(cloned);
+      if (clones.length === 1) {
+        manager.canvas.setActiveObject(clones[0]!);
+      }
       manager.canvas.requestRenderAll();
       manager.commit();
     } catch (err) {

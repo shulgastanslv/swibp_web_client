@@ -8,8 +8,6 @@ import {
 } from "fabric";
 import { LayoutManager } from "./layouts";
 
-export type GridStyle = "lines" | "dots";
-
 type Bounds = {
   left: number;
   top: number;
@@ -22,25 +20,27 @@ type Bounds = {
 };
 
 export interface GridSettings {
-  size: number;
+  columns: number;
+  rows: number;
+  margin: number;
   color: string;
   opacity: number;
-  style: GridStyle;
   snapToGrid: boolean;
 }
 
 /**
- * Visual grid + smart guides.
+ * Figma-style layout grid (columns × rows + margin) + smart guides.
  * Hold Ctrl/⌘ while dragging to snap to canvas center, edges, and other objects.
- * When snapToGrid is on and the grid is visible, objects also snap to the grid.
+ * When snap is on and the grid is visible, objects also snap to layout lines.
  */
 export class GridManager {
   private canvas: Canvas;
   public isGridVisible = false;
-  private gridSize = 20;
-  private gridColor = "#000000";
-  private gridOpacity = 0.12;
-  private gridStyle: GridStyle = "lines";
+  private gridColumns = 4;
+  private gridRows = 4;
+  private gridMargin = 64;
+  private gridColor = "#9747FF";
+  private gridOpacity = 0.16;
   private snapToGrid = true;
   private gridOverlay: Rect | null = null;
   private guideLines: Line[] = [];
@@ -89,30 +89,21 @@ export class GridManager {
   }
 
   public applySettings(settings: Partial<GridSettings>) {
-    if (settings.size != null) this.gridSize = Math.max(4, Math.round(settings.size));
+    if (settings.columns != null) {
+      this.gridColumns = Math.max(0, Math.min(24, Math.round(settings.columns)));
+    }
+    if (settings.rows != null) {
+      this.gridRows = Math.max(0, Math.min(24, Math.round(settings.rows)));
+    }
+    if (settings.margin != null) {
+      this.gridMargin = Math.max(0, Math.round(settings.margin));
+    }
     if (settings.color != null) this.gridColor = settings.color;
     if (settings.opacity != null) {
       this.gridOpacity = Math.min(1, Math.max(0, settings.opacity));
     }
-    if (settings.style != null) this.gridStyle = settings.style;
     if (settings.snapToGrid != null) this.snapToGrid = settings.snapToGrid;
     if (this.isGridVisible) this.refreshGrid();
-  }
-
-  public setGridSize(size: number) {
-    this.applySettings({ size });
-  }
-
-  public setGridColor(color: string) {
-    this.applySettings({ color });
-  }
-
-  public setGridOpacity(opacity: number) {
-    this.applySettings({ opacity });
-  }
-
-  public setGridStyle(style: GridStyle) {
-    this.applySettings({ style });
   }
 
   public setSnapToGrid(enabled: boolean) {
@@ -220,31 +211,86 @@ export class GridManager {
     return `rgba(${r},${g},${b},${this.gridOpacity})`;
   }
 
-  private createPatternSource(): HTMLCanvasElement {
-    const size = Math.max(4, this.gridSize);
+  private getLayoutMetrics(width: number, height: number) {
+    const margin = Math.min(
+      this.gridMargin,
+      Math.floor(width / 2),
+      Math.floor(height / 2),
+    );
+    const innerW = Math.max(0, width - margin * 2);
+    const innerH = Math.max(0, height - margin * 2);
+    const columns = this.gridColumns;
+    const rows = this.gridRows;
+
+    const xs: number[] = [];
+    const ys: number[] = [];
+
+    if (columns > 0) {
+      for (let i = 0; i <= columns; i++) {
+        xs.push(margin + (innerW * i) / columns);
+      }
+    }
+    if (rows > 0) {
+      for (let i = 0; i <= rows; i++) {
+        ys.push(margin + (innerH * i) / rows);
+      }
+    }
+
+    return { margin, innerW, innerH, columns, rows, xs, ys };
+  }
+
+  /** Full-canvas layout grid (Figma-style columns / rows + margin). */
+  private createLayoutSource(width: number, height: number): HTMLCanvasElement {
     const tile = document.createElement("canvas");
-    tile.width = size;
-    tile.height = size;
+    tile.width = Math.max(1, Math.round(width));
+    tile.height = Math.max(1, Math.round(height));
     const ctx = tile.getContext("2d");
     if (!ctx) return tile;
 
-    const color = this.resolvedColor();
+    const { margin, innerW, innerH, columns, rows, xs, ys } =
+      this.getLayoutMetrics(tile.width, tile.height);
+    const fill = this.resolvedColor();
+    const line = fill.replace(
+      /rgba\((\d+),(\d+),(\d+),([0-9.]+)\)/,
+      (_, r, g, b, a) =>
+        `rgba(${r},${g},${b},${Math.min(1, Number(a) * 1.6)})`,
+    );
 
-    if (this.gridStyle === "dots") {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(0.5, 0.5, 1.15, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, 0.5);
-      ctx.lineTo(size, 0.5);
-      ctx.moveTo(0.5, 0);
-      ctx.lineTo(0.5, size);
-      ctx.stroke();
+    // Column bands (zebra) — Figma-like.
+    if (columns > 0 && innerW > 0) {
+      const colW = innerW / columns;
+      for (let i = 0; i < columns; i++) {
+        if (i % 2 === 1) continue;
+        ctx.fillStyle = fill;
+        ctx.fillRect(margin + i * colW, margin, colW, innerH);
+      }
     }
+
+    // Row bands (lighter zebra).
+    if (rows > 0 && innerH > 0) {
+      const rowH = innerH / rows;
+      for (let i = 0; i < rows; i++) {
+        if (i % 2 === 1) continue;
+        ctx.fillStyle = fill;
+        ctx.globalAlpha = 0.45;
+        ctx.fillRect(margin, margin + i * rowH, innerW, rowH);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Division lines + margin frame.
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const x of xs) {
+      ctx.moveTo(x + 0.5, margin);
+      ctx.lineTo(x + 0.5, margin + innerH);
+    }
+    for (const y of ys) {
+      ctx.moveTo(margin, y + 0.5);
+      ctx.lineTo(margin + innerW, y + 0.5);
+    }
+    ctx.stroke();
 
     return tile;
   }
@@ -256,9 +302,14 @@ export class GridManager {
     }
 
     const { width, height } = this.getLogicalSize();
+    if (this.gridColumns <= 0 && this.gridRows <= 0) {
+      this.canvas.requestRenderAll();
+      return;
+    }
+
     const pattern = new Pattern({
-      source: this.createPatternSource(),
-      repeat: "repeat",
+      source: this.createLayoutSource(width, height),
+      repeat: "no-repeat",
     });
 
     this.gridOverlay = new Rect({
@@ -444,46 +495,50 @@ export class GridManager {
       bounds.centerY = nextCY;
 
       if (!snappedX) {
-        const leftGrid = Math.round(bounds.left / this.gridSize) * this.gridSize;
-        const centerGrid =
-          Math.round(bounds.centerX / this.gridSize) * this.gridSize;
-        const rightGrid =
-          Math.round(bounds.right / this.gridSize) * this.gridSize;
-
-        if (Math.abs(bounds.left - leftGrid) < threshold) {
-          nextCX = leftGrid + bounds.width / 2;
-          snappedX = true;
-          this.drawVerticalGuide(leftGrid);
-        } else if (Math.abs(bounds.centerX - centerGrid) < threshold) {
-          nextCX = centerGrid;
-          snappedX = true;
-          this.drawVerticalGuide(centerGrid);
-        } else if (Math.abs(bounds.right - rightGrid) < threshold) {
-          nextCX = rightGrid - bounds.width / 2;
-          snappedX = true;
-          this.drawVerticalGuide(rightGrid);
+        const { xs } = this.getLayoutMetrics(width, height);
+        for (const lineX of xs) {
+          if (Math.abs(bounds.left - lineX) < threshold) {
+            nextCX = lineX + bounds.width / 2;
+            snappedX = true;
+            this.drawVerticalGuide(lineX);
+            break;
+          }
+          if (Math.abs(bounds.centerX - lineX) < threshold) {
+            nextCX = lineX;
+            snappedX = true;
+            this.drawVerticalGuide(lineX);
+            break;
+          }
+          if (Math.abs(bounds.right - lineX) < threshold) {
+            nextCX = lineX - bounds.width / 2;
+            snappedX = true;
+            this.drawVerticalGuide(lineX);
+            break;
+          }
         }
       }
 
       if (!snappedY) {
-        const topGrid = Math.round(bounds.top / this.gridSize) * this.gridSize;
-        const centerGrid =
-          Math.round(bounds.centerY / this.gridSize) * this.gridSize;
-        const bottomGrid =
-          Math.round(bounds.bottom / this.gridSize) * this.gridSize;
-
-        if (Math.abs(bounds.top - topGrid) < threshold) {
-          nextCY = topGrid + bounds.height / 2;
-          snappedY = true;
-          this.drawHorizontalGuide(topGrid);
-        } else if (Math.abs(bounds.centerY - centerGrid) < threshold) {
-          nextCY = centerGrid;
-          snappedY = true;
-          this.drawHorizontalGuide(centerGrid);
-        } else if (Math.abs(bounds.bottom - bottomGrid) < threshold) {
-          nextCY = bottomGrid - bounds.height / 2;
-          snappedY = true;
-          this.drawHorizontalGuide(bottomGrid);
+        const { ys } = this.getLayoutMetrics(width, height);
+        for (const lineY of ys) {
+          if (Math.abs(bounds.top - lineY) < threshold) {
+            nextCY = lineY + bounds.height / 2;
+            snappedY = true;
+            this.drawHorizontalGuide(lineY);
+            break;
+          }
+          if (Math.abs(bounds.centerY - lineY) < threshold) {
+            nextCY = lineY;
+            snappedY = true;
+            this.drawHorizontalGuide(lineY);
+            break;
+          }
+          if (Math.abs(bounds.bottom - lineY) < threshold) {
+            nextCY = lineY - bounds.height / 2;
+            snappedY = true;
+            this.drawHorizontalGuide(lineY);
+            break;
+          }
         }
       }
     }

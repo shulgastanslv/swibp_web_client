@@ -39,12 +39,12 @@ export function CollapsibleGroup({
 
   return (
     <div className={cn("border-b border-border/60 last:border-b-0", className)}>
-      <div className="flex h-10 items-center gap-1 pr-2.5">
+      <div className="flex h-full items-center gap-1">
         <button
           type="button"
           onClick={toggle}
           aria-expanded={isOpen}
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full px-2.5 py-2 text-left transition-colors hover:bg-muted/50"
+          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-none px-2.5 py-2.5 text-left transition-colors hover:bg-muted/50"
         >
           <ChevronRight
             className={cn(

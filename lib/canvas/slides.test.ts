@@ -93,6 +93,32 @@ test("add inserts an empty slide after the current one and opens it", async () =
   assert.equal(canvas.content.objects.length, 0);
 });
 
+test("duplicate clones the current slide after it and opens the copy", async () => {
+  const { store, canvas, controller, contentOf } = setup(["a", "b"]);
+  canvas.content = doc("a-edited");
+
+  await controller.duplicate();
+
+  const ids = store.getState().slides.map((s) => s.id);
+  assert.deepEqual(ids, [1, 3, 2]);
+  assert.equal(store.getState().currentSlideId, 3);
+  assert.equal(contentOf(1), "a-edited");
+  assert.equal(contentOf(3), "a-edited");
+  assert.equal(labelOf(canvas.content), "a-edited");
+});
+
+test("duplicate of another slide leaves the canvas on the copy", async () => {
+  const { store, canvas, controller, contentOf } = setup(["a", "b", "c"]);
+
+  await controller.duplicate(2);
+
+  assert.deepEqual(store.getState().slides.map((s) => s.id), [1, 2, 4, 3]);
+  assert.equal(store.getState().currentSlideId, 4);
+  assert.equal(contentOf(2), "b");
+  assert.equal(contentOf(4), "b");
+  assert.equal(labelOf(canvas.content), "b");
+});
+
 test("removing the current slide opens its neighbour without overwriting it", async () => {
   const { store, canvas, controller, contentOf } = setup(["a", "b", "c"]);
   await controller.switchTo(2);

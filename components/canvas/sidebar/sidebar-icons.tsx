@@ -9,17 +9,21 @@ import {
   type PixabayIcon,
 } from "@/actions/pixabay";
 
-const RECENT_KEY = "canvas_recent_pixabay_icons_v1";
+const RECENT_KEY = "canvas_recent_pixabay_icons_v2";
+
+function proxiedPixabayUrl(remoteUrl: string): string {
+  return `/api/pixabay/image?url=${encodeURIComponent(remoteUrl)}`;
+}
 
 const CATEGORIES = [
-  { id: "popular", label: "Топ", query: "icon" },
-  { id: "arrows", label: "Стрелки", query: "arrow icon" },
-  { id: "business", label: "Бизнес", query: "business icon" },
-  { id: "people", label: "Люди", query: "people icon" },
-  { id: "social", label: "Соцсети", query: "social media icon" },
+  { id: "popular", label: "Top", query: "icon" },
+  { id: "arrows", label: "Arrows", query: "arrow icon" },
+  { id: "business", label: "Business", query: "business icon" },
+  { id: "people", label: "People", query: "people icon" },
+  { id: "social", label: "Social", query: "social media icon" },
   { id: "tech", label: "Tech", query: "technology icon" },
-  { id: "nature", label: "Природа", query: "nature icon" },
-  { id: "food", label: "Еда", query: "food icon" },
+  { id: "nature", label: "Nature", query: "nature icon" },
+  { id: "food", label: "Food", query: "food icon" },
 ] as const;
 
 export function SidebarIcons() {
@@ -55,8 +59,8 @@ export function SidebarIcons() {
     setIsSearching(true);
     setError(null);
     try {
-      const res = await searchPixabayIcons(q, { perPage: 40 });
-      if (!res.ok) {
+      const res = await searchPixabayIcons(q, { perPage: 100 });
+      if (res.ok === false) {
         setError(res.error);
         setResults([]);
         return;
@@ -100,7 +104,9 @@ export function SidebarIcons() {
         /* ignore */
       }
 
-      await manager.objects.addImage(icon.imageUrl, { maxSize: 160 });
+      await manager.objects.addImage(proxiedPixabayUrl(icon.imageUrl), {
+        maxSize: 160,
+      });
       manager.commit();
     } catch (err) {
       console.error(err);
@@ -118,7 +124,7 @@ export function SidebarIcons() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Найти на Pixabay…"
+          placeholder="Search assets..."
           className="h-9 w-full min-w-0 rounded-xl bg-muted/30 pl-9 pr-9 text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:bg-muted/45"
         />
         {search ? (
@@ -127,10 +133,10 @@ export function SidebarIcons() {
             onClick={() => setSearch("")}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground hover:text-foreground"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="size-3.5" />
           </button>
         ) : isSearching ? (
-          <Loader2 className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
+          <Loader2 className="absolute right-3 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
         ) : null}
       </div>
 
@@ -142,9 +148,9 @@ export function SidebarIcons() {
               type="button"
               onClick={() => setCategoryId(cat.id)}
               className={cn(
-                "h-6 rounded-md px-2 text-[10px] transition-colors",
+                "h-6 rounded-full px-2 text-xs transition-colors",
                 categoryId === cat.id
-                  ? "bg-foreground/90 text-background"
+                  ? "bg-muted/50 rounded-full text-foreground"
                   : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
               )}
             >
@@ -154,12 +160,12 @@ export function SidebarIcons() {
         </div>
       )}
 
-      {error && <p className="text-[11px] text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
 
       {recent.length > 0 && !search.trim() && (
         <div className="flex min-w-0 flex-col gap-1.5">
-          <span className="text-[10px] font-medium text-muted-foreground/80">
-            Недавние
+          <span className="text-xs font-medium text-muted-foreground/80">
+            Recent
           </span>
           <div className="grid grid-cols-4 gap-1.5">
             {recent.slice(0, 8).map((item) => (
@@ -176,21 +182,21 @@ export function SidebarIcons() {
 
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-medium text-muted-foreground/80">
-            {search.trim() ? "Результаты" : "Pixabay"}
+          <span className="text-xs font-medium text-muted-foreground/80">
+            {search.trim() ? "Results" : "Assets"}
           </span>
-          <span className="tabular-nums text-[10px] text-muted-foreground/40">
+          <span className="tabular-nums text-xs text-muted-foreground/40">
             {results.length}
           </span>
         </div>
 
         {isSearching && results.length === 0 ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
           </div>
         ) : results.length === 0 ? (
-          <p className="py-12 text-center text-[11px] text-muted-foreground">
-            Ничего не найдено
+          <p className="py-12 text-center text-xs text-muted-foreground">
+            No assets found
           </p>
         ) : (
           <div className="grid min-w-0 grid-cols-3 gap-2">
@@ -230,13 +236,13 @@ function IconTile({
       )}
     >
       {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/50" />
+        <Loader2 className="size-4 animate-spin text-muted-foreground/50" />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={item.previewUrl}
           alt={item.name}
-          className="h-full w-full object-contain opacity-90 transition-transform group-hover:scale-[1.03] group-hover:opacity-100"
+          className="size-full object-contain opacity-90 transition-transform group-hover:scale-[1.03] group-hover:opacity-100"
           draggable={false}
           loading="lazy"
         />

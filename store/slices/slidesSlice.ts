@@ -8,6 +8,8 @@ export interface SlidesSlice {
   setCurrentSlideId: (id: number) => void;
   /** Inserts an empty slide after `afterId` (or at the end) and returns its id. */
   addSlide: (afterId?: number) => number;
+  /** Clones `id` (or current) and inserts the copy after it. Returns the new id, or null. */
+  duplicateSlide: (id?: number) => number | null;
   removeSlide: (id: number) => void;
   moveSlide: (direction: "left" | "right") => void;
   updateSlideJSONById: (id: number, json: FabricCanvasJSON) => void;
@@ -44,6 +46,28 @@ export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> =
       const afterIndex = slides.findIndex((s) => s.id === afterId);
       const insertAt = afterIndex === -1 ? slides.length : afterIndex + 1;
       set({ slides: [...slides.slice(0, insertAt), newSlide, ...slides.slice(insertAt)] });
+      markDirty();
+      return newId;
+    },
+
+    duplicateSlide: (id) => {
+      const { slides, currentSlideId } = get();
+      const sourceId = id ?? currentSlideId;
+      const sourceIndex = slides.findIndex((s) => s.id === sourceId);
+      if (sourceIndex === -1) return null;
+
+      const source = slides[sourceIndex]!;
+      const newId = Math.max(0, ...slides.map((s) => s.id)) + 1;
+      const newSlide: SlideItem = {
+        id: newId,
+        canvasJSON: structuredClone(source.canvasJSON),
+        thumbnail: source.thumbnail ?? null,
+      };
+
+      const insertAt = sourceIndex + 1;
+      set({
+        slides: [...slides.slice(0, insertAt), newSlide, ...slides.slice(insertAt)],
+      });
       markDirty();
       return newId;
     },
