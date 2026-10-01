@@ -1,14 +1,32 @@
-import { Canvas, Rect, Image, filters, Pattern } from "fabric";
+import { Canvas, Rect, Image, filters, Pattern, Gradient, type FabricObject } from "fabric";
+
+export type ImageAdjustments = {
+  blur: number; // 0–40 px
+  brightness: number; // -1..1
+  contrast: number; // -1..1
+  saturation: number; // -1..1
+  hue: number; // -1..1
+};
+
+const IMAGE_FILTER_CTORS = [
+  filters.Blur,
+  filters.Brightness,
+  filters.Contrast,
+  filters.Saturation,
+  filters.HueRotation,
+  filters.Grayscale,
+] as const;
 
 export class EffectsManager {
   private canvas: Canvas;
   private vignetteRect: Rect | null = null;
   private noiseRect: Rect | null = null;
+  private warmthRect: Rect | null = null;
   private static noisePattern: Pattern | null = null;
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
-    this.generateNoisePattern();
+    void this.generateNoisePattern();
   }
 
   /** Logical (unzoomed) canvas size — objects live in this space. */
@@ -18,6 +36,11 @@ export class EffectsManager {
       width: (this.canvas.getWidth() || 1080) / zoom,
       height: (this.canvas.getHeight() || 1080) / zoom,
     };
+  }
+
+  private markEffect(obj: FabricObject) {
+    // @ts-expect-error custom flag for effect layers
+    obj.isEffectLayer = true;
   }
 
   private async generateNoisePattern() {
@@ -44,21 +67,18 @@ export class EffectsManager {
     });
   }
 
-  public setVignette(intensity: number) {
-    if (intensity <= 0.01) {
-      if (this.vignetteRect) {
-        this.canvas.remove(this.vignetteRect);
-        this.vignetteRect = null;
-      }
-      return;
-    }
-
+  private ensureOverlay(
+    current: Rect | null,
+    opts: {
+      opacity: number;
+      fill: Rect["fill"];
+      globalCompositeOperation?: GlobalCompositeOperation;
+    },
+  ): Rect {
     const { width, height } = this.getLogicalSize();
-    // Reach the corners of the rectangle, not just the shorter half-side.
-    const cornerRadius = Math.sqrt((width / 2) ** 2 + (height / 2) ** 2);
 
-    if (!this.vignetteRect) {
-      this.vignetteRect = new Rect({
+    if (!current) {
+      const rect = new Rect({
         left: 0,
         top: 0,
         width,
@@ -66,112 +86,174 @@ export class EffectsManager {
         selectable: false,
         evented: false,
         hoverCursor: "default",
-        excludeFromExport: true,
-        opacity: intensity,
+        opacity: opts.opacity,
+        fill: opts.fill,
+        globalCompositeOperation: opts.globalCompositeOperation,
       });
-      // @ts-expect-error custom flag for effect layers
-      this.vignetteRect.isEffectLayer = true;
-      this.canvas.add(this.vignetteRect);
-      this.canvas.bringObjectToFront(this.vignetteRect);
-    } else {
-      this.vignetteRect.set({
-        width,
-        height,
-        opacity: intensity,
-      });
+      this.markEffect(rect);
+      this.canvas.add(rect);
+      this.canvas.bringObjectToFront(rect);
+      return rect;
     }
 
-    this.vignetteRect.set({
-      fill: {
-        type: "radial",
-        coords: {
-          r1: 0,
-          r2: cornerRadius,
-          x1: width / 2,
-          y1: height / 2,
-          x2: width / 2,
-          y2: height / 2,
-        },
-        colorStops: [
-          { offset: 0, color: "rgba(0,0,0,0)" },
-          { offset: 0.55, color: "rgba(0,0,0,0)" },
-          { offset: 1, color: "rgb(0,0,0)" },
-        ],
+    current.set({
+      width,
+      height,
+      opacity: opts.opacity,
+      fill: opts.fill,
+      globalCompositeOperation: opts.globalCompositeOperation,
+    });
+    this.canvas.bringObjectToFront(current);
+    return current;
+  }
+
+  private removeOverlay(rect: Rect | null): null {
+    if (rect) this.canvas.remove(rect);
+    return null;
+  }
+
+  public setVignette(intensity: number) {
+    if (intensity <= 0.01) {
+      this.vignetteRect = this.removeOverlay(this.vignetteRect);
+      this.canvas.requestRenderAll();
+      return;
+    }
+
+    const { width, height } = this.getLogicalSize();
+    const cornerRadius = Math.sqrt((width / 2) ** 2 + (height / 2) ** 2);
+
+    const vignetteFill = new Gradient({
+      type: "radial",
+      coords: {
+        r1: 0,
+        r2: cornerRadius,
+        x1: width / 2,
+        y1: height / 2,
+        x2: width / 2,
+        y2: height / 2,
       },
+      colorStops: [
+        { offset: 0, color: "rgba(0,0,0,0)" },
+        { offset: 0.55, color: "rgba(0,0,0,0)" },
+        { offset: 1, color: "rgb(0,0,0)" },
+      ],
+    });
+
+    this.vignetteRect = this.ensureOverlay(this.vignetteRect, {
+      opacity: intensity,
+      fill: vignetteFill,
     });
     this.canvas.requestRenderAll();
   }
 
   public async setNoise(intensity: number) {
     if (intensity <= 0) {
-      if (this.noiseRect) {
-        this.canvas.remove(this.noiseRect);
-        this.noiseRect = null;
-      }
+      this.noiseRect = this.removeOverlay(this.noiseRect);
+      this.canvas.requestRenderAll();
       return;
     }
 
     await this.generateNoisePattern();
-    const { width, height } = this.getLogicalSize();
-
-    if (!this.noiseRect) {
-      this.noiseRect = new Rect({
-        left: 0,
-        top: 0,
-        width,
-        height,
-        selectable: false,
-        evented: false,
-        hoverCursor: "default",
-        excludeFromExport: true,
-        globalCompositeOperation: "overlay",
-      });
-      // @ts-expect-error custom flag for effect layers
-      this.noiseRect.isEffectLayer = true;
-      this.canvas.add(this.noiseRect);
-      this.canvas.bringObjectToFront(this.noiseRect);
-    } else {
-      this.noiseRect.set({ width, height });
-    }
-
-    this.noiseRect.set({
-      fill: EffectsManager.noisePattern,
+    this.noiseRect = this.ensureOverlay(this.noiseRect, {
       opacity: intensity,
+      fill: EffectsManager.noisePattern,
+      globalCompositeOperation: "overlay",
     });
     this.canvas.requestRenderAll();
   }
 
-  public setBlur(amount: number) {
-    // amount from UI is px 0–40; Fabric Blur expects ~0–1
-    const blurValue = Math.min(1, Math.max(0, amount / 40));
-    const activeObject = this.canvas.getActiveObject();
-    let target = activeObject;
-
-    if (!target && this.canvas.backgroundImage && this.canvas.backgroundImage instanceof Image) {
-      target = this.canvas.backgroundImage;
-    }
-
-    if (target && target instanceof Image) {
-      target.filters = target.filters || [];
-      target.filters = target.filters.filter((f) => !(f instanceof filters.Blur));
-
-      if (blurValue > 0) {
-        target.filters.push(new filters.Blur({ blur: blurValue }));
-      }
-
-      target.applyFilters();
+  /** Warmth: -1 cool … 0 … +1 warm. Slide overlay. */
+  public setWarmth(value: number) {
+    if (Math.abs(value) < 0.01) {
+      this.warmthRect = this.removeOverlay(this.warmthRect);
       this.canvas.requestRenderAll();
+      return;
     }
+
+    const warm = value > 0;
+    this.warmthRect = this.ensureOverlay(this.warmthRect, {
+      opacity: Math.min(0.55, Math.abs(value) * 0.5),
+      fill: warm ? "rgb(255, 140, 50)" : "rgb(60, 120, 220)",
+      globalCompositeOperation: "soft-light",
+    });
+    this.canvas.requestRenderAll();
+  }
+
+  resolveImageTarget(): Image | null {
+    const active = this.canvas.getActiveObject();
+    if (active instanceof Image) return active;
+    if (this.canvas.backgroundImage instanceof Image) {
+      return this.canvas.backgroundImage;
+    }
+    return null;
+  }
+
+  public setImageAdjustments(adj: ImageAdjustments): boolean {
+    const target = this.resolveImageTarget();
+    if (!target) return false;
+
+    const next = (target.filters ?? []).filter(
+      (f) => !IMAGE_FILTER_CTORS.some((Ctor) => f instanceof Ctor),
+    );
+
+    const blurValue = Math.min(1, Math.max(0, adj.blur / 40));
+    if (blurValue > 0.001) next.push(new filters.Blur({ blur: blurValue }));
+    if (Math.abs(adj.brightness) > 0.001) {
+      next.push(new filters.Brightness({ brightness: adj.brightness }));
+    }
+    if (Math.abs(adj.contrast) > 0.001) {
+      next.push(new filters.Contrast({ contrast: adj.contrast }));
+    }
+    if (Math.abs(adj.saturation) > 0.001) {
+      next.push(new filters.Saturation({ saturation: adj.saturation }));
+    }
+    if (Math.abs(adj.hue) > 0.001) {
+      next.push(new filters.HueRotation({ rotation: adj.hue }));
+    }
+
+    target.filters = next;
+    target.applyFilters();
+    this.canvas.requestRenderAll();
+    return true;
+  }
+
+  /** @deprecated use setImageAdjustments — only updates Blur filter */
+  public setBlur(amount: number) {
+    const target = this.resolveImageTarget();
+    if (!target) return;
+
+    const blurValue = Math.min(1, Math.max(0, amount / 40));
+    const next = (target.filters ?? []).filter(
+      (f) => !(f instanceof filters.Blur),
+    );
+    if (blurValue > 0.001) next.push(new filters.Blur({ blur: blurValue }));
+    target.filters = next;
+    target.applyFilters();
+    this.canvas.requestRenderAll();
   }
 
   public clearAll() {
     this.setVignette(0);
     void this.setNoise(0);
-    this.setBlur(0);
+    this.setWarmth(0);
+    this.setImageAdjustments({
+      blur: 0,
+      brightness: 0,
+      contrast: 0,
+      saturation: 0,
+      hue: 0,
+    });
   }
 
   public onCanvasResize() {
     if (this.vignetteRect) this.setVignette(this.vignetteRect.opacity || 0.5);
     if (this.noiseRect) void this.setNoise(this.noiseRect.opacity || 0.5);
+    if (this.warmthRect) {
+      const warm =
+        typeof this.warmthRect.fill === "string" &&
+        this.warmthRect.fill.includes("255");
+      const sign = warm ? 1 : -1;
+      this.setWarmth(sign * ((this.warmthRect.opacity || 0.25) / 0.5));
+    }
   }
 }

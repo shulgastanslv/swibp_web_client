@@ -10,7 +10,12 @@ export interface SettingsSlice {
   snapToGrid: boolean;
   vignette: number;
   noise: number;
+  warmth: number;
   blur: number;
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  hue: number;
   toggleGrid: () => void;
   setGridVisible: (visible: boolean) => void;
   setGridColumns: (columns: number) => void;
@@ -21,8 +26,37 @@ export interface SettingsSlice {
   setSnapToGrid: (enabled: boolean) => void;
   setVignette: (vignette: number) => void;
   setNoise: (noise: number) => void;
+  setWarmth: (warmth: number) => void;
   setBlur: (blur: number) => void;
+  setBrightness: (brightness: number) => void;
+  setContrast: (contrast: number) => void;
+  setSaturation: (saturation: number) => void;
+  setHue: (hue: number) => void;
+  resetFilters: () => void;
+  applyFilterPreset: (preset: FilterPresetValues) => void;
 }
+
+export type FilterPresetValues = {
+  vignette?: number;
+  noise?: number;
+  warmth?: number;
+  blur?: number;
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+  hue?: number;
+};
+
+const FILTER_DEFAULTS = {
+  vignette: 0,
+  noise: 0,
+  warmth: 0,
+  blur: 0,
+  brightness: 0,
+  contrast: 0,
+  saturation: 0,
+  hue: 0,
+} as const;
 
 export const createSettingsSlice: StateCreator<
   SettingsSlice,
@@ -37,9 +71,7 @@ export const createSettingsSlice: StateCreator<
   gridColor: "#9747FF",
   gridOpacity: 0.16,
   snapToGrid: true,
-  vignette: 0,
-  noise: 0,
-  blur: 0,
+  ...FILTER_DEFAULTS,
 
   toggleGrid: () => set((s) => ({ isGridVisible: !s.isGridVisible })),
   setGridVisible: (isGridVisible) => set({ isGridVisible }),
@@ -55,5 +87,16 @@ export const createSettingsSlice: StateCreator<
   setSnapToGrid: (snapToGrid) => set({ snapToGrid }),
   setVignette: (vignette) => set({ vignette }),
   setNoise: (noise) => set({ noise }),
+  setWarmth: (warmth) => set({ warmth }),
   setBlur: (blur) => set({ blur }),
+  setBrightness: (brightness) => set({ brightness }),
+  setContrast: (contrast) => set({ contrast }),
+  setSaturation: (saturation) => set({ saturation }),
+  setHue: (hue) => set({ hue }),
+  resetFilters: () => set({ ...FILTER_DEFAULTS }),
+  applyFilterPreset: (preset) =>
+    set({
+      ...FILTER_DEFAULTS,
+      ...preset,
+    }),
 });
