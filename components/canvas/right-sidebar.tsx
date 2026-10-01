@@ -233,7 +233,7 @@ function NumberField({
             className="h-7 flex-1 border-0 bg-transparent px-0.5 text-right font-mono text-xs tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
           />
           {unit ? (
-            <span className="shrink-0 pl-0.5 text-[10px] text-muted-foreground">
+            <span className="shrink-0 pl-0.5 text-xs text-muted-foreground">
               {unit}
             </span>
           ) : null}
@@ -295,7 +295,7 @@ function DimInput({
           }}
           className="h-7 flex-1 border-0 bg-transparent px-0.5 font-mono text-xs tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
-        <span className="shrink-0 text-[10px] text-muted-foreground">{unit}</span>
+        <span className="shrink-0 text-xs text-muted-foreground">{unit}</span>
       </div>
     </div>
   );
@@ -532,20 +532,20 @@ export function RightSidebar({
       formValues?.src ||
       "";
     if (!src) {
-      setBgError("Нет источника изображения");
+      setBgError("No image source");
       return;
     }
 
     setBgRemoving(true);
     setBgError(null);
-    setBgProgress("Подготовка модели…");
+    setBgProgress("Preparing the model…");
 
     try {
       const result = await removeImageBackground(src, {
         onProgress: ({ key, current, total }) => {
           const pct = total > 0 ? Math.round((current / total) * 100) : 0;
           setBgProgress(
-            pct >= 100 ? "Обработка…" : `Загрузка ${key}: ${pct}%`,
+            pct >= 100 ? "Processing…" : `Loading ${key}: ${pct}%`,
           );
         },
       });
@@ -553,7 +553,7 @@ export function RightSidebar({
       setBgProgress(null);
     } catch (err) {
       console.error(err);
-      setBgError("Не удалось убрать фон. Попробуйте ещё раз.");
+      setBgError("Couldn't remove the background. Try again.");
       setBgProgress(null);
     } finally {
       setBgRemoving(false);
@@ -640,15 +640,15 @@ export function RightSidebar({
   const canHaveRadius = isRect || isImage;
 
   const typeLabel: Record<string, string> = {
-    rect: "Прямоугольник",
-    circle: "Круг",
-    triangle: "Треугольник",
-    image: "Изображение",
-    text: "Текст",
-    "i-text": "Текст",
-    textbox: "Текст",
-    path: "Фигура",
-    group: "Группа",
+    rect: "Rectangle",
+    circle: "Circle",
+    triangle: "Triangle",
+    image: "Image",
+    text: "Text",
+    "i-text": "Text",
+    textbox: "Text",
+    path: "Shape",
+    group: "Group",
   };
 
   const alignIcons: Record<TextAlign, React.ElementType> = {
@@ -825,12 +825,12 @@ export function RightSidebar({
                     {bgRemoving ? "Removing background…" : "Remove background"}
                   </Button>
                   {bgProgress && (
-                    <p className="text-[11px] text-muted-foreground leading-snug">
+                    <p className="text-xs text-muted-foreground leading-snug">
                       {bgProgress}
                     </p>
                   )}
                   {bgError && (
-                    <p className="text-[11px] text-destructive leading-snug">
+                    <p className="text-xs text-destructive leading-snug">
                       {bgError}
                     </p>
                   )}

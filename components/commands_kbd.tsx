@@ -37,7 +37,7 @@ export function CommandsKbd() {
         <Button
           variant="ghost"
           size="icon"
-          title="Команды"
+          title="Commands"
           className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50"
         >
           <Command className="h-3.5 w-3.5" />
@@ -45,53 +45,53 @@ export function CommandsKbd() {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-64 p-1.5 bg-background/80 backdrop-blur-md rounded-4xl shadow-2xl">
-        <DropdownMenuLabel>Команды</DropdownMenuLabel>
+        <DropdownMenuLabel>Commands</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem  className="cursor-pointer">
-            <span>Отменить</span>
+            <span>Undo</span>
             <Kbd className="ml-auto">{cmdKey}Z</Kbd>
           </DropdownMenuItem>
 
           <DropdownMenuItem  className="cursor-pointer">
-            <span>Повторить</span>
+            <span>Redo</span>
             <Kbd className="ml-auto">{cmdKey}⇧Z</Kbd>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem className="cursor-pointer">
-            <span>Копировать</span>
+            <span>Copy</span>
             <Kbd className="ml-auto">{cmdKey}C</Kbd>
           </DropdownMenuItem>
 
           <DropdownMenuItem className="cursor-pointer">
-            <span>Вставить</span>
+            <span>Paste</span>
             <Kbd className="ml-auto">{cmdKey}V</Kbd>
           </DropdownMenuItem>
 
           <DropdownMenuItem className="cursor-pointer">
-            <span>Дублировать</span>
+            <span>Duplicate</span>
             <Kbd className="ml-auto">{cmdKey}D</Kbd>
           </DropdownMenuItem>
 
           <DropdownMenuItem className="cursor-pointer">
-            <span>Удалить</span>
+            <span>Delete</span>
             <Kbd className="ml-auto">Del</Kbd>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem className="cursor-pointer">
-            <span>Центр</span>
+            <span>Center</span>
             <Kbd className="ml-auto">{cmdKey}Alt C</Kbd>
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer">
-            <span>Центр H / V</span>
+            <span>Center H / V</span>
             <Kbd className="ml-auto">{cmdKey}Alt H/V</Kbd>
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer">
-            <span>Snap при перетаскивании</span>
+            <span>Snap while dragging</span>
             <Kbd className="ml-auto">{cmdKey}+drag</Kbd>
           </DropdownMenuItem>
         </DropdownMenuGroup>

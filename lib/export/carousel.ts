@@ -135,7 +135,7 @@ export function downloadSlidesSeparately(
 
 export async function copyImageToClipboard(blob: Blob): Promise<void> {
   if (!navigator.clipboard?.write) {
-    throw new Error("Буфер обмена недоступен");
+    throw new Error("Clipboard is unavailable");
   }
   await navigator.clipboard.write([
     new ClipboardItem({ [blob.type || "image/png"]: blob }),

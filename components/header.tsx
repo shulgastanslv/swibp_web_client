@@ -98,7 +98,7 @@ export function Header({ onPreview }: HeaderProps) {
       return;
     }
     const res = await persist();
-    if (!res.success) alert("Ошибка при сохранении");
+    if (!res.success) alert("Couldn't save");
   };
 
   const handleUndo = () => {
@@ -116,7 +116,7 @@ export function Header({ onPreview }: HeaderProps) {
       slidesController?.saveCurrent();
       const state = useCanvasStore.getState();
       const current = state.slides.find((s) => s.id === state.currentSlideId);
-      if (!current) throw new Error("Нет активного слайда");
+      if (!current) throw new Error("No active slide");
 
       const [rendered] = await renderSlidesToImages(
         [{ id: current.id, canvasJSON: current.canvasJSON }],
@@ -129,7 +129,7 @@ export function Header({ onPreview }: HeaderProps) {
       setTimeout(() => setCopied(false), 1600);
     } catch (err) {
       console.error(err);
-      alert(err instanceof Error ? err.message : "Не удалось скопировать");
+      alert(err instanceof Error ? err.message : "Couldn't copy");
     } finally {
       setCopying(false);
     }
@@ -166,7 +166,7 @@ export function Header({ onPreview }: HeaderProps) {
             placeholder="Project name..."
           />
           {isDirty && (
-            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+            <span className="text-xs text-muted-foreground shrink-0 hidden sm:inline">
               <CloudOff className="w-3.5 h-3.5" />
             </span>
           )}
@@ -267,7 +267,7 @@ export function Header({ onPreview }: HeaderProps) {
                 Notifications
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <div className="py-4 text-center text-muted-foreground text-[11px]">
+              <div className="py-4 text-center text-muted-foreground text-xs">
                 No new notifications
               </div>
             </DropdownMenuContent>
@@ -292,7 +292,7 @@ export function Header({ onPreview }: HeaderProps) {
             >
               <ArrowUp className="w-3.5 h-3.5" />
               <span>Export</span>
-              <span className="text-[11px] font-normal text-primary-foreground/70">
+              <span className="text-xs font-normal text-primary-foreground/70">
                 [{slideCount}] · PNG
               </span>
             </button>
@@ -330,17 +330,17 @@ export function Header({ onPreview }: HeaderProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-full p-0"
+                  className="h-8 w-8 rounded-full p-0 hover:bg-muted/50 hover:text-foreground"
                   title="Account"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={
                         session.user?.image ??
-                        `https://api.dicebear.com/9.x/glass/svg?seed=${session.user?.id}`
+                        `https://api.dicebear.com/10.x/squircles/svg?seed=${session.user?.id}`
                       } alt={userName}
                     />
-                    <AvatarFallback className="text-[14px]">
+                    <AvatarFallback className="text-sm">
                       {userInitial}
                     </AvatarFallback>
                   </Avatar>

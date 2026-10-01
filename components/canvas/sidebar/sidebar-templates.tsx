@@ -38,7 +38,7 @@ export function SidebarTemplates() {
       ]);
 
       if (!listRes.success) {
-        alert("Ошибка при загрузке шаблонов");
+        alert("Couldn't load templates");
         setTemplates([]);
         return;
       }
@@ -68,7 +68,7 @@ export function SidebarTemplates() {
     const res = await seedBuiltinTemplates();
     setSeeding(false);
     if (!res.success) {
-      alert("Ошибка при засеивании шаблонов");
+      alert("Couldn't seed templates");
       return;
     }
     await fetchTemplates();
@@ -80,7 +80,7 @@ export function SidebarTemplates() {
     setError(null);
     try {
       const res = await applyTemplateById(id);
-      if (!res.success) alert("Ошибка при применении шаблона");
+      if (!res.success) alert("Couldn't apply the template");
     } finally {
       setApplyingId(null);
     }
@@ -192,11 +192,11 @@ export function SidebarTemplates() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-xs font-medium">{tpl.title}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">
+                    <p className="truncate text-xs text-muted-foreground">
                       {tpl.category} · {tpl.slideCount} slides · {tpl.aspectRatio}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-[10px] text-muted-foreground ring-1 ring-border/40">
+                  <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground ring-1 ring-border/40">
                     {busy ? "…" : "Apply"}
                   </span>
                 </div>

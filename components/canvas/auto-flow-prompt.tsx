@@ -105,21 +105,21 @@ export function AutoFlowPrompt() {
       <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-border/60 bg-background/95 px-3 py-2 shadow-lg backdrop-blur-md">
         <Layers className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <p className="text-xs text-foreground max-w-[240px]">
-          Объект выходит за край слайда. Создать следующий и перенести?
+          This object runs past the slide edge. Create the next slide and move it?
         </p>
         <Button
           size="sm"
           className="h-7 rounded-xl text-xs px-2.5 shrink-0"
           onClick={() => void accept()}
         >
-          Создать
+          Create
         </Button>
         <Button
           variant="ghost"
           size="icon"
           className="h-7 w-7 rounded-full shrink-0"
           onClick={dismiss}
-          title="Скрыть"
+          title="Dismiss"
         >
           <X className="h-3.5 w-3.5" />
         </Button>

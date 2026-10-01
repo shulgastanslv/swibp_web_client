@@ -38,10 +38,10 @@ function blobToDataUrl(blob: Blob): Promise<string> {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("Не удалось закодировать результат"));
+      else reject(new Error("Couldn't encode the result"));
     };
     reader.onerror = () =>
-      reject(reader.error ?? new Error("Ошибка чтения результата"));
+      reject(reader.error ?? new Error("Couldn't read the result"));
     reader.readAsDataURL(blob);
   });
 }

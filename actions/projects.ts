@@ -91,7 +91,7 @@ export async function getUserProjects(): Promise<
 > {
   try {
     const userId = await requireUserId();
-    if (!userId) return { success: false, error: "Войдите в аккаунт" };
+    if (!userId) return { success: false, error: "Sign in" };
 
     const rawProjects = await prisma.project.findMany({
       where: { userId },
@@ -120,7 +120,7 @@ export async function getUserProjects(): Promise<
     return { success: true, projects };
   } catch (err) {
     console.error("getUserProjects error:", err);
-    return { success: false, error: "Ошибка загрузки проектов" };
+    return { success: false, error: "Couldn't load projects" };
   }
 }
 
@@ -130,7 +130,7 @@ export async function createProject(input?: {
 }): Promise<ActionResult<{ projectId: string; project: ProjectDetail }>> {
   try {
     const userId = await requireUserId();
-    if (!userId) return { success: false, error: "Войдите в аккаунт" };
+    if (!userId) return { success: false, error: "Sign in" };
 
     const aspectRatio = input?.aspectRatio ?? "4:5";
     const dims = CANVAS_RATIOS[aspectRatio] ?? CANVAS_RATIOS["4:5"];
@@ -173,7 +173,7 @@ export async function createProject(input?: {
     };
   } catch (err) {
     console.error("createProject error:", err);
-    return { success: false, error: "Не удалось создать проект" };
+    return { success: false, error: "Couldn't create the project" };
   }
 }
 
@@ -182,7 +182,7 @@ export async function getProjectById(
 ): Promise<ActionResult<{ project: ProjectDetail; isOwner: boolean }>> {
   try {
     const userId = await requireUserId();
-    if (!projectId) return { success: false, error: "projectId не передан" };
+    if (!projectId) return { success: false, error: "projectId is required" };
 
     const project = await prisma.project.findFirst({
       where: {
@@ -197,7 +197,7 @@ export async function getProjectById(
       },
     });
 
-    if (!project) return { success: false, error: "Проект не найден" };
+    if (!project) return { success: false, error: "Project not found" };
 
     return {
       success: true,
@@ -215,7 +215,7 @@ export async function getProjectById(
     };
   } catch (err) {
     console.error("getProjectById error:", err);
-    return { success: false, error: "Ошибка загрузки" };
+    return { success: false, error: "Couldn't load" };
   }
 }
 
@@ -226,15 +226,15 @@ export async function setProjectPublic(
 ): Promise<ActionResult<{ isPublic: boolean; sharePath: string }>> {
   try {
     const userId = await requireUserId();
-    if (!userId) return { success: false, error: "Войдите в аккаунт" };
-    if (!projectId) return { success: false, error: "projectId не передан" };
+    if (!userId) return { success: false, error: "Sign in" };
+    if (!projectId) return { success: false, error: "projectId is required" };
 
     const result = await prisma.project.updateMany({
       where: { id: projectId, userId },
       data: { isPublic },
     });
 
-    if (result.count === 0) return { success: false, error: "Проект не найден" };
+    if (result.count === 0) return { success: false, error: "Project not found" };
 
     return {
       success: true,
@@ -243,7 +243,7 @@ export async function setProjectPublic(
     };
   } catch (err) {
     console.error("setProjectPublic error:", err);
-    return { success: false, error: "Не удалось обновить доступ" };
+    return { success: false, error: "Couldn't update access" };
   }
 }
 
@@ -254,17 +254,17 @@ export async function saveProject(
 ): Promise<ActionResult<{ updatedAt: string }>> {
   try {
     const userId = await requireUserId();
-    if (!userId) return { success: false, error: "Войдите в аккаунт" };
-    if (!projectId) return { success: false, error: "projectId не передан" };
+    if (!userId) return { success: false, error: "Sign in" };
+    if (!projectId) return { success: false, error: "projectId is required" };
     if (!input.slides?.length) {
-      return { success: false, error: "Нужен хотя бы один слайд" };
+      return { success: false, error: "At least one slide is required" };
     }
 
     const existing = await prisma.project.findFirst({
       where: { id: projectId, userId },
       select: { id: true },
     });
-    if (!existing) return { success: false, error: "Проект не найден" };
+    if (!existing) return { success: false, error: "Project not found" };
 
     const dims =
       CANVAS_RATIOS[input.aspectRatio] ??
@@ -298,7 +298,7 @@ export async function saveProject(
     return { success: true, updatedAt: updated.updatedAt.toISOString() };
   } catch (err) {
     console.error("saveProject error:", err);
-    return { success: false, error: "Не удалось сохранить проект" };
+    return { success: false, error: "Couldn't save the project" };
   }
 }
 
@@ -308,9 +308,9 @@ export async function saveAsNewProject(
 ): Promise<ActionResult<{ projectId: string; updatedAt: string }>> {
   try {
     const userId = await requireUserId();
-    if (!userId) return { success: false, error: "Войдите в аккаунт" };
+    if (!userId) return { success: false, error: "Sign in" };
     if (!input.slides?.length) {
-      return { success: false, error: "Нужен хотя бы один слайд" };
+      return { success: false, error: "At least one slide is required" };
     }
 
     const dims =
@@ -343,7 +343,7 @@ export async function saveAsNewProject(
     };
   } catch (err) {
     console.error("saveAsNewProject error:", err);
-    return { success: false, error: "Не удалось сохранить проект" };
+    return { success: false, error: "Couldn't save the project" };
   }
 }
 
@@ -353,18 +353,18 @@ export async function updateProjectTitle(
 ): Promise<ActionResult<object>> {
   try {
     const userId = await requireUserId();
-    if (!userId) return { success: false, error: "Войдите в аккаунт" };
-    if (!projectId) return { success: false, error: "projectId не передан" };
+    if (!userId) return { success: false, error: "Sign in" };
+    if (!projectId) return { success: false, error: "projectId is required" };
 
     const result = await prisma.project.updateMany({
       where: { id: projectId, userId },
       data: { title: title.trim() || "Untitled Carousel" },
     });
 
-    if (result.count === 0) return { success: false, error: "Проект не найден" };
+    if (result.count === 0) return { success: false, error: "Project not found" };
     return { success: true };
   } catch {
-    return { success: false, error: "Не удалось обновить название" };
+    return { success: false, error: "Couldn't rename the project" };
   }
 }
 
@@ -373,8 +373,8 @@ export async function toggleSaveProject(
 ): Promise<ActionResult<{ saved: boolean }>> {
   try {
     const userId = await requireUserId();
-    if (!userId) return { success: false, error: "Войдите в аккаунт" };
-    if (!projectId) return { success: false, error: "projectId не передан" };
+    if (!userId) return { success: false, error: "Sign in" };
+    if (!projectId) return { success: false, error: "projectId is required" };
 
     const existing = await prisma.savedProject.findUnique({
       where: { userId_projectId: { userId, projectId } },
@@ -389,24 +389,24 @@ export async function toggleSaveProject(
     return { success: true, saved: true };
   } catch (err) {
     console.error("toggleSaveProject error:", err);
-    return { success: false, error: "Ошибка сохранения" };
+    return { success: false, error: "Couldn't save" };
   }
 }
 
 export async function deleteProject(projectId: string): Promise<ActionResult<object>> {
   try {
     const userId = await requireUserId();
-    if (!userId) return { success: false, error: "Войдите в аккаунт" };
-    if (!projectId) return { success: false, error: "projectId не передан" };
+    if (!userId) return { success: false, error: "Sign in" };
+    if (!projectId) return { success: false, error: "projectId is required" };
 
     const result = await prisma.project.deleteMany({
       where: { id: projectId, userId },
     });
 
-    if (result.count === 0) return { success: false, error: "Проект не найден" };
+    if (result.count === 0) return { success: false, error: "Project not found" };
     revalidatePath("/");
     return { success: true };
   } catch {
-    return { success: false, error: "Ошибка удаления проекта" };
+    return { success: false, error: "Couldn't delete the project" };
   }
 }

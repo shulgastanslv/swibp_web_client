@@ -29,7 +29,7 @@ function CountField({
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
       <Input
         type="number"
         min={min}
@@ -130,7 +130,7 @@ export function GridControls() {
                 <p className="text-xs font-semibold text-foreground">
                   Layout grid
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Columns, rows, margin
                 </p>
               </div>
@@ -164,8 +164,8 @@ export function GridControls() {
             <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 px-3 py-2.5">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-foreground">Snap</p>
-                <p className="text-[10px] text-muted-foreground">
-                  Привязка к линиям сетки
+                <p className="text-xs text-muted-foreground">
+                  Snap to grid lines
                 </p>
               </div>
               <Switch checked={snapToGrid} onCheckedChange={setSnapToGrid} />

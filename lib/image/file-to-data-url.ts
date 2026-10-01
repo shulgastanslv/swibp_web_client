@@ -49,9 +49,9 @@ function readFileAsDataUrl(file: File): Promise<string> {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("Не удалось прочитать файл"));
+      else reject(new Error("Couldn't read the file"));
     };
-    reader.onerror = () => reject(reader.error ?? new Error("Ошибка чтения файла"));
+    reader.onerror = () => reject(reader.error ?? new Error("Couldn't read the file"));
     reader.readAsDataURL(file);
   });
 }

@@ -39,7 +39,7 @@ export async function searchPixabayIcons(
   const key =
     process.env.PIXABAY_API_KEY ?? process.env.NEXT_PUBLIC_PIXABAY_API_KEY;
   if (!key) {
-    return { ok: false, error: "PIXABAY_API_KEY не задан" };
+    return { ok: false, error: "PIXABAY_API_KEY is not set" };
   }
 
   const q = query.trim() || "icon";
@@ -81,6 +81,6 @@ export async function searchPixabayIcons(
     return { ok: true, items };
   } catch (err) {
     console.error("searchPixabayIcons:", err);
-    return { ok: false, error: "Не удалось загрузить иконки" };
+    return { ok: false, error: "Couldn't load icons" };
   }
 }

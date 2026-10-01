@@ -95,7 +95,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
     if (!name.trim() || loading) return;
 
     if (status !== "authenticated") {
-      setError("Сначала войдите в аккаунт");
+      setError("Sign in first");
       return;
     }
 
@@ -104,7 +104,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
 
     const res = await newProject(name.trim(), format.ratio);
     if (!res.success) {
-      setError("Не удалось создать проект");
+      setError("Couldn't create the project");
       setLoading(false);
       return;
     }
@@ -147,7 +147,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
           />
 
           <div className="space-y-2">
-            <p className="text-[11px] text-muted-foreground">Format</p>
+            <p className="text-xs text-muted-foreground">Format</p>
             <div className="flex flex-wrap gap-1.5">
               {FORMATS.map((f) => (
                 <button
@@ -169,7 +169,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
           </div>
 
           <div className="space-y-2">
-            <p className="text-[11px] text-muted-foreground">Template</p>
+            <p className="text-xs text-muted-foreground">Template</p>
             <div className="flex max-h-36 flex-col gap-1 overflow-y-auto rounded-2xl bg-muted/30 p-1">
               <button
                 type="button"
@@ -186,12 +186,12 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
               </button>
 
               {loadingList ? (
-                <div className="flex items-center justify-center gap-2 py-4 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground">
                   <Loader2 className="size-3.5 animate-spin" />
                   Loading…
                 </div>
               ) : visibleTemplates.length === 0 ? (
-                <p className="px-3 py-3 text-[11px] text-muted-foreground">
+                <p className="px-3 py-3 text-xs text-muted-foreground">
                   No templates for this format
                 </p>
               ) : (
@@ -209,7 +209,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
                     )}
                   >
                     <span className="min-w-0 truncate">{tpl.title}</span>
-                    <span className="shrink-0 text-[10px] opacity-60">
+                    <span className="shrink-0 text-xs opacity-60">
                       {tpl.slideCount}
                     </span>
                   </button>
@@ -219,7 +219,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
           </div>
         </div>
 
-        {error && <p className="text-[11px] text-destructive">{error}</p>}
+        {error && <p className="text-xs text-destructive">{error}</p>}
 
         <Button
           type="button"

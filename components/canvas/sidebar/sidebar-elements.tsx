@@ -9,12 +9,7 @@ import {
   Type,
   Quote,
   Code,
-  Tag,
-  Star,
-  ArrowRight,
-  MousePointerClick,
   Minus,
-  User,
   AlignLeft,
   Pencil,
   Waypoints,
@@ -80,11 +75,11 @@ export function SidebarElements() {
     try {
       parsed = new URL(trimmed);
       if (!/^https?:$/i.test(parsed.protocol)) {
-        setUrlError("Нужна ссылка http(s)");
+        setUrlError("Use an http(s) link");
         return;
       }
     } catch {
-      setUrlError("Некорректная ссылка");
+      setUrlError("Invalid link");
       return;
     }
 
@@ -95,7 +90,7 @@ export function SidebarElements() {
       setImageUrl("");
     } catch (err) {
       console.error(err);
-      setUrlError("Не удалось загрузить изображение (CORS?)");
+      setUrlError("Couldn't load the image (CORS?)");
     } finally {
       setUrlLoading(false);
     }
@@ -110,7 +105,7 @@ export function SidebarElements() {
           { label: "Heading", icon: Type, action: () => manager?.objects.addHeading() },
           { label: "Subtitle", icon: Type, action: () => manager?.objects.addSubtitle() },
           { label: "Paragraph", icon: AlignLeft, action: () => manager?.objects.addParagraph() },
-          { label: "Text", icon: Pencil, action: () => manager?.objects.addText("Новый текст") },
+          { label: "Text", icon: Pencil, action: () => manager?.objects.addText("New text") },
           { label: "Quote", icon: Quote, action: () => manager?.objects.addQuote() },
           { label: "Code", icon: Code, action: () => manager?.objects.addCodeBlock() },
         ],
@@ -126,22 +121,10 @@ export function SidebarElements() {
           {
             label: "Connect",
             icon: Waypoints,
-            title: "Выделите 2 объекта через Shift и нажмите",
+            title: "Select 2 objects with Shift, then click",
             action: () => manager?.connectSelectedObjects(),
           },
           { label: "Divider", icon: Minus, action: () => manager?.objects.addDividerLine() },
-        ],
-      },
-      {
-        id: "elements-blocks",
-        title: "Blocks",
-        items: [
-          { label: "Topic", icon: Tag, action: () => manager?.objects.addTag() },
-          { label: "Step", icon: Tag, action: () => manager?.objects.addBadge() },
-          { label: "Rating", icon: Star, action: () => manager?.objects.addStarRating() },
-          { label: "Handle", icon: User, action: () => manager?.objects.addHandle() },
-          { label: "Swipe", icon: ArrowRight, action: () => manager?.objects.addSwipeTag() },
-          { label: "CTA", icon: MousePointerClick, action: () => manager?.objects.addCTAButton() },
         ],
       },
     ],
@@ -149,7 +132,7 @@ export function SidebarElements() {
   );
 
   return (
-    <div className="flex flex-col text-[11px] text-foreground">
+    <div className="flex flex-col text-xs text-foreground">
       <CollapsibleGroup id="elements-image" title="Image">
         <input
           type="file"

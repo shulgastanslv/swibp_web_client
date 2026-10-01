@@ -19,7 +19,7 @@ export const authOptions: AuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Введите email и пароль");
+          throw new Error("Enter your email and password");
         }
 
         const user = await prisma.user.findUnique({
@@ -27,7 +27,7 @@ export const authOptions: AuthOptions = {
         });
 
         if (!user || !user.password) {
-          throw new Error("Пользователь не найден или вошел через соцсети");
+          throw new Error("No password account found for this email");
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -36,7 +36,7 @@ export const authOptions: AuthOptions = {
         );
 
         if (!isPasswordValid) {
-          throw new Error("Неверный пароль");
+          throw new Error("Incorrect password");
         }
 
         return {

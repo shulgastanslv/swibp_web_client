@@ -74,7 +74,7 @@ export function CarouselStack({
       </div>
 
       {badge ? (
-        <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-medium text-foreground ring-1 ring-border/40">
+        <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-border/40">
           {badge}
         </span>
       ) : null}

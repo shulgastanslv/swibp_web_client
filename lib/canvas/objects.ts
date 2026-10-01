@@ -12,6 +12,10 @@ import {
   Image,
 } from "fabric";
 
+/** 4K crop of a public Unsplash photo (CORS-enabled). */
+const CODE_BLOCK_BG_4K =
+  "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=3840&h=2160&q=80";
+
 export class ObjectFactory {
   private canvas: Canvas;
 
@@ -183,7 +187,6 @@ export class ObjectFactory {
     });
   }
 
-  // ── NEW ELEMENT METHODS ────────────────────────────────────────────
 
   addHeading(text = "New Heading", x?: number, y?: number): Textbox {
     const pos = this.getPosition(x, y);
@@ -197,10 +200,8 @@ export class ObjectFactory {
       lineHeight: 1.1,
     });
 
-    // Принудительно рассчитываем геометрию текста
     tb.initDimensions();
 
-    // Получаем реальную ширину текста (с запасом 2-4px для предотвращения переноса)
     const actualWidth = Math.ceil(tb.calcTextWidth()) + 4;
 
     // Устанавливаем ширину ровно под текст
@@ -271,40 +272,188 @@ export class ObjectFactory {
     return tb;
   }
 
-  addCodeBlock(code = "const hello = 'world';", x?: number, y?: number): Group {
+  addCodeBlock(
+    code = "// Paste your code",
+    x?: number,
+    y?: number,
+  ): Group {
     const pos = this.getPosition(x, y);
     const textW = 760;
-    const padX = 40;
-    const padY = 32;
+    const padX = 36;
+    const padTop = 52;
+    const padBottom = 28;
+    const radius = 16;
     const totalW = textW + padX * 2;
-    const totalH = 120;
+    const minH = 200;
 
+    const codeText = new Textbox(code, {
+      width: textW,
+      fontSize: 26,
+      fontFamily: "Consolas, 'Courier New', monospace",
+      fill: "#f8fafc",
+      lineHeight: 1.45,
+      splitByGrapheme: true,
+      editable: true,
+      originX: "left",
+      originY: "top",
+    });
 
-    const bg = new Rect({
-      left: -totalW / 2,
-      top: -totalH / 2,
+    const contentHeight = () =>
+      Math.max(minH, codeText.calcTextHeight() + padTop + padBottom);
+
+    let totalH = contentHeight();
+
+    const pinTopLeft = (obj: FabricObject, height: number) => {
+      obj.set({
+        left: -totalW / 2,
+        top: -height / 2,
+        originX: "left",
+        originY: "top",
+      });
+    };
+
+    let photo: FabricObject = new Rect({
       width: totalW,
       height: totalH,
       fill: "#0d1117",
-      rx: 12,
-      ry: 12,
+      rx: radius,
+      ry: radius,
+      evented: false,
+      selectable: false,
+    });
+    pinTopLeft(photo, totalH);
+
+    let naturalW = totalW;
+    let naturalH = totalH;
+
+    const coverPhoto = (img: Image, height: number) => {
+      const scale = Math.max(totalW / naturalW, height / naturalH);
+      const cropW = totalW / scale;
+      const cropH = height / scale;
+      img.set({
+        cropX: Math.max(0, (naturalW - cropW) / 2),
+        cropY: Math.max(0, (naturalH - cropH) / 2),
+        width: cropW,
+        height: cropH,
+        scaleX: scale,
+        scaleY: scale,
+      });
+      pinTopLeft(img, height);
+    };
+
+    const scrim = new Rect({
+      width: totalW,
+      height: totalH,
+      rx: radius,
+      ry: radius,
+      fill: "rgba(6, 10, 18, 0.58)",
+      evented: false,
+      selectable: false,
+    });
+    pinTopLeft(scrim, totalH);
+
+    const dots = ["#ff5f57", "#febc2e", "#28c840"].map((fill, i) => {
+      const dot = new Circle({
+        radius: 6,
+        fill,
+        originX: "left",
+        originY: "top",
+        evented: false,
+        selectable: false,
+      });
+      dot.set({
+        left: -totalW / 2 + 22 + i * 20,
+        top: -totalH / 2 + 18,
+      });
+      return dot;
     });
 
-    const dot1 = new Circle({ left: -totalW / 2 + 20, top: -totalH / 2 + 18, radius: 7, fill: "#ff5f57" });
-    const dot2 = new Circle({ left: -totalW / 2 + 40, top: -totalH / 2 + 18, radius: 7, fill: "#febc2e" });
-    const dot3 = new Circle({ left: -totalW / 2 + 60, top: -totalH / 2 + 18, radius: 7, fill: "#28c840" });
-
-    const codeText = new Textbox(code, {
+    codeText.set({
       left: -textW / 2,
-      top: -totalH / 2 + padY,
-      width: textW,
-      fontSize: 28,
-      fontFamily: "'Courier New', Courier, monospace",
-      fill: "#58a6ff",
+      top: -totalH / 2 + padTop,
     });
 
-    const group = new Group([bg, dot1, dot2, dot3, codeText], pos);
+    const clip = new Rect({
+      width: totalW,
+      height: totalH,
+      rx: radius,
+      ry: radius,
+      originX: "center",
+      originY: "center",
+    });
+
+    const group = new Group([photo, scrim, ...dots, codeText], {
+      ...pos,
+      subTargetCheck: true,
+      interactive: true,
+      clipPath: clip,
+    });
+
+    const syncFrame = () => {
+      const nextH = contentHeight();
+      if (Math.abs(nextH - totalH) < 1) return;
+      totalH = nextH;
+
+      if (photo.type === "image") coverPhoto(photo as Image, totalH);
+      else {
+        photo.set({ height: totalH });
+        pinTopLeft(photo, totalH);
+      }
+
+      scrim.set({ height: totalH });
+      pinTopLeft(scrim, totalH);
+      dots.forEach((dot, i) => {
+        dot.set({
+          left: -totalW / 2 + 22 + i * 20,
+          top: -totalH / 2 + 18,
+        });
+      });
+      codeText.set({ top: -totalH / 2 + padTop });
+      clip.set({ height: totalH });
+      relayout();
+    };
+
+    const relayout = () => {
+      const originY = group.originY ?? "center";
+      const topBefore = group.top ?? 0;
+      const heightBefore = group.getScaledHeight();
+      const topEdge =
+        originY === "center" ? topBefore - heightBefore / 2 : topBefore;
+
+      group.set({ dirty: true });
+      group.triggerLayout();
+
+      const heightAfter = group.getScaledHeight();
+      if (originY === "center") {
+        group.set({ top: topEdge + heightAfter / 2 });
+      }
+      group.setCoords();
+      this.canvas.requestRenderAll();
+    };
+
+    codeText.on("changed", syncFrame);
     this.addToCanvas(group);
+    codeText.enterEditing();
+    codeText.selectAll();
+    this.canvas.requestRenderAll();
+
+    void Image.fromURL(CODE_BLOCK_BG_4K, { crossOrigin: "anonymous" })
+      .then((img) => {
+        if (!group.canvas) return;
+        naturalW = img.width || totalW;
+        naturalH = img.height || totalH;
+        coverPhoto(img, totalH);
+        img.set({ evented: false, selectable: false });
+        const index = group.getObjects().indexOf(photo);
+        group.remove(photo);
+        group.insertAt(Math.max(index, 0), img);
+        photo = img;
+        relayout();
+      })
+      .catch((err) => {
+        console.error("Code block background failed:", err);
+      });
+
     return group;
   }
 
@@ -390,7 +539,7 @@ export class ObjectFactory {
 
   /** CTA: subscribe title + social icons row. */
   addCTAButton(
-    label = "Подписаться",
+    label = "Subscribe",
     x?: number,
     y?: number,
   ): Group {
@@ -414,7 +563,7 @@ export class ObjectFactory {
       textAlign: "center",
     });
 
-    const hint = new Textbox("в соцсетях", {
+    const hint = new Textbox("on social", {
       left: -w / 2,
       top: -28,
       width: w,

@@ -47,23 +47,23 @@ export function useProject() {
 
       const res = await getProjectById(projectId);
       if (seq !== loadSeq.current) {
-        return { success: false as const, error: "Отменено" };
+        return { success: false as const, error: "Cancelled" };
       }
 
       if (!res.success) {
         store.setLoadingProject(false);
-        return { success: false as const, error: "Ошибка загрузки" };
+        return { success: false as const, error: "Couldn't load" };
       }
 
       slidesController?.saveCurrent();
       store.loadProjectState(res.project);
       if (seq !== loadSeq.current) {
-        return { success: false as const, error: "Отменено" };
+        return { success: false as const, error: "Cancelled" };
       }
 
       await slidesController?.loadCurrent();
       if (seq !== loadSeq.current) {
-        return { success: false as const, error: "Отменено" };
+        return { success: false as const, error: "Cancelled" };
       }
 
       useCanvasStore.getState().markSaved();
@@ -74,12 +74,12 @@ export function useProject() {
 
   const persist = useCallback(async () => {
     if (status !== "authenticated") {
-      return { success: false as const, error: "Войдите в аккаунт, чтобы сохранить" };
+      return { success: false as const, error: "Sign in to save" };
     }
 
     const store = useCanvasStore.getState();
     if (store.isSaving) {
-      return { success: false as const, error: "Сохранение уже идёт" };
+      return { success: false as const, error: "A save is already in progress" };
     }
 
     slidesController?.saveCurrent();
@@ -128,7 +128,7 @@ export function useProject() {
   const newProject = useCallback(
     async (title?: string, aspectRatio?: RatioKey) => {
       if (status !== "authenticated") {
-        return { success: false as const, error: "Войдите в аккаунт" };
+        return { success: false as const, error: "Sign in" };
       }
 
       const ratio =

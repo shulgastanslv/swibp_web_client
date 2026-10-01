@@ -182,7 +182,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
         {(exporting || done) && (
           <div className="space-y-1.5">
-            <div className="flex justify-between text-[11px] text-muted-foreground">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>{done ? "Done" : "Rendering…"}</span>
               <span className="tabular-nums">{progress}%</span>
             </div>
@@ -195,7 +195,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           </div>
         )}
 
-        {error && <p className="text-[11px] text-destructive">{error}</p>}
+        {error && <p className="text-xs text-destructive">{error}</p>}
 
         <Button
           type="button"

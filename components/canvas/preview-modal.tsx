@@ -127,7 +127,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
             ),
           );
         } catch (error) {
-          console.error(`Ошибка рендеринга слайда ${slide.id}:`, error);
+          console.error(`Failed to render slide ${slide.id}:`, error);
           if (isMountedRef.current) {
             setSnapshots((prev) =>
               prev.map((s) => (s.id === slide.id ? { ...s, loading: false } : s)),
@@ -246,13 +246,13 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={activeImage}
-              alt={`Слайд ${activeIdx + 1}`}
+              alt={`Slide ${activeIdx + 1}`}
               className="w-full h-full object-contain"
               draggable={false}
             />
           ) : (
             <div className="absolute inset-0 bg-background flex items-center justify-center border border-dashed border-border/60">
-              <span className="text-xs text-muted-foreground">Пустой слайд</span>
+              <span className="text-xs text-muted-foreground">Empty slide</span>
             </div>
           )}
         </div>
@@ -292,7 +292,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={stripSrc}
-                  alt={`Превью ${i + 1}`}
+                  alt={`Preview ${i + 1}`}
                   className="w-full h-full object-cover"
                   draggable={false}
                 />

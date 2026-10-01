@@ -61,7 +61,7 @@ export function CanvasToolbar() {
   return (
     <div className="h-11 w-full flex items-center justify-between px-4 bg-background/60 backdrop-blur-md border-b border-border/40 z-10 select-none shrink-0">
       <div className="flex items-center gap-2">
-        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider pl-1">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider pl-1">
           Aspect Ratio
         </span>
 
@@ -122,7 +122,7 @@ export function CanvasToolbar() {
             }`}
             title={
               autoFlowEnabled
-                ? "Auto Flow: on — предложит новый слайд при выходе за край"
+                ? "Auto Flow: on — offers a new slide when content runs past the edge"
                 : "Auto Flow: off"
             }
           >

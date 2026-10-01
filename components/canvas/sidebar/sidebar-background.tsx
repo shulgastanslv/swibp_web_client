@@ -283,7 +283,7 @@ export function SidebarBackground() {
           >
             <UploadCloud className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Upload</span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Drop or click
             </span>
           </div>

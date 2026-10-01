@@ -23,7 +23,7 @@ export class ImportExportManager {
     );
 
     if (objects.length === 0) {
-      throw new Error("SVG не содержит отрисовываемых элементов");
+      throw new Error("SVG has no drawable elements");
     }
 
     const target: FabricObject =

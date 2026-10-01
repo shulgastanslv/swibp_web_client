@@ -147,7 +147,7 @@ export function PublishTemplateDialog({
               </div>
             </div>
 
-            {error && <p className="text-[11px] text-destructive">{error}</p>}
+            {error && <p className="text-xs text-destructive">{error}</p>}
 
             <Button
               type="button"

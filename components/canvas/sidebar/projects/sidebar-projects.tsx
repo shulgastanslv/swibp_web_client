@@ -99,7 +99,7 @@ export function SidebarProjects() {
   if (!userId) {
     return (
       <div className="p-4 text-center text-xs text-muted-foreground">
-        Войдите в аккаунт, чтобы сохранять и управлять проектами.
+        Sign in to save and manage projects.
       </div>
     );
   }
@@ -143,7 +143,7 @@ export function SidebarProjects() {
             type="button"
             onClick={() => setFilter(tab)}
             className={cn(
-              "h-6 shrink-0 px-2.5 rounded-full text-[10px] transition-colors",
+              "h-6 shrink-0 px-2.5 rounded-full text-xs transition-colors",
               filter === tab
                 ? "bg-foreground text-background"
                 : "bg-muted/30 text-muted-foreground hover:text-foreground",
@@ -159,7 +159,7 @@ export function SidebarProjects() {
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       ) : visibleProjects.length === 0 ? (
-        <p className="text-center text-[11px] text-muted-foreground py-6">
+        <p className="text-center text-xs text-muted-foreground py-6">
           No projects found
         </p>
       ) : (
@@ -197,7 +197,7 @@ export function SidebarProjects() {
                       type="button"
                       onClick={(e) => void handleToggleSave(e, p.id)}
                       className="flex h-7 w-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
-                      title={p.isSaved ? "Убрать из сохранённых" : "Сохранить"}
+                      title={p.isSaved ? "Remove from saved" : "Save"}
                     >
                       <Bookmark
                         className={cn(

@@ -68,7 +68,7 @@ export function SidebarIcons() {
       setResults(res.items);
     } catch (err) {
       console.error(err);
-      setError("Не удалось загрузить");
+      setError("Couldn't load");
       setResults([]);
     } finally {
       setIsSearching(false);
@@ -110,7 +110,7 @@ export function SidebarIcons() {
       manager.commit();
     } catch (err) {
       console.error(err);
-      setError("Ошибка добавления");
+      setError("Couldn't add");
     } finally {
       setLoadingId(null);
     }

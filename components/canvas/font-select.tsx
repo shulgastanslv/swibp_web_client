@@ -45,7 +45,7 @@ export function FontSelect({ value, onChange, disabled }: FontSelectProps) {
     setError(null);
     void fetchGoogleFontFamilies()
       .then((list) => setFamilies(list))
-      .catch(() => setError("Не удалось загрузить список шрифтов"))
+      .catch(() => setError("Couldn't load the font list"))
       .finally(() => setLoadingList(false));
   }, [open, families.length, loadingList]);
 
@@ -64,8 +64,8 @@ export function FontSelect({ value, onChange, disabled }: FontSelectProps) {
         .slice(0, MAX_VISIBLE);
       return {
         groups: [
-          { label: "Системные", items: [...system] },
-          { label: "Популярные", items: [...popular] },
+          { label: "System", items: [...system] },
+          { label: "Popular", items: [...popular] },
           { label: "Google Fonts", items: rest },
         ],
       };
@@ -76,7 +76,7 @@ export function FontSelect({ value, onChange, disabled }: FontSelectProps) {
       .slice(0, MAX_VISIBLE);
 
     return {
-      groups: [{ label: `Найдено (${matched.length})`, items: matched }],
+      groups: [{ label: `Found (${matched.length})`, items: matched }],
     };
   }, [query, families]);
 
@@ -94,7 +94,7 @@ export function FontSelect({ value, onChange, disabled }: FontSelectProps) {
 
   return (
     <div ref={rootRef} className="relative flex flex-col gap-1.5">
-      <span className="text-xs text-muted-foreground">Шрифт</span>
+      <span className="text-xs text-muted-foreground">Font</span>
       <button
         type="button"
         disabled={disabled || loadingFont}
@@ -125,7 +125,7 @@ export function FontSelect({ value, onChange, disabled }: FontSelectProps) {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Поиск по Google Fonts…"
+              placeholder="Search Google Fonts…"
               className="h-8 w-full rounded-full bg-muted/40 pl-8 pr-3 text-xs outline-none placeholder:text-muted-foreground/70 focus:ring-1 focus:ring-ring"
             />
           </div>
@@ -134,17 +134,17 @@ export function FontSelect({ value, onChange, disabled }: FontSelectProps) {
             {loadingList && families.length === 0 ? (
               <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
                 <Loader2 className="size-3.5 animate-spin" />
-                Загрузка списка…
+                Loading fonts…
               </div>
             ) : error ? (
-              <p className="px-3 py-4 text-center text-[11px] text-destructive">
+              <p className="px-3 py-4 text-center text-xs text-destructive">
                 {error}
               </p>
             ) : (
               options.groups.map((group) =>
                 group.items.length === 0 ? null : (
                   <div key={group.label} className="mb-1">
-                    <p className="px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+                    <p className="px-2.5 py-1 text-xs font-medium text-muted-foreground">
                       {group.label}
                     </p>
                     {group.items.map((family) => {

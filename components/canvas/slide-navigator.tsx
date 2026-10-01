@@ -97,7 +97,7 @@ export function SlideNavigator() {
   return (
     <footer className="h-[76px] shrink-0 flex items-center gap-3 px-4 bg-background border-t border-border z-10 select-none">
       <div className="w-[72px] shrink-0 leading-tight">
-        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">
           Slide
         </div>
         <div className="text-xs tabular-nums text-foreground">
@@ -147,7 +147,7 @@ export function SlideNavigator() {
                   draggable={false}
                 />
               ) : (
-                <span className="flex h-full w-full items-center justify-center text-[10px] tabular-nums text-muted-foreground">
+                <span className="flex h-full w-full items-center justify-center text-xs tabular-nums text-muted-foreground">
                   {idx + 1}
                 </span>
               )}
@@ -162,7 +162,7 @@ export function SlideNavigator() {
           className="flex h-[52px] shrink-0 items-center gap-1.5 rounded-lg border border-dashed border-border/70 px-2.5 text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         >
           <Plus className="h-3.5 w-3.5" />
-          <span className="text-[11px]">Add</span>
+          <span className="text-xs">Add</span>
         </button>
       </div>
 
@@ -181,7 +181,7 @@ export function SlideNavigator() {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 rounded-lg px-2 text-[11px] text-muted-foreground"
+          className="h-8 rounded-lg px-2 text-xs text-muted-foreground"
           onClick={() => move("left")}
           disabled={!canGoPrev}
           title="Move left"
@@ -192,7 +192,7 @@ export function SlideNavigator() {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 rounded-lg px-2 text-[11px] text-muted-foreground"
+          className="h-8 rounded-lg px-2 text-xs text-muted-foreground"
           onClick={() => move("right")}
           disabled={!canGoNext}
           title="Move right"
@@ -203,7 +203,7 @@ export function SlideNavigator() {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 rounded-lg px-2 text-[11px] text-muted-foreground"
+          className="h-8 rounded-lg px-2 text-xs text-muted-foreground"
           onClick={() => duplicate()}
           title="Duplicate slide"
         >
@@ -213,7 +213,7 @@ export function SlideNavigator() {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 rounded-lg px-2 text-[11px] text-muted-foreground hover:text-destructive"
+          className="h-8 rounded-lg px-2 text-xs text-muted-foreground hover:text-destructive"
           onClick={() => remove(currentSlideId)}
           disabled={!canRemove}
           title="Delete slide"

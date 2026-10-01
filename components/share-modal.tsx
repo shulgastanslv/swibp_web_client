@@ -56,7 +56,7 @@ export function ShareModal({
     void setProjectPublic(currentProjectId, true)
       .then((res) => {
         if (res.success) setIsPublic(true);
-        else alert("Ошибка при установке публичного доступа");
+        else alert("Couldn't update public access");
       })
       .finally(() => setBusy(false));
   }, [open, currentProjectId, status]);
@@ -74,7 +74,7 @@ export function ShareModal({
       if (!id) {
         const res = await persist();
         if (!res.success || !("projectId" in res) || !res.projectId) {
-          setError("Сначала сохраните проект");
+          setError("Save the project first");
           return null;
         }
         id = res.projectId;
@@ -83,7 +83,7 @@ export function ShareModal({
 
       const pub = await setProjectPublic(id, true);
       if (!pub.success) {
-        alert("Ошибка при установке публичного доступа");
+        alert("Couldn't update public access");
         return null;
       }
       setIsPublic(true);
@@ -105,7 +105,7 @@ export function ShareModal({
     setBusy(false);
     if (!res.success) {
       setIsPublic(!next);
-      alert("Ошибка при установке публичного доступа");
+      alert("Couldn't update public access");
     }
   };
 
@@ -119,7 +119,7 @@ export function ShareModal({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      alert("Не удалось скопировать ссылку");
+      alert("Couldn't copy the link");
     }
   };
 
@@ -131,25 +131,25 @@ export function ShareModal({
             Share Project
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Ссылка откроет карусель у любого, у кого есть доступ к приложению.
-            Публичный доступ можно выключить в любой момент.
+            Anyone with the link can open the carousel.
+            You can turn public access off at any time.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 pt-2">
           {status !== "authenticated" ? (
             <p className="text-xs text-muted-foreground">
-              Войдите в аккаунт, чтобы поделиться проектом.
+              Sign in to share this project.
             </p>
           ) : (
             <>
               <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/20 px-3 py-2.5">
                 <div className="min-w-0">
                   <Label htmlFor="share-public" className="text-xs font-medium">
-                    Публичная ссылка
+                    Public link
                   </Label>
-                  <p className="text-[10px] text-muted-foreground">
-                    {isPublic ? "Сейчас доступна по ссылке" : "Выключена"}
+                  <p className="text-xs text-muted-foreground">
+                    {isPublic ? "Anyone with the link can open it" : "Off"}
                   </p>
                 </div>
                 <Switch
@@ -163,7 +163,7 @@ export function ShareModal({
               <div className="flex items-center gap-2">
                 <Input
                   readOnly
-                  value={shareUrl || "Сохраните проект, чтобы получить ссылку"}
+                  value={shareUrl || "Save the project to get a link"}
                   className="h-8 text-xs font-mono bg-muted/40 border-border/60 rounded-xl"
                 />
                 <Button
@@ -197,13 +197,13 @@ export function ShareModal({
                   onClick={() => void ensureSavedAndPublic()}
                 >
                   <Link2 className="w-3.5 h-3.5" />
-                  Сохранить и создать ссылку
+                  Save and create link
                 </Button>
               )}
             </>
           )}
 
-          {error && <p className="text-[11px] text-destructive">{error}</p>}
+          {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
       </DialogContent>
     </Dialog>

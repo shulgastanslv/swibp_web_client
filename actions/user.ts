@@ -12,11 +12,11 @@ interface RegisterInput {
 export async function registerUser({ name, email, password }: RegisterInput) {
   try {
     if (!email || !password) {
-      return { error: "Email и пароль обязательны для заполнения" };
+      return { error: "Email and password are required" };
     }
 
     if (password.length < 6) {
-      return { error: "Пароль должен содержать минимум 6 символов" };
+      return { error: "Password must be at least 6 characters" };
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -24,7 +24,7 @@ export async function registerUser({ name, email, password }: RegisterInput) {
     });
 
     if (existingUser) {
-      return { error: "Пользователь с таким email уже зарегистрирован" };
+      return { error: "An account with this email already exists" };
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -45,6 +45,6 @@ export async function registerUser({ name, email, password }: RegisterInput) {
     return { success: true, user };
   } catch (err) {
     console.error("Register user error:", err);
-    return { error: "Произошла внутренняя ошибка сервера" };
+    return { error: "Something went wrong on the server" };
   }
 }

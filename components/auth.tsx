@@ -68,7 +68,7 @@ export function AuthModal({
     try {
       const callbackUrl = searchParams.get("callbackUrl") || "/";
 
-      // 1. Регистрация нового аккаунта
+      // 1. Register a new account
       if (view === "register") {
         const res = await registerUser({ name, email, password });
         if (res.error) {
@@ -77,7 +77,7 @@ export function AuthModal({
           return;
         }
 
-        // Авторизуем пользователя сразу после создания аккаунта
+        // Sign the user in right after the account is created
         const loginRes = await signIn("credentials", {
           email,
           password,
@@ -94,7 +94,7 @@ export function AuthModal({
         return;
       }
 
-      // 2. Вход по паролю
+      // 2. Sign in with a password
       if (view === "login") {
         const res = await signIn("credentials", {
           email,
@@ -104,7 +104,7 @@ export function AuthModal({
         });
 
         if (res?.error) {
-          setErrorMessage("Неверный email или пароль");
+          setErrorMessage("Incorrect email or password");
         } else {
           onOpenChange?.(false);
           router.refresh();
@@ -113,13 +113,13 @@ export function AuthModal({
         return;
       }
 
-      // 3. Восстановление пароля
+      // 3. Password reset
       if (view === "forgot-password") {
-        // Логика сброса пароля
+        // Password reset flow
         setIsLoading(false);
       }
     } catch {
-      setErrorMessage("Что-то пошло не так. Попробуйте еще раз.");
+      setErrorMessage("Something went wrong. Try again.");
       setIsLoading(false);
     }
   };
@@ -141,7 +141,7 @@ export function AuthModal({
       >
         <div className="p-8 flex flex-col justify-center">
 
-          {/* Плашка ошибки */}
+          {/* Error banner */}
           {errorMessage && (
             <div className="mb-4 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive text-center">
               {errorMessage}
@@ -298,7 +298,7 @@ export function AuthModal({
                   </label>
                   <Input
                     type="password"
-                    placeholder="Минимум 6 символов"
+                    placeholder="At least 6 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -388,7 +388,7 @@ const Divider = ({ text }: { text: string }) => (
     <div className="absolute inset-0 flex items-center">
       <div className="w-full border-t border-border" />
     </div>
-    <span className="relative px-3 text-[10px] tracking-wider uppercase text-muted-foreground font-semibold bg-background">
+    <span className="relative px-3 text-xs tracking-wider uppercase text-muted-foreground font-semibold bg-background">
       {text}
     </span>
   </div>

@@ -104,7 +104,7 @@ export async function getTemplates(options?: {
     return { success: true, templates };
   } catch (err) {
     console.error("getTemplates error:", err);
-    return { success: false, error: "Не удалось загрузить шаблоны" };
+    return { success: false, error: "Couldn't load templates" };
   }
 }
 
@@ -112,13 +112,13 @@ export async function getTemplateById(
   templateId: string,
 ): Promise<ActionResult<{ template: TemplateDetail }>> {
   try {
-    if (!templateId) return { success: false, error: "templateId не передан" };
+    if (!templateId) return { success: false, error: "templateId is required" };
 
     const row = await prisma.template.findUnique({
       where: { id: templateId },
     });
 
-    if (!row) return { success: false, error: "Шаблон не найден" };
+    if (!row) return { success: false, error: "Template not found" };
 
     const parsed = parseTemplateCanvasJSON(row.canvasJSON);
     const aspectRatio = isRatioKey(row.aspectRatio)
@@ -140,7 +140,7 @@ export async function getTemplateById(
     };
   } catch (err) {
     console.error("getTemplateById error:", err);
-    return { success: false, error: "Ошибка загрузки шаблона" };
+    return { success: false, error: "Couldn't load the template" };
   }
 }
 
@@ -150,12 +150,12 @@ export async function publishTemplate(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return { success: false, error: "Войдите в аккаунт, чтобы публиковать" };
+      return { success: false, error: "Sign in to publish" };
     }
 
     const title = input.title.trim();
     const category = input.category.trim() || "Other";
-    if (!title) return { success: false, error: "Укажите название шаблона" };
+    if (!title) return { success: false, error: "Enter a template name" };
 
     const template = await prisma.template.create({
       data: {
@@ -178,7 +178,7 @@ export async function publishTemplate(
     return { success: true, templateId: template.id };
   } catch (err) {
     console.error("publishTemplate error:", err);
-    return { success: false, error: "Не удалось опубликовать шаблон" };
+    return { success: false, error: "Couldn't publish the template" };
   }
 }
 
@@ -234,7 +234,7 @@ export async function seedBuiltinTemplates(): Promise<
     return { success: true, created, skipped };
   } catch (err) {
     console.error("seedBuiltinTemplates error:", err);
-    return { success: false, error: "Не удалось засеять шаблоны" };
+    return { success: false, error: "Couldn't seed templates" };
   }
 }
 
@@ -253,6 +253,6 @@ export async function getTemplateCategories(): Promise<
     };
   } catch (err) {
     console.error("getTemplateCategories error:", err);
-    return { success: false, error: "Ошибка категорий" };
+    return { success: false, error: "Couldn't load categories" };
   }
 }

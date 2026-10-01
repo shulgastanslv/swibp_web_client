@@ -91,8 +91,8 @@ function Control({
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-medium text-foreground">{label}</span>
-        <span className="tabular-nums text-[10px] text-muted-foreground/70">
+        <span className="text-xs font-medium text-foreground">{label}</span>
+        <span className="tabular-nums text-xs text-muted-foreground/70">
           {valueLabel}
         </span>
       </div>
