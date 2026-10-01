@@ -1,159 +1,89 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Search, Loader2, X } from "lucide-react";
 import { useCanvasManager } from "@/context/canvas-manager";
 import { cn } from "@/lib/utils";
 import {
-  categoriesForTab,
-  defaultsForTab,
-  displayName,
-  ICON_TABS,
-  tabById,
-  type IconItem,
-  type IconTabId,
-} from "@/lib/icons/catalog";
-import { searchIconifyIcons } from "@/lib/icons/fetch-svg";
-import {
-  ensureIconBodies,
-  fetchIconSvg,
-  getCachedIconDataUrl,
-} from "@/lib/icons/icon-cache";
-import { fetchUndrawSvg, searchUndraw } from "@/actions/undraw";
+  searchPixabayIcons,
+  type PixabayIcon,
+} from "@/actions/pixabay";
 
-const RECENT_KEY = "canvas_recent_icons_v2";
-const ICON_COLORS = [
-  "#111827",
-  "#ffffff",
-  "#ef4444",
-  "#f59e0b",
-  "#22c55e",
-  "#3b82f6",
-  "#6c63ff",
-  "#a855f7",
-  "#ec4899",
+const RECENT_KEY = "canvas_recent_pixabay_icons_v1";
+
+const CATEGORIES = [
+  { id: "popular", label: "Топ", query: "icon" },
+  { id: "arrows", label: "Стрелки", query: "arrow icon" },
+  { id: "business", label: "Бизнес", query: "business icon" },
+  { id: "people", label: "Люди", query: "people icon" },
+  { id: "social", label: "Соцсети", query: "social media icon" },
+  { id: "tech", label: "Tech", query: "technology icon" },
+  { id: "nature", label: "Природа", query: "nature icon" },
+  { id: "food", label: "Еда", query: "food icon" },
 ] as const;
 
 export function SidebarIcons() {
   const manager = useCanvasManager();
-  const [tab, setTab] = useState<IconTabId>("icons");
-  const [categoryId, setCategoryId] = useState("popular");
+  const [categoryId, setCategoryId] = useState<string>(CATEGORIES[0].id);
   const [search, setSearch] = useState("");
-  const [results, setResults] = useState<IconItem[]>([]);
-  const [recent, setRecent] = useState<IconItem[]>([]);
+  const [results, setResults] = useState<PixabayIcon[]>([]);
+  const [recent, setRecent] = useState<PixabayIcon[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [iconColor, setIconColor] = useState("#6c63ff");
-  const [thumbsTick, setThumbsTick] = useState(0);
-
-  const activeTab = tabById(tab);
-  const isUndraw = tab === "undraw";
-  const categories = categoriesForTab(tab);
-  const showColorPicker = tab === "icons" || isUndraw;
-  const previewColor = showColorPicker ? iconColor : "#111827";
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(RECENT_KEY);
       if (!stored) return;
-      const parsed = JSON.parse(stored) as IconItem[];
+      const parsed = JSON.parse(stored) as PixabayIcon[];
       if (Array.isArray(parsed) && parsed.length > 0) setRecent(parsed);
     } catch {
       /* ignore */
     }
   }, []);
 
-  const runSearch = useCallback(
-    async (query: string) => {
-      const q = query.trim();
-      if (!q) {
+  const runSearch = useCallback(async (query: string) => {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      setIsSearching(false);
+      setError(null);
+      return;
+    }
+
+    setIsSearching(true);
+    setError(null);
+    try {
+      const res = await searchPixabayIcons(q, { perPage: 40 });
+      if (!res.ok) {
+        setError(res.error);
         setResults([]);
-        setIsSearching(false);
-        setError(null);
         return;
       }
-
-      setIsSearching(true);
-      setError(null);
-      try {
-        if (isUndraw) {
-          const res = await searchUndraw(q);
-          if (res.ok === false) {
-            setError(res.error);
-            return;
-          }
-          setResults(res.items.map((item) => ({
-            id: item.id,
-            name: item.title,
-            media: item.media,
-            kind: "undraw" as const,
-          })));
-        } else {
-          const icons = await searchIconifyIcons({
-            query: q,
-            prefixes: activeTab.prefixes,   
-            limit: 60,
-          });
-          setResults(icons);
-        }
-      } catch (err) {
-        console.error(err);
-        setError("Не удалось загрузить");
-        setResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [activeTab.prefixes, isUndraw],
-  );
+      setResults(res.items);
+    } catch (err) {
+      console.error(err);
+      setError("Не удалось загрузить");
+      setResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
 
   useEffect(() => {
     const trimmed = search.trim();
-    if (!trimmed) {
-      setResults([]);
-      setIsSearching(false);
-      return;
+    if (trimmed) {
+      const t = window.setTimeout(() => void runSearch(trimmed), 320);
+      return () => window.clearTimeout(t);
     }
-    const t = window.setTimeout(() => void runSearch(trimmed), 320);
-    return () => window.clearTimeout(t);
-  }, [search, runSearch]);
 
-  useEffect(() => {
-    if (search.trim()) return;
-    const cat = categories.find((c) => c.id === categoryId) ?? categories[0];
-    if (!cat) return;
+    const cat =
+      CATEGORIES.find((c) => c.id === categoryId) ?? CATEGORIES[0];
     void runSearch(cat.query);
-  }, [categoryId, tab, search, runSearch, categories]);
+  }, [search, categoryId, runSearch]);
 
-  const list = useMemo(() => {
-    if (search.trim() || results.length > 0) return results;
-    return defaultsForTab(tab);
-  }, [search, results, tab]);
-
-  useEffect(() => {
-    if (isUndraw) return;
-    const ids = [
-      ...list.filter((i) => i.kind !== "undraw").map((i) => i.id),
-      ...(!search.trim()
-        ? recent
-            .filter((i) => i.kind !== "undraw")
-            .slice(0, 8)
-            .map((i) => i.id)
-        : []),
-    ];
-    if (ids.length === 0) return;
-
-    let cancelled = false;
-    void ensureIconBodies(ids).then(() => {
-      if (!cancelled) setThumbsTick((n) => n + 1);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [list, recent, search, isUndraw]);
-
-  const handleSelect = async (icon: IconItem) => {
+  const handleSelect = async (icon: PixabayIcon) => {
     if (!manager || loadingId) return;
     setLoadingId(icon.id);
     setError(null);
@@ -170,25 +100,7 @@ export function SidebarIcons() {
         /* ignore */
       }
 
-      let svg: string | null = null;
-      if (icon.kind === "undraw" && icon.media) {
-        const res = await fetchUndrawSvg(icon.media, previewColor);
-        if (!res.ok) {
-          return;
-        }
-        svg = res.svg;
-      } else {
-        svg = await fetchIconSvg(icon.id, previewColor);
-      }
-
-      if (!svg) {
-        setError("Иконка недоступна");
-        return;
-      }
-
-      await manager.io.addSVG(svg, {
-        maxSize: icon.kind === "undraw" ? 360 : 120,
-      });
+      await manager.objects.addImage(icon.imageUrl, { maxSize: 160 });
       manager.commit();
     } catch (err) {
       console.error(err);
@@ -198,43 +110,15 @@ export function SidebarIcons() {
     }
   };
 
-  const switchTab = (next: IconTabId) => {
-    setTab(next);
-    setSearch("");
-    setResults([]);
-    const cats = categoriesForTab(next);
-    setCategoryId(cats[0]?.id ?? "popular");
-    if (next === "undraw") setIconColor("#6c63ff");
-    else if (next === "icons") setIconColor("#111827");
-  };
-
   return (
     <div className="flex min-w-0 flex-col gap-3 overflow-hidden p-1.5">
-      <nav className="flex min-w-0 gap-0.5 rounded-xl bg-muted/30 p-1">
-        {ICON_TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => switchTab(t.id)}
-            className={cn(
-              "h-8 min-w-0 flex-1 truncate rounded-lg text-[10px] font-medium tracking-tight transition-colors",
-              tab === t.id
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
       <div className="relative min-w-0">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/70" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={isUndraw ? "Найти иллюстрацию…" : "Найти…"}
+          placeholder="Найти на Pixabay…"
           className="h-9 w-full min-w-0 rounded-xl bg-muted/30 pl-9 pr-9 text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:bg-muted/45"
         />
         {search ? (
@@ -252,7 +136,7 @@ export function SidebarIcons() {
 
       {!search.trim() && (
         <div className="flex min-w-0 flex-wrap gap-1">
-          {categories.map((cat) => (
+          {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               type="button"
@@ -270,42 +154,6 @@ export function SidebarIcons() {
         </div>
       )}
 
-      {showColorPicker && (
-        <div className="flex items-center gap-1.5">
-          {ICON_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              title={c}
-              onClick={() => setIconColor(c)}
-              className={cn(
-                "h-[18px] w-[18px] rounded-full transition-transform",
-                c === "#ffffff" && "ring-1 ring-border/60",
-                iconColor === c
-                  ? "scale-110 ring-2 ring-foreground ring-offset-1 ring-offset-background"
-                  : "hover:opacity-80",
-              )}
-              style={{ backgroundColor: c }}
-            />
-          ))}
-          <label className="relative h-[18px] w-[18px] cursor-pointer overflow-hidden rounded-full ring-1 ring-border/50">
-            <input
-              type="color"
-              value={iconColor}
-              onChange={(e) => setIconColor(e.target.value)}
-              className="absolute inset-0 cursor-pointer opacity-0"
-            />
-            <span
-              className="block h-full w-full"
-              style={{
-                background:
-                  "conic-gradient(from 90deg, #f43f5e, #eab308, #22c55e, #06b6d4, #6366f1, #d946ef, #f43f5e)",
-              }}
-            />
-          </label>
-        </div>
-      )}
-
       {error && <p className="text-[11px] text-destructive">{error}</p>}
 
       {recent.length > 0 && !search.trim() && (
@@ -313,26 +161,15 @@ export function SidebarIcons() {
           <span className="text-[10px] font-medium text-muted-foreground/80">
             Недавние
           </span>
-          <div
-            className={cn(
-              "grid gap-1.5",
-              isUndraw ? "grid-cols-4" : "grid-cols-8",
-            )}
-          >
-            {recent
-              .filter((i) => (isUndraw ? i.kind === "undraw" : i.kind !== "undraw"))
-              .slice(0, isUndraw ? 4 : 8)
-              .map((item) => (
-                <IconTile
-                  key={`r-${item.id}`}
-                  item={item}
-                  color={previewColor}
-                  tick={thumbsTick}
-                  loading={loadingId === item.id}
-                  onSelect={() => void handleSelect(item)}
-                  size={item.kind === "undraw" ? "illustration" : "sm"}
-                />
-              ))}
+          <div className="grid grid-cols-4 gap-1.5">
+            {recent.slice(0, 8).map((item) => (
+              <IconTile
+                key={`r-${item.id}`}
+                item={item}
+                loading={loadingId === item.id}
+                onSelect={() => void handleSelect(item)}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -340,41 +177,29 @@ export function SidebarIcons() {
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-medium text-muted-foreground/80">
-            {search.trim()
-              ? "Результаты"
-              : isUndraw
-                ? "Иллюстрации"
-                : "Библиотека"}
+            {search.trim() ? "Результаты" : "Pixabay"}
           </span>
           <span className="tabular-nums text-[10px] text-muted-foreground/40">
-            {list.length}
+            {results.length}
           </span>
         </div>
 
-        {isSearching && list.length === 0 ? (
+        {isSearching && results.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
-        ) : list.length === 0 ? (
+        ) : results.length === 0 ? (
           <p className="py-12 text-center text-[11px] text-muted-foreground">
             Ничего не найдено
           </p>
         ) : (
-          <div
-            className={cn(
-              "grid min-w-0 gap-2",
-              isUndraw ? "grid-cols-2" : "grid-cols-4",
-            )}
-          >
-            {list.map((item) => (
+          <div className="grid min-w-0 grid-cols-3 gap-2">
+            {results.map((item) => (
               <IconTile
                 key={item.id}
                 item={item}
-                color={previewColor}
-                tick={thumbsTick}
                 loading={loadingId === item.id}
                 onSelect={() => void handleSelect(item)}
-                size={item.kind === "undraw" ? "illustration" : "md"}
               />
             ))}
           </div>
@@ -386,69 +211,35 @@ export function SidebarIcons() {
 
 function IconTile({
   item,
-  color,
-  tick,
   loading,
   onSelect,
-  size = "md",
 }: {
-  item: IconItem;
-  color: string;
-  tick: number;
+  item: PixabayIcon;
   loading: boolean;
   onSelect: () => void;
-  size?: "sm" | "md" | "illustration";
 }) {
-  const isIllustration = size === "illustration" || item.kind === "undraw";
-  const sm = size === "sm";
-  const cached = item.kind === "undraw" ? null : getCachedIconDataUrl(item.id, color);
-  const src = item.media ?? cached;
-  void tick;
-
   return (
     <button
       type="button"
       disabled={loading}
       onClick={onSelect}
-      title={displayName(item.id, item.name)}
+      title={item.name}
       className={cn(
-        "group flex min-w-0 flex-col items-center justify-center rounded-xl bg-muted/25 transition-colors",
+        "group flex aspect-square min-w-0 flex-col items-center justify-center rounded-xl bg-muted/25 p-2 transition-colors",
         "hover:bg-muted/55 active:scale-[0.97] disabled:opacity-50",
-        isIllustration ? "aspect-[4/3] gap-1 p-2" : "aspect-square",
-        sm && "p-0",
-        size === "md" && "p-2.5",
       )}
     >
-      {loading || !src ? (
-        <Loader2
-          className={cn(
-            "animate-spin text-muted-foreground/50",
-            sm ? "h-3.5 w-3.5" : "h-4 w-4",
-          )}
-        />
+      {loading ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/50" />
       ) : (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={displayName(item.id, item.name)}
-            className={cn(
-              "object-contain opacity-90 transition-transform group-hover:scale-[1.03] group-hover:opacity-100",
-              isIllustration
-                ? "h-full w-full"
-                : sm
-                  ? "h-4 w-4"
-                  : "h-6 w-6",
-            )}
-            draggable={false}
-            loading="lazy"
-          />
-          {isIllustration && (
-            <span className="w-full truncate text-center text-[9px] text-muted-foreground group-hover:text-foreground">
-              {item.name}
-            </span>
-          )}
-        </>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.previewUrl}
+          alt={item.name}
+          className="h-full w-full object-contain opacity-90 transition-transform group-hover:scale-[1.03] group-hover:opacity-100"
+          draggable={false}
+          loading="lazy"
+        />
       )}
     </button>
   );

@@ -49,7 +49,10 @@ export class ObjectFactory {
     return line;
   }
 
-  async addImage(url: string): Promise<void> {
+  async addImage(
+    url: string,
+    options?: { maxSize?: number },
+  ): Promise<void> {
     const isRemote = /^https?:\/\//i.test(url);
     const img = await Image.fromURL(
       url,
@@ -58,11 +61,17 @@ export class ObjectFactory {
     const zoom = this.canvas.getZoom() || 1;
     const width = (this.canvas.width || 1080) / zoom;
     const height = (this.canvas.height || 1080) / zoom;
-    const scale = Math.min(
-      (width * 0.8) / (img.width || 1),
-      (height * 0.8) / (img.height || 1),
-      1,
-    );
+    const scale = options?.maxSize
+      ? Math.min(
+          options.maxSize / (img.width || 1),
+          options.maxSize / (img.height || 1),
+          1,
+        )
+      : Math.min(
+          (width * 0.8) / (img.width || 1),
+          (height * 0.8) / (img.height || 1),
+          1,
+        );
     img.set({
       left: width / 2,
       top: height / 2,
@@ -299,36 +308,38 @@ export class ObjectFactory {
     return group;
   }
 
-  addTag(label = "CATEGORY", x?: number, y?: number): Group {
+  /** Topic: title + subtitle text block. */
+  addTag(
+    title = "Your topic title",
+    x?: number,
+    y?: number,
+  ): Group {
     const pos = this.getPosition(x, y);
-    const fontSize = 24;
-    const padX = 36;
-    const padY = 16;
-    const estW = Math.max(label.length * fontSize * 0.58 + padX * 2, 120);
-    const estH = fontSize + padY * 2;
+    const w = 820;
 
-    const bg = new Rect({
-      left: -estW / 2,
-      top: -estH / 2,
-      width: estW,
-      height: estH,
-      fill: "#f1f5f9",
-      rx: estH / 2,
-      ry: estH / 2,
-    });
-
-    const text = new Textbox(label, {
-      left: -estW / 2 + padX,
-      top: -estH / 2 + padY,
-      width: estW - padX * 2,
-      fontSize,
+    const heading = new Textbox(title, {
+      left: -w / 2,
+      top: -70,
+      width: w,
+      fontSize: 64,
       fontFamily: "Inter, sans-serif",
-      fontWeight: "700",
-      fill: "#0f172a",
-      textAlign: "center",
+      fontWeight: "600",
+      fill: "#111111",
+      lineHeight: 1.1,
     });
 
-    const group = new Group([bg, text], pos);
+    const subtitle = new Textbox("Your subtitle goes here", {
+      left: -w / 2,
+      top: 20,
+      width: w,
+      fontSize: 32,
+      fontFamily: "Inter, sans-serif",
+      fontWeight: "400",
+      fill: "#737373",
+      lineHeight: 1.35,
+    });
+
+    const group = new Group([heading, subtitle], pos);
     this.addToCanvas(group);
     return group;
   }
@@ -339,7 +350,7 @@ export class ObjectFactory {
       ...pos,
       fontSize: 52,
       fontFamily: "Inter, sans-serif",
-      fill: "#f59e0b",
+      fill: "#111111",
       width: 500,
     });
     this.addToCanvas(tb);
@@ -351,124 +362,181 @@ export class ObjectFactory {
     return tb;
   }
 
-  addSwipeTag(label = "SWIPE ➔", x?: number, y?: number): Group {
+  /** Swipe cue: label + right arrow. */
+  addSwipeTag(label = "Swipe", x?: number, y?: number): Group {
     const pos = this.getPosition(x, y);
-    const fontSize = 26;
-    const padX = 32;
-    const padY = 14;
-    const estW = Math.max(label.length * fontSize * 0.55 + padX * 2, 140);
-    const estH = fontSize + padY * 2;
 
-    const bg = new Rect({
-      left: -estW / 2,
-      top: -estH / 2,
-      width: estW,
-      height: estH,
-      fill: "#0f172a",
-      rx: estH / 2,
-      ry: estH / 2,
+   
+
+    const shaft = new Line([-28, 0, 36, 0], {
+      stroke: "#111111",
+      strokeWidth: 4,
+      strokeLineCap: "round",
     });
 
-    const text = new Textbox(label, {
-      left: -estW / 2 + padX,
-      top: -estH / 2 + padY,
-      width: estW - padX * 2,
-      fontSize,
+    const head = new Polygon(
+      [
+        { x: 36, y: 0 },
+        { x: 18, y: -14 },
+        { x: 18, y: 14 },
+      ],
+      { fill: "#111111" },
+    );
+
+    const group = new Group([shaft, head], pos);
+    this.addToCanvas(group);
+    return group;
+  }
+
+  /** CTA: subscribe title + social icons row. */
+  addCTAButton(
+    label = "Подписаться",
+    x?: number,
+    y?: number,
+  ): Group {
+    const pos = this.getPosition(x, y);
+    const w = 720;
+    const socials = [
+      { key: "IG", name: "Instagram" },
+      { key: "TT", name: "TikTok" },
+      { key: "YT", name: "YouTube" },
+      { key: "X", name: "X" },
+    ] as const;
+
+    const title = new Textbox(label, {
+      left: -w / 2,
+      top: -90,
+      width: w,
+      fontSize: 48,
       fontFamily: "Inter, sans-serif",
       fontWeight: "600",
-      fill: "#ffffff",
+      fill: "#111111",
       textAlign: "center",
     });
 
-    const group = new Group([bg, text], pos);
+    const hint = new Textbox("в соцсетях", {
+      left: -w / 2,
+      top: -28,
+      width: w,
+      fontSize: 24,
+      fontFamily: "Inter, sans-serif",
+      fontWeight: "400",
+      fill: "#737373",
+      textAlign: "center",
+    });
+
+    const iconSize = 56;
+    const gap = 20;
+    const rowW = socials.length * iconSize + (socials.length - 1) * gap;
+    const startX = -rowW / 2;
+
+    const socialObjects: FabricObject[] = [];
+    socials.forEach((social, i) => {
+      const cx = startX + i * (iconSize + gap) + iconSize / 2;
+      const cy = 48;
+
+      const circle = new Circle({
+        left: cx,
+        top: cy,
+        originX: "center",
+        originY: "center",
+        radius: iconSize / 2,
+        fill: "#111111",
+      });
+
+      const letter = new Textbox(social.key, {
+        left: cx - iconSize / 2,
+        top: cy - 11,
+        width: iconSize,
+        fontSize: social.key.length > 1 ? 16 : 20,
+        fontFamily: "Inter, sans-serif",
+        fontWeight: "600",
+        fill: "#ffffff",
+        textAlign: "center",
+      });
+
+      const name = new Textbox(social.name, {
+        left: cx - 48,
+        top: cy + iconSize / 2 + 12,
+        width: 96,
+        fontSize: 16,
+        fontFamily: "Inter, sans-serif",
+        fontWeight: "400",
+        fill: "#737373",
+        textAlign: "center",
+      });
+
+      socialObjects.push(circle, letter, name);
+    });
+
+    const group = new Group([title, hint, ...socialObjects], pos);
     this.addToCanvas(group);
     return group;
   }
 
-  addCTAButton(label = "Follow for More →", x?: number, y?: number): Group {
+  /** Step number for carousel sequences. */
+  addBadge(step = "01", x?: number, y?: number): Group {
     const pos = this.getPosition(x, y);
-    const fontSize = 36;
-    const padX = 72;
-    const padY = 28;
-    const estW = Math.max(label.length * fontSize * 0.5 + padX * 2, 300);
-    const estH = fontSize + padY * 2;
 
-    const bg = new Rect({
-      left: -estW / 2,
-      top: -estH / 2,
-      width: estW,
-      height: estH,
-      fill: "#3b82f6",
-      rx: estH / 2,
-      ry: estH / 2,
-    });
-
-    const text = new Textbox(label, {
-      left: -estW / 2 + padX,
-      top: -estH / 2 + padY,
-      width: estW - padX * 2,
-      fontSize,
+    const number = new Textbox(step, {
+      left: -80,
+      top: -70,
+      width: 160,
+      fontSize: 120,
       fontFamily: "Inter, sans-serif",
       fontWeight: "600",
-      fill: "#ffffff",
+      fill: "#111111",
       textAlign: "center",
+      lineHeight: 1,
     });
 
-    const group = new Group([bg, text], pos);
+    const caption = new Textbox("STEP", {
+      left: -80,
+      top: 60,
+      width: 160,
+      fontSize: 22,
+      fontFamily: "Inter, sans-serif",
+      fontWeight: "500",
+      fill: "#737373",
+      textAlign: "center",
+      charSpacing: 200,
+    });
+
+    const group = new Group([number, caption], pos);
     this.addToCanvas(group);
     return group;
   }
 
-  addBadge(label = "NEW", x?: number, y?: number): Group {
+  /** Handle: @username + channel label. */
+  addHandle(username = "@username", x?: number, y?: number): Group {
     const pos = this.getPosition(x, y);
-    const fontSize = 22;
-    const padX = 24;
-    const padY = 10;
-    const estW = Math.max(label.length * fontSize * 0.6 + padX * 2, 80);
-    const estH = fontSize + padY * 2;
+    const w = 480;
 
-    const bg = new Rect({
-      left: -estW / 2,
-      top: -estH / 2,
-      width: estW,
-      height: estH,
-      fill: "#6366f1",
-      rx: 8,
-      ry: 8,
-    });
-
-    const text = new Textbox(label, {
-      left: -estW / 2 + padX,
-      top: -estH / 2 + padY,
-      width: estW - padX * 2,
-      fontSize,
+    const handle = new Textbox(username, {
+      left: -w / 2,
+      top: -36,
+      width: w,
+      fontSize: 36,
       fontFamily: "Inter, sans-serif",
-      fontWeight: "700",
-      fill: "#ffffff",
+      fontWeight: "600",
+      fill: "#111111",
       textAlign: "center",
     });
 
-    const group = new Group([bg, text], pos);
+    const channel = new Textbox("Your channel", {
+      left: -w / 2,
+      top: 16,
+      width: w,
+      fontSize: 24,
+      fontFamily: "Inter, sans-serif",
+      fontWeight: "400",
+      fill: "#737373",
+      textAlign: "center",
+    });
+
+    const group = new Group([handle, channel], pos);
     this.addToCanvas(group);
     return group;
-  }
-
-  addHandle(username = "@username", x?: number, y?: number): Textbox {
-    const pos = this.getPosition(x, y);
-    const tb = new Textbox(username, {
-      ...pos,
-      fontSize: 30,
-      fontFamily: "Inter, sans-serif",
-      fill: "#94a3b8",
-      width: 400,
-    });
-    this.addToCanvas(tb);
-    const actualWidth = tb.calcTextWidth();
-    if (actualWidth < tb.width) {
-      tb.set({ width: actualWidth });
-      this.canvas.renderAll();
-    }
-    return tb;
   }
 
   addDividerLine(x?: number, y?: number): Line {
