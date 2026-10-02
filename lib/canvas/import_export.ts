@@ -7,7 +7,7 @@ import {
   Rect,
   Gradient,
 } from "fabric";
-import type { BackgroundConfig, ExportOptions } from "./types";
+import type { BackgroundConfig, CanvasState, ExportOptions } from "./types";
 
 export class ImportExportManager {
   private canvas: Canvas;
@@ -16,55 +16,61 @@ export class ImportExportManager {
     this.canvas = canvas;
   }
 
-  async addSVG(svgContent: string) {
-    return new Promise<void>((resolve) => {
-      const objects: FabricObject[] = [];
-      const myReviver = (_element: Element, fabricObject: FabricObject) => {
-        if (fabricObject) objects.push(fabricObject);
-      };
+  async addSVG(svgContent: string, options?: { maxSize?: number }) {
+    const result = await loadSVGFromString(svgContent);
+    const objects = (result.objects ?? []).filter(
+      (o): o is FabricObject => o != null,
+    );
 
-      loadSVGFromString(svgContent, myReviver).then(() => {
-        if (objects.length === 0) {
-          resolve();
-          return;
-        }
+    if (objects.length === 0) {
+      throw new Error("SVG has no drawable elements");
+    }
 
-        const target: FabricObject =
-          objects.length > 1
-            ? new Group(objects, { originX: "center", originY: "center" })
-            : objects[0];
+    const target: FabricObject =
+      objects.length > 1
+        ? new Group(objects, {
+            originX: "center",
+            originY: "center",
+          })
+        : objects[0];
 
-        target.set({ left: 0, top: 0, originX: "center", originY: "center" });
-
-        const scale = Math.min(
-          200 / (target.width || 1),
-          200 / (target.height || 1),
-          1,
-        );
-        target.scale(scale);
-
-        this.canvas.add(target);
-        this.canvas.centerObject(target);
-        this.canvas.setActiveObject(target);
-        this.canvas.renderAll();
-        resolve();
-      });
+    target.set({
+      originX: "center",
+      originY: "center",
     });
+
+    const maxSize = options?.maxSize ?? 120;
+    const scale = Math.min(
+      maxSize / (target.width || 1),
+      maxSize / (target.height || 1),
+      1,
+    );
+    target.scale(scale);
+
+    this.canvas.add(target);
+    this.canvas.centerObject(target);
+    this.canvas.setActiveObject(target);
+    this.canvas.requestRenderAll();
   }
 
-  setBackground(config: BackgroundConfig): void {
+  async setBackground(config: BackgroundConfig): Promise<void> {
     if (config.type === "solid" && config.color) {
+      this.canvas.backgroundImage = undefined;
       this.canvas.backgroundColor = config.color;
       this.canvas.renderAll();
     } else if (config.type === "gradient" && config.colors) {
       this.setGradient(config.colors);
     } else if (config.type === "image" && config.url) {
-      this.setImage(config.url);
+      await this.setImage(config.url);
     }
   }
 
-  private setImage(url: string): void {
-    FabricImage.fromURL(url).then((img) => {
+  private setImage(url: string): Promise<void> {
+    const isRemote = /^https?:\/\//i.test(url);
+    return FabricImage.fromURL(
+      url,
+      isRemote ? { crossOrigin: "anonymous" } : undefined,
+    ).then((img) => {
       const zoom = this.canvas.getZoom() || 1;
       const width = (this.canvas.width || 1080) / zoom;
       const height = (this.canvas.height || 1080) / zoom;
@@ -121,7 +127,7 @@ export class ImportExportManager {
 
 
   toJSON(): CanvasState {
-    return this.canvas.toJSON() as unknown as CanvasState;
+    return this.canvas.toJSON() as CanvasState;
   }
   exportAsJSON(): string {
     return JSON.stringify(this.toJSON(), null, 2);

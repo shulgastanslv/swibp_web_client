@@ -65,12 +65,12 @@ export function SidebarLayers({
 
   return (
     <div className="flex flex-col gap-1 text-xs p-2">
-      <span className="text-muted-foreground text-[11px] font-medium mb-1">
+      <span className="text-muted-foreground text-xs font-medium mb-1">
         Objects on canvas ({canvasObjects.length})
       </span>
 
       {canvasObjects.length === 0 && (
-        <p className="text-muted-foreground text-[11px] py-6 text-center">
+        <p className="text-muted-foreground text-xs py-6 text-center">
           No objects yet. Add elements from the Elements tab.
         </p>
       )}
@@ -98,7 +98,7 @@ export function SidebarLayers({
               <div className="flex items-center gap-1.5 min-w-0">
                 <GripVertical className="w-3 h-3 text-muted-foreground/40 shrink-0 cursor-grab active:cursor-grabbing" />
                 <Eye className="w-3 h-3 text-muted-foreground shrink-0" />
-                <span className="truncate font-mono text-[11px] text-wrap max-w-52 line-clamp-1">{getObjectLabel(obj)}</span>
+                <span className="truncate font-mono text-xs text-wrap max-w-52 line-clamp-1">{getObjectLabel(obj)}</span>
               </div>
               <button
                 onClick={(e) => {

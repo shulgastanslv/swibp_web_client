@@ -6,11 +6,40 @@ import {
   Line,
   Textbox,
   Text,
+  IText,
   Polygon,
   Group,
   Object as FabricObject,
   Image,
 } from "fabric";
+
+const CODE_BLOCK_BG_4K =
+  "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=3840&h=2160&q=80";
+
+export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+export type Side = "left" | "right";
+export type SlideNumberStyle = "1" | "01" | "1 / 8";
+
+const CORNER_MARGIN = 64;
+const CORNER_FONT = "Inter, sans-serif";
+const CORNER_MUTED = "#64748b";
+const CORNER_INK = "#0f172a";
+
+export function formatSlideNumber(
+  style: SlideNumberStyle,
+  index: number,
+  total: number,
+): string {
+  const n = index + 1;
+  switch (style) {
+    case "01":
+      return String(n).padStart(2, "0");
+    case "1 / 8":
+      return `${n} / ${total}`;
+    default:
+      return String(n);
+  }
+}
 
 export class ObjectFactory {
   private canvas: Canvas;
@@ -34,6 +63,139 @@ export class ObjectFactory {
     return { left: c.x, top: c.y, originX: "center" as const, originY: "center" as const };
   }
 
+  /** Logical (unzoomed) slide size. */
+  private getLogicalSize() {
+    const zoom = this.canvas.getZoom() || 1;
+    return {
+      width: (this.canvas.width || 1080) / zoom,
+      height: (this.canvas.height || 1080) / zoom,
+    };
+  }
+
+  /** Center of the slide in logical coordinates (ignores viewport zoom). */
+  getLogicalCenter() {
+    const { width, height } = this.getLogicalSize();
+    return { x: width / 2, y: height / 2 };
+  }
+
+  /** Position + origin so an object hugs the given corner with CORNER_MARGIN inset. */
+  private getCornerPosition(corner: Corner) {
+    const { width, height } = this.getLogicalSize();
+    const isRight = corner.endsWith("right");
+    const isBottom = corner.startsWith("bottom");
+    return {
+      left: isRight ? width - CORNER_MARGIN : CORNER_MARGIN,
+      top: isBottom ? height - CORNER_MARGIN : CORNER_MARGIN,
+      originX: (isRight ? "right" : "left") as "left" | "right",
+      originY: (isBottom ? "bottom" : "top") as "top" | "bottom",
+    };
+  }
+
+  // ── CORNER BLOCKS ──────────────────────────────────────────────────
+
+  /** Slide counter pinned to a corner (default: top-left). */
+  addSlideNumber(
+    style: SlideNumberStyle,
+    index: number,
+    total: number,
+    corner: Corner = "top-left",
+  ): IText {
+    const text = new IText(formatSlideNumber(style, index, total), {
+      ...this.getCornerPosition(corner),
+      fontSize: 25,
+      fontFamily: CORNER_FONT,
+      fontWeight: "400",
+      fill: CORNER_MUTED,
+    });
+    this.addToCanvas(text);
+    return text;
+  }
+
+  /**
+   * Author handle at the top edge, aligned left or right.
+   * Optional platform label (Telegram, Threads…) sits in a muted line above the handle.
+   */
+  addCornerHandle(
+    handle = "@username",
+    side: Side = "right",
+    platform?: string,
+  ): Group {
+    const corner: Corner = side === "right" ? "top-right" : "top-left";
+    const pos = this.getCornerPosition(corner);
+    const align = side === "right" ? "right" : "left";
+
+    const parts: FabricObject[] = [];
+    let cursorY = 0;
+
+    if (platform) {
+      const label = new IText(platform, {
+        originX: align,
+        originY: "top",
+        left: 0,
+        top: cursorY,
+        fontSize: 22,
+        fontFamily: CORNER_FONT,
+        fontWeight: "400",
+        fill: CORNER_MUTED,
+        textAlign: align,
+      });
+      parts.push(label);
+      cursorY += label.height + 6;
+    }
+
+    parts.push(
+      new IText(handle, {
+        originX: align,
+        originY: "top",
+        left: 0,
+        top: cursorY,
+        fontSize: 22,
+        fontFamily: CORNER_FONT,
+        fontWeight: "400",
+        fill: CORNER_INK,
+        textAlign: align,
+      }),
+    );
+
+    const group = new Group(parts, {
+      ...pos,
+      subTargetCheck: true,
+      interactive: true,
+    });
+    this.addToCanvas(group);
+    return group;
+  }
+
+  /** Text swipe cue (e.g. "->") pinned bottom-right. */
+  addSwipeArrow(text = "->", corner: Corner = "bottom-right"): IText {
+    const arrow = new IText(text, {
+      ...this.getCornerPosition(corner),
+      fontSize: 56,
+      fontFamily: "Consolas, 'Courier New', monospace",
+      fontWeight: "700",
+      fill: CORNER_INK,
+    });
+    this.addToCanvas(arrow);
+    return arrow;
+  }
+
+  /** Bottom-left "// info" caption plus a bottom-right swipe arrow. */
+  addSwipeInfo(
+    info = "info",
+    arrowText = "->",
+  ): { info: IText; arrow: IText } {
+    const caption = new IText(`// ${info}`, {
+      ...this.getCornerPosition("bottom-left"),
+      fontSize: 28,
+      fontFamily: "Consolas, 'Courier New', monospace",
+      fontWeight: "500",
+      fill: CORNER_MUTED,
+    });
+    this.canvas.add(caption);
+    const arrow = this.addSwipeArrow(arrowText);
+    return { info: caption, arrow };
+  }
+
   // ── EXISTING METHODS (keep exactly as before) ──────────────────────
 
   addLine(x?: number, y?: number): Line {
@@ -49,18 +211,31 @@ export class ObjectFactory {
     return line;
   }
 
-  async addImage(url: string): Promise<void> {
-    const img = await Image.fromURL(url);
-    const width = this.canvas.width || 1080;
-    const height = this.canvas.height || 1080;
-    const scale = Math.min(
-      (width * 0.8) / (img.width || 1),
-      (height * 0.8) / (img.height || 1),
-      1,
+  async addImage(
+    url: string,
+    options?: { maxSize?: number; dx?: number; dy?: number },
+  ): Promise<void> {
+    const isRemote = /^https?:\/\//i.test(url);
+    const img = await Image.fromURL(
+      url,
+      isRemote ? { crossOrigin: "anonymous" } : undefined,
     );
+    const { width, height } = this.getLogicalSize();
+    const center = this.getLogicalCenter();
+    const scale = options?.maxSize
+      ? Math.min(
+          options.maxSize / (img.width || 1),
+          options.maxSize / (img.height || 1),
+          1,
+        )
+      : Math.min(
+          (width * 0.8) / (img.width || 1),
+          (height * 0.8) / (img.height || 1),
+          1,
+        );
     img.set({
-      left: width / 2,
-      top: height / 2,
+      left: center.x + (options?.dx ?? 0),
+      top: center.y + (options?.dy ?? 0),
       originX: "center",
       originY: "center",
       scaleX: scale,
@@ -169,7 +344,6 @@ export class ObjectFactory {
     });
   }
 
-  // ── NEW ELEMENT METHODS ────────────────────────────────────────────
 
   addHeading(text = "New Heading", x?: number, y?: number): Textbox {
     const pos = this.getPosition(x, y);
@@ -180,18 +354,15 @@ export class ObjectFactory {
       fontWeight: "bold",
       fontFamily: "Inter, sans-serif",
       fill: "#0f172a",
-      lineHeight: 1.1,
+      lineHeight: 0.8,
     });
 
-    // Принудительно рассчитываем геометрию текста
     tb.initDimensions();
 
-    // Получаем реальную ширину текста (с запасом 2-4px для предотвращения переноса)
     const actualWidth = Math.ceil(tb.calcTextWidth()) + 4;
 
-    // Устанавливаем ширину ровно под текст
     tb.set({ width: actualWidth });
-    tb.setCoords(); // Обязательно обновляем синюю рамку выделения
+    tb.setCoords();
 
     this.addToCanvas(tb);
     this.canvas.renderAll();
@@ -207,7 +378,7 @@ export class ObjectFactory {
       fontFamily: "Inter, sans-serif",
       fill: "#64748b",
       width: 700,
-      lineHeight: 1.4,
+      lineHeight: 0.8,
     });
     this.addToCanvas(tb);
     const actualWidth = tb.calcTextWidth();
@@ -226,8 +397,8 @@ export class ObjectFactory {
       fontFamily: "Inter, sans-serif",
       fill: "#334155",
       width: 700,
-      lineHeight: 1.6,
-    });
+      lineHeight: 0.8,
+        });
     this.addToCanvas(tb);
     const actualWidth = tb.calcTextWidth();
     if (actualWidth < tb.width) {
@@ -257,213 +428,220 @@ export class ObjectFactory {
     return tb;
   }
 
-  addCodeBlock(code = "const hello = 'world';", x?: number, y?: number): Group {
+  addCodeBlock(
+    code = "// Paste your code",
+    x?: number,
+    y?: number,
+  ): Group {
     const pos = this.getPosition(x, y);
     const textW = 760;
-    const padX = 40;
-    const padY = 32;
+    const padX = 36;
+    const padTop = 52;
+    const padBottom = 28;
+    const radius = 16;
     const totalW = textW + padX * 2;
-    const totalH = 120;
+    const minH = 200;
 
+    const codeText = new Textbox(code, {
+      width: textW,
+      fontSize: 26,
+      fontFamily: "Consolas, 'Courier New', monospace",
+      fill: "#f8fafc",
+      lineHeight: 1.45,
+      splitByGrapheme: true,
+      editable: true,
+      originX: "left",
+      originY: "top",
+    });
 
-    const bg = new Rect({
-      left: -totalW / 2,
-      top: -totalH / 2,
+    const contentHeight = () =>
+      Math.max(minH, codeText.calcTextHeight() + padTop + padBottom);
+
+    let totalH = contentHeight();
+
+    const pinTopLeft = (obj: FabricObject, height: number) => {
+      obj.set({
+        left: -totalW / 2,
+        top: -height / 2,
+        originX: "left",
+        originY: "top",
+      });
+    };
+
+    let photo: FabricObject = new Rect({
       width: totalW,
       height: totalH,
       fill: "#0d1117",
-      rx: 12,
-      ry: 12,
+      rx: radius,
+      ry: radius,
+      evented: false,
+      selectable: false,
+    });
+    pinTopLeft(photo, totalH);
+
+    let naturalW = totalW;
+    let naturalH = totalH;
+
+    const coverPhoto = (img: Image, height: number) => {
+      const scale = Math.max(totalW / naturalW, height / naturalH);
+      const cropW = totalW / scale;
+      const cropH = height / scale;
+      img.set({
+        cropX: Math.max(0, (naturalW - cropW) / 2),
+        cropY: Math.max(0, (naturalH - cropH) / 2),
+        width: cropW,
+        height: cropH,
+        scaleX: scale,
+        scaleY: scale,
+      });
+      pinTopLeft(img, height);
+    };
+
+    const scrim = new Rect({
+      width: totalW,
+      height: totalH,
+      rx: radius,
+      ry: radius,
+      fill: "rgba(6, 10, 18, 0.58)",
+      evented: false,
+      selectable: false,
+    });
+    pinTopLeft(scrim, totalH);
+
+    const dots = ["#ff5f57", "#febc2e", "#28c840"].map((fill, i) => {
+      const dot = new Circle({
+        radius: 6,
+        fill,
+        originX: "left",
+        originY: "top",
+        evented: false,
+        selectable: false,
+      });
+      dot.set({
+        left: -totalW / 2 + 22 + i * 20,
+        top: -totalH / 2 + 18,
+      });
+      return dot;
     });
 
-    const dot1 = new Circle({ left: -totalW / 2 + 20, top: -totalH / 2 + 18, radius: 7, fill: "#ff5f57" });
-    const dot2 = new Circle({ left: -totalW / 2 + 40, top: -totalH / 2 + 18, radius: 7, fill: "#febc2e" });
-    const dot3 = new Circle({ left: -totalW / 2 + 60, top: -totalH / 2 + 18, radius: 7, fill: "#28c840" });
-
-    const codeText = new Textbox(code, {
+    codeText.set({
       left: -textW / 2,
-      top: -totalH / 2 + padY,
-      width: textW,
-      fontSize: 28,
-      fontFamily: "'Courier New', Courier, monospace",
-      fill: "#58a6ff",
+      top: -totalH / 2 + padTop,
     });
 
-    const group = new Group([bg, dot1, dot2, dot3, codeText], pos);
-    this.addToCanvas(group);
-    return group;
-  }
-
-  addTag(label = "CATEGORY", x?: number, y?: number): Group {
-    const pos = this.getPosition(x, y);
-    const fontSize = 24;
-    const padX = 36;
-    const padY = 16;
-    const estW = Math.max(label.length * fontSize * 0.58 + padX * 2, 120);
-    const estH = fontSize + padY * 2;
-
-    const bg = new Rect({
-      left: -estW / 2,
-      top: -estH / 2,
-      width: estW,
-      height: estH,
-      fill: "#f1f5f9",
-      rx: estH / 2,
-      ry: estH / 2,
+    const clip = new Rect({
+      width: totalW,
+      height: totalH,
+      rx: radius,
+      ry: radius,
+      originX: "center",
+      originY: "center",
     });
 
-    const text = new Textbox(label, {
-      left: -estW / 2 + padX,
-      top: -estH / 2 + padY,
-      width: estW - padX * 2,
-      fontSize,
-      fontFamily: "Inter, sans-serif",
-      fontWeight: "700",
-      fill: "#0f172a",
-      textAlign: "center",
-    });
-
-    const group = new Group([bg, text], pos);
-    this.addToCanvas(group);
-    return group;
-  }
-
-  addStarRating(text = "★★★★★  5.0", x?: number, y?: number): Textbox {
-    const pos = this.getPosition(x, y);
-    const tb = new Textbox(text, {
+    const group = new Group([photo, scrim, ...dots, codeText], {
       ...pos,
-      fontSize: 52,
-      fontFamily: "Inter, sans-serif",
-      fill: "#f59e0b",
-      width: 500,
+      subTargetCheck: true,
+      interactive: true,
+      clipPath: clip,
     });
-    this.addToCanvas(tb);
-    const actualWidth = tb.calcTextWidth();
-    if (actualWidth < tb.width) {
-      tb.set({ width: actualWidth });
-      this.canvas.renderAll();
-    }
-    return tb;
+
+    const syncFrame = () => {
+      const nextH = contentHeight();
+      if (Math.abs(nextH - totalH) < 1) return;
+      totalH = nextH;
+
+      if (photo.type === "image") coverPhoto(photo as Image, totalH);
+      else {
+        photo.set({ height: totalH });
+        pinTopLeft(photo, totalH);
+      }
+
+      scrim.set({ height: totalH });
+      pinTopLeft(scrim, totalH);
+      dots.forEach((dot, i) => {
+        dot.set({
+          left: -totalW / 2 + 22 + i * 20,
+          top: -totalH / 2 + 18,
+        });
+      });
+      codeText.set({ top: -totalH / 2 + padTop });
+      clip.set({ height: totalH });
+      relayout();
+    };
+
+    const relayout = () => {
+      const originY = group.originY ?? "center";
+      const topBefore = group.top ?? 0;
+      const heightBefore = group.getScaledHeight();
+      const topEdge =
+        originY === "center" ? topBefore - heightBefore / 2 : topBefore;
+
+      group.set({ dirty: true });
+      group.triggerLayout();
+
+      const heightAfter = group.getScaledHeight();
+      if (originY === "center") {
+        group.set({ top: topEdge + heightAfter / 2 });
+      }
+      group.setCoords();
+      this.canvas.requestRenderAll();
+    };
+
+    codeText.on("changed", syncFrame);
+    this.addToCanvas(group);
+    codeText.enterEditing();
+    codeText.selectAll();
+    this.canvas.requestRenderAll();
+
+    void Image.fromURL(CODE_BLOCK_BG_4K, { crossOrigin: "anonymous" })
+      .then((img) => {
+        if (!group.canvas) return;
+        naturalW = img.width || totalW;
+        naturalH = img.height || totalH;
+        coverPhoto(img, totalH);
+        img.set({ evented: false, selectable: false });
+        const index = group.getObjects().indexOf(photo);
+        group.remove(photo);
+        group.insertAt(Math.max(index, 0), img);
+        photo = img;
+        relayout();
+      })
+      .catch((err) => {
+        console.error("Code block background failed:", err);
+      });
+
+    return group;
   }
 
-  addSwipeTag(label = "SWIPE ➔", x?: number, y?: number): Group {
+  addHandle(username = "@username", x?: number, y?: number): Group {
     const pos = this.getPosition(x, y);
-    const fontSize = 26;
-    const padX = 32;
-    const padY = 14;
-    const estW = Math.max(label.length * fontSize * 0.55 + padX * 2, 140);
-    const estH = fontSize + padY * 2;
+    const w = 480;
 
-    const bg = new Rect({
-      left: -estW / 2,
-      top: -estH / 2,
-      width: estW,
-      height: estH,
-      fill: "#0f172a",
-      rx: estH / 2,
-      ry: estH / 2,
-    });
-
-    const text = new Textbox(label, {
-      left: -estW / 2 + padX,
-      top: -estH / 2 + padY,
-      width: estW - padX * 2,
-      fontSize,
+    const handle = new Textbox(username, {
+      left: -w / 2,
+      top: -36,
+      width: w,
+      fontSize: 36,
       fontFamily: "Inter, sans-serif",
       fontWeight: "600",
-      fill: "#ffffff",
+      fill: "#111111",
       textAlign: "center",
     });
 
-    const group = new Group([bg, text], pos);
-    this.addToCanvas(group);
-    return group;
-  }
-
-  addCTAButton(label = "Follow for More →", x?: number, y?: number): Group {
-    const pos = this.getPosition(x, y);
-    const fontSize = 36;
-    const padX = 72;
-    const padY = 28;
-    const estW = Math.max(label.length * fontSize * 0.5 + padX * 2, 300);
-    const estH = fontSize + padY * 2;
-
-    const bg = new Rect({
-      left: -estW / 2,
-      top: -estH / 2,
-      width: estW,
-      height: estH,
-      fill: "#3b82f6",
-      rx: estH / 2,
-      ry: estH / 2,
-    });
-
-    const text = new Textbox(label, {
-      left: -estW / 2 + padX,
-      top: -estH / 2 + padY,
-      width: estW - padX * 2,
-      fontSize,
+    const channel = new Textbox("Your channel", {
+      left: -w / 2,
+      top: 16,
+      width: w,
+      fontSize: 24,
       fontFamily: "Inter, sans-serif",
-      fontWeight: "600",
-      fill: "#ffffff",
+      fontWeight: "400",
+      fill: "#737373",
       textAlign: "center",
     });
 
-    const group = new Group([bg, text], pos);
+    const group = new Group([handle, channel], pos);
     this.addToCanvas(group);
     return group;
-  }
-
-  addBadge(label = "NEW", x?: number, y?: number): Group {
-    const pos = this.getPosition(x, y);
-    const fontSize = 22;
-    const padX = 24;
-    const padY = 10;
-    const estW = Math.max(label.length * fontSize * 0.6 + padX * 2, 80);
-    const estH = fontSize + padY * 2;
-
-    const bg = new Rect({
-      left: -estW / 2,
-      top: -estH / 2,
-      width: estW,
-      height: estH,
-      fill: "#6366f1",
-      rx: 8,
-      ry: 8,
-    });
-
-    const text = new Textbox(label, {
-      left: -estW / 2 + padX,
-      top: -estH / 2 + padY,
-      width: estW - padX * 2,
-      fontSize,
-      fontFamily: "Inter, sans-serif",
-      fontWeight: "700",
-      fill: "#ffffff",
-      textAlign: "center",
-    });
-
-    const group = new Group([bg, text], pos);
-    this.addToCanvas(group);
-    return group;
-  }
-
-  addHandle(username = "@username", x?: number, y?: number): Textbox {
-    const pos = this.getPosition(x, y);
-    const tb = new Textbox(username, {
-      ...pos,
-      fontSize: 30,
-      fontFamily: "Inter, sans-serif",
-      fill: "#94a3b8",
-      width: 400,
-    });
-    this.addToCanvas(tb);
-    const actualWidth = tb.calcTextWidth();
-    if (actualWidth < tb.width) {
-      tb.set({ width: actualWidth });
-      this.canvas.renderAll();
-    }
-    return tb;
   }
 
   addDividerLine(x?: number, y?: number): Line {
@@ -479,7 +657,6 @@ export class ObjectFactory {
     return line;
   }
 
-  // ── Private helpers ────────────────────────────────────────────────
 
   private addToCanvas(obj: FabricObject) {
     this.canvas.add(obj);

@@ -1,36 +1,99 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, X } from "lucide-react";
-import { TEMPLATES } from "@/lib/templates/templates-data";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Search, X, Loader2, Sparkles } from "lucide-react";
+
+import {
+  getTemplates,
+  getTemplateCategories,
+  type TemplateListItem,
+} from "@/actions/templates";
+import { useApplyTemplate } from "@/hooks/use-apply-template";
+import { cn } from "@/lib/utils";
+import { CarouselStack } from "@/components/canvas/sidebar/carousel-stack";
 
 export function SidebarTemplates() {
+  const { applyTemplateById } = useApplyTemplate();
+
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<string>("all");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [templates, setTemplates] = useState<TemplateListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredTemplates = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return TEMPLATES;
+  const fetchTemplates = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [listRes, catsRes] = await Promise.all([
+        getTemplates({
+          category: category === "all" ? undefined : category,
+          search: search.trim() || undefined,
+        }),
+        getTemplateCategories(),
+      ]);
 
-    return TEMPLATES.filter((tpl) =>
-      tpl.name.toLowerCase().includes(query) ||
-      (tpl.badge && tpl.badge.toLowerCase().includes(query))
-    );
-  }, [search]);
+      if (!listRes.success) {
+        alert("Couldn't load templates");
+        setTemplates([]);
+        return;
+      }
+
+      setTemplates(listRes.templates);
+      if (catsRes.success) setCategories(catsRes.categories);
+    } finally {
+      setLoading(false);
+    }
+  }, [category, search]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      void fetchTemplates();
+    }, search ? 220 : 0);
+    return () => window.clearTimeout(t);
+  }, [fetchTemplates, search]);
+ 
+  useEffect(() => {
+    const onChanged = () => void fetchTemplates();
+    window.addEventListener("swibp:templates-changed", onChanged);
+    return () => window.removeEventListener("swibp:templates-changed", onChanged);
+  }, [fetchTemplates]);
+
+ 
+  const handleApply = async (id: string) => {
+    if (applyingId) return;
+    setApplyingId(id);
+    setError(null);
+    try {
+      const res = await applyTemplateById(id);
+      if (!res.success) alert("Couldn't apply the template");
+    } finally {
+      setApplyingId(null);
+    }
+  };
+
+  const tabs = useMemo(() => ["all", ...categories], [categories]);
 
   return (
     <div className="flex flex-col gap-3 p-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground font-medium">Шаблоны</span>
-        <span className="text-[10px] text-muted-foreground">{filteredTemplates.length}</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground font-medium">Templates</span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {templates.length}
+          </span>
+        </div>
       </div>
 
       <div className="relative flex items-center">
-        <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Поиск шаблонов..."
+          placeholder="Search templates..."
           className="w-full h-8 pl-8 pr-7 text-xs bg-muted/50 rounded-full placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
         />
         {search && (
@@ -39,35 +102,84 @@ export function SidebarTemplates() {
             onClick={() => setSearch("")}
             className="absolute right-2 text-muted-foreground hover:text-foreground"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="size-4" />
           </button>
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        {filteredTemplates.length > 0 ? (
-          filteredTemplates.map((tpl) => (
+      {tabs.length > 1 && (
+        <div className="flex gap-1 overflow-x-scroll pb-0.5 px-0.5 w-64">
+          {tabs.map((tab) => (
             <button
-              key={tpl.id}
-              className="flex flex-col p-3 rounded-2xl bg-muted/30 hover:bg-muted/70 text-left gap-2 transition-colors cursor-pointer"
+              key={tab}
+              type="button"
+              onClick={() => setCategory(tab)}
+              className={cn(
+                "h-6 shrink-0 px-2.5 rounded-full text-xs border transition-colors",
+                category === tab
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-muted/30 text-muted-foreground border-border/40 hover:text-foreground",
+              )}
             >
-              <div className="w-full h-32 rounded-lg bg-card border border-border/40 flex items-center justify-center text-xs font-bold text-foreground">
-                {tpl.name}
-              </div>
-              <div className="flex items-center justify-between w-full">
-                <span className="text-xs text-muted-foreground">{tpl.badge}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-background border border-border/40">
-                  Применить
-                </span>
-              </div>
+              {tab === "all" ? "All" : tab}
             </button>
-          ))
-        ) : (
-          <div className="py-8 text-center text-xs text-muted-foreground">
-            Шаблоны не найдены
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <p className="text-xs text-destructive px-1">{error}</p>
+      )}
+
+      {loading && templates.length === 0 ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : templates.length === 0 ? (
+        <div className="py-6 px-2 text-center space-y-3">
+          <p className="text-xs text-muted-foreground">
+            No templates found. Seed built-in presets or publish your own through Publish.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {templates.map((tpl) => {
+            const busy = applyingId === tpl.id;
+
+            return (
+              <button
+                key={tpl.id}
+                type="button"
+                disabled={!!applyingId}
+                onClick={() => void handleApply(tpl.id)}
+                className={cn(
+                  "flex flex-col gap-2 rounded-2xl bg-muted/30 p-3 text-left transition-colors hover:bg-muted/70 disabled:opacity-60",
+                  busy && "ring-1 ring-foreground/15",
+                )}
+              >
+                <CarouselStack
+                  slideCount={tpl.slideCount}
+                  previewUrl={tpl.previewUrl}
+                  badge="Template"
+                  busy={busy}
+                />
+
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium">{tpl.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {tpl.category} · {tpl.slideCount} slides · {tpl.aspectRatio}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground ring-1 ring-border/40">
+                    {busy ? "…" : "Apply"}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

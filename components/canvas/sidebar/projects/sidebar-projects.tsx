@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Search, Bookmark, Loader2 } from "lucide-react";
+import { Search, Bookmark, Loader2, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import {
   getUserProjects,
   toggleSaveProject,
   deleteProject,
-  getProjectById,
   type ProjectListItem,
 } from "@/actions/projects";
+import { useProject } from "@/hooks/use-project";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProjectActionsDropdown } from "./project_actions_dropdown";
+import { Input } from "@/components/ui/input";
+import { CarouselStack } from "@/components/canvas/sidebar/carousel-stack";
 
 type Filter = "all" | "saved";
 
@@ -25,27 +25,33 @@ export function SidebarProjects() {
   const [search, setSearch] = useState("");
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const { currentProjectId } = useCanvasStore();
-  const userId = (session?.user as { id?: string })?.id;
+  const currentProjectId = useCanvasStore((s) => s.currentProjectId);
+  const { loadProject } = useProject();
+  const userId = session?.user?.id;
 
   const fetchProjects = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     try {
-      const res = await getUserProjects(userId);
-      if (res.success && res.projects) {
-        setProjects(res.projects);
-      }
+      const res = await getUserProjects();
+      if (res.success) setProjects(res.projects);
     } finally {
       setLoading(false);
     }
   }, [userId]);
 
   useEffect(() => {
-    if (userId) {
-      fetchProjects();
-    }
+    if (userId) void fetchProjects();
+  }, [userId, fetchProjects]);
+
+  useEffect(() => {
+    const onChanged = () => {
+      if (userId) void fetchProjects();
+    };
+    window.addEventListener("swibp:projects-changed", onChanged);
+    return () => window.removeEventListener("swibp:projects-changed", onChanged);
   }, [userId, fetchProjects]);
 
   const handleToggleSave = async (e: React.MouseEvent, projectId: string) => {
@@ -53,23 +59,40 @@ export function SidebarProjects() {
     if (!userId) return;
 
     setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, isSaved: !p.isSaved } : p))
+      prev.map((p) => (p.id === projectId ? { ...p, isSaved: !p.isSaved } : p)),
     );
 
-    await toggleSaveProject(userId, projectId);
+    const res = await toggleSaveProject(projectId);
+    if (!res.success) {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, isSaved: !p.isSaved } : p)),
+      );
+    }
   };
 
   const handleSelectProject = async (id: string) => {
-    if (id === currentProjectId) return;
-    const res = await getProjectById(id);
-    if (res?.project) {
-      // Инициализация выбранного проекта
+    if (id === currentProjectId || loadingId) return;
+    setLoadingId(id);
+    try {
+      const res = await loadProject(id);
+      if (!res.success) {
+        console.error("loadProject failed:", res.error);
+      }
+    } finally {
+      setLoadingId(null);
     }
   };
 
   const handleDelete = async (id: string) => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
-    await deleteProject(id);
+    const res = await deleteProject(id);
+    if (!res.success) {
+      void fetchProjects();
+      return;
+    }
+    if (id === currentProjectId) {
+      useCanvasStore.getState().resetToBlankProject();
+    }
   };
 
   const visibleProjects = useMemo(() => {
@@ -84,86 +107,133 @@ export function SidebarProjects() {
   if (!userId) {
     return (
       <div className="p-4 text-center text-xs text-muted-foreground">
-        Войдите в аккаунт, чтобы сохранять и управлять проектами.
+        Sign in to save and manage projects.
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-2.5 text-xs p-2">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+    <div className="flex flex-col gap-3 p-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground font-medium">
+          Your projects
+        </span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {visibleProjects.length}
+          </span>
+        </div>
+      </div>
+
+      <div className="relative flex items-center">
+        <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
         <Input
-          type="text"
-          placeholder="Поиск проектов…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-8 pl-8 text-xs rounded-full bg-muted/30 border-border/60"
+          placeholder="Search projects..."
+          className="w-full h-8 pl-8 pr-7 text-xs bg-muted/50 rounded-full placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
         />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            className="absolute right-2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
-      <div className="bg-muted/50 p-0.5 rounded-full border border-border/40 w-fit flex gap-0.5">
+
+      <div className="flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
         {(["all", "saved"] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setFilter(tab)}
             className={cn(
-              "px-3 py-0.5 rounded-full text-[11px] transition-all",
+              "h-6 shrink-0 px-2.5 rounded-full text-xs transition-colors",
               filter === tab
-                ? "bg-background text-foreground shadow-xs font-medium"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-foreground text-background"
+                : "bg-muted/30 text-muted-foreground hover:text-foreground",
             )}
           >
-            {tab === "all" ? "Все" : "Сохранённые"}
+            {tab === "all" ? "All" : "Saved"}
           </button>
         ))}
       </div>
-      {loading ? (
-        <div className="flex items-center justify-center py-6">
+
+      {loading && projects.length === 0 ? (
+        <div className="flex items-center justify-center py-10">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       ) : visibleProjects.length === 0 ? (
-        <p className="text-center text-[11px] text-muted-foreground py-6">
-          Проектов не найдено
+        <p className="text-center text-xs text-muted-foreground py-6">
+          No projects found
         </p>
       ) : (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           {visibleProjects.map((p) => {
             const isActive = p.id === currentProjectId;
+            const busy = loadingId === p.id;
 
             return (
               <div
                 key={p.id}
-                onClick={() => handleSelectProject(p.id)}
+                role="button"
+                tabIndex={0}
+                onClick={() => void handleSelectProject(p.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    void handleSelectProject(p.id);
+                  }
+                }}
                 className={cn(
-                  "group flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl cursor-pointer transition-colors",
-                  isActive
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "hover:bg-muted/50 text-foreground"
+                  "group flex flex-col p-3 rounded-2xl bg-muted/30 hover:bg-muted/70 text-left gap-2 transition-colors cursor-pointer",
+                  isActive && "bg-muted/70",
+                  busy && "opacity-60",
                 )}
               >
-                <button
-                  type="button"
-                  onClick={(e) => handleToggleSave(e, p.id)}
-                  className="shrink-0 transition-transform active:scale-90"
+                <CarouselStack
+                  slideCount={p.slideCount}
+                  previewUrl={p.previewUrl}
+                  badge="Project"
+                  busy={busy}
                 >
-                  <Bookmark
-                    className={cn(
-                      "h-3.5 w-3.5 transition-colors",
-                      p.isSaved
-                        ? "fill-primary text-primary"
-                        : "text-muted-foreground/40 hover:text-muted-foreground"
-                    )}
-                  />
-                </button>
+                  <div className="absolute top-1.5 right-1.5 flex items-start gap-0.5 z-10">
+                    <button
+                      type="button"
+                      onClick={(e) => void handleToggleSave(e, p.id)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
+                      title={p.isSaved ? "Remove from saved" : "Save"}
+                    >
+                      <Bookmark
+                        className={cn(
+                          "h-3.5 w-3.5",
+                          p.isSaved && "fill-primary text-primary",
+                        )}
+                      />
+                    </button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ProjectActionsDropdown
+                        onDelete={() => void handleDelete(p.id)}
+                      />
+                    </div>
+                  </div>
+                </CarouselStack>
 
-                <span className="flex-1 truncate text-xs">{p.title}</span>
-
-                <span className="text-[10px] text-muted-foreground font-mono shrink-0 group-hover:hidden">
-                  {p.slideCount} сл.
-                </span>
-
-                <ProjectActionsDropdown onDelete={() => handleDelete(p.id)} />
+                <div className="flex items-center justify-between w-full gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate">{p.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {p.slideCount} slides · {p.aspectRatio}
+                      {isActive ? " · Open" : ""}
+                    </p>
+                  </div>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-background shrink-0">
+                    {busy ? "…" : isActive ? "Open" : "Open"}
+                  </span>
+                </div>
               </div>
             );
           })}

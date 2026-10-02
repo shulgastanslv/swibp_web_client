@@ -5,6 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { CollapsibleGroup } from "@/components/ui/collapsible-group";
 import {
   AlignLeft,
   AlignCenter,
@@ -20,11 +22,13 @@ import {
   PanelRightClose,
   PanelRightOpen,
   MousePointerClick,
-  Image as ImageIcon,
   Upload,
-  RotateCw,
+  WandSparkles,
+  Loader2,
+  Lock,
+  Unlock,
 } from "lucide-react";
-import { useCanvas } from "@/hooks/useCanvas";
+import { useSelectedObject } from "@/hooks/use-selected-object";
 import {
   FabricImage,
   type FabricObject,
@@ -32,7 +36,14 @@ import {
   Rect,
   Shadow as FabricShadow,
 } from "fabric";
-import { useCanvasManager } from "../../context/canvas-manager";
+import { useCanvasManager } from "@/context/canvas-manager";
+import { fileToDataUrl } from "@/lib/image/file-to-data-url";
+import { removeImageBackground } from "@/lib/image/remove-background";
+import { FontSelect } from "@/components/canvas/font-select";
+import {
+  loadGoogleFont,
+  normalizeFontFamily,
+} from "@/lib/fonts/google-fonts";
 
 type TextAlign = "left" | "center" | "right" | "justify";
 
@@ -52,10 +63,9 @@ interface InspectedProperties {
   width: number;
   height: number;
   rx?: number;
-  // Image properties
   src?: string;
-  // Text properties
   text?: string;
+  fontFamily?: string;
   fontSize?: number;
   lineHeight?: number;
   textAlign?: TextAlign;
@@ -63,7 +73,7 @@ interface InspectedProperties {
   isItalic?: boolean;
   isUnderline?: boolean;
   backgroundColor?: string;
-  // Shadow
+  isLocked?: boolean;
   hasShadow: boolean;
   shadowColor: string;
   shadowBlur: number;
@@ -71,22 +81,248 @@ interface InspectedProperties {
   shadowOffsetY: number;
 }
 
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+/** Shared shell for inspector fields — border only, fully rounded, no fill. */
+const fieldShell =
+  "flex items-center rounded-full bg-muted/40";
+
+const btnRound = "rounded-full";
+
+function normalizeHex(raw: string): string | null {
+  let value = raw.trim();
+  if (!value) return null;
+  if (!value.startsWith("#")) value = `#${value}`;
+  if (!HEX_RE.test(value)) return null;
+  if (value.length === 4) {
+    const [, r, g, b] = value;
+    value = `#${r}${r}${g}${g}${b}${b}`;
+  }
+  return value.toLowerCase();
+}
+
+function toPickerHex(value: string): string {
+  const normalized = normalizeHex(value.slice(0, 7));
+  return normalized ?? "#000000";
+}
+
+function clampNumber(value: number, min?: number, max?: number): number {
+  let next = value;
+  if (min != null) next = Math.max(min, next);
+  if (max != null) next = Math.min(max, next);
+  return next;
+}
+
+function ColorField({
+  label,
+  value,
+  onChange,
+  trailing,
+}: {
+  label: string;
+  value: string;
+  onChange: (hex: string) => void;
+  trailing?: React.ReactNode;
+}) {
+  const display = value === "transparent" ? "" : value;
+  const [draft, setDraft] = useState(display);
+
+  useEffect(() => {
+    setDraft(display);
+  }, [display]);
+
+  const commit = () => {
+    if (!draft.trim()) return;
+    const next = normalizeHex(draft);
+    if (next) {
+      onChange(next);
+      setDraft(next);
+    } else {
+      setDraft(display);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <div className={`${fieldShell} h-9 gap-2 px-2`}>
+        <input
+          type="color"
+          value={toPickerHex(value || "#000000")}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setDraft(e.target.value);
+          }}
+          className="size-6 shrink-0 cursor-pointer rounded-full border border-border bg-transparent p-0"
+          title={label}
+        />
+        <Input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+          }}
+          placeholder="#000000"
+          spellCheck={false}
+          className="h-7 flex-1 border-0 bg-transparent px-1 font-mono text-xs uppercase shadow-none focus-visible:ring-0 dark:bg-transparent"
+        />
+        {trailing}
+      </div>
+    </div>
+  );
+}
+
+function NumberField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  unit,
+  decimals = 0,
+  showSlider = true,
+}: {
+  label: string;
+  value: number;
+  onChange: (next: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  decimals?: number;
+  showSlider?: boolean;
+}) {
+  const format = (n: number) =>
+    decimals > 0 ? n.toFixed(decimals) : String(Math.round(n));
+  const [draft, setDraft] = useState(format(value));
+
+  useEffect(() => {
+    setDraft(format(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync from external value only
+  }, [value, decimals]);
+
+  const commit = () => {
+    const parsed = Number(draft.replace(",", "."));
+    if (!Number.isFinite(parsed)) {
+      setDraft(format(value));
+      return;
+    }
+    const next = clampNumber(parsed, min, max);
+    onChange(next);
+    setDraft(format(next));
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <div className={`${fieldShell} h-8 w-[4.75rem] px-2`}>
+          <Input
+            type="text"
+            inputMode="decimal"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+            className="h-7 flex-1 border-0 bg-transparent px-0.5 text-right font-mono text-xs tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
+          />
+          {unit ? (
+            <span className="shrink-0 pl-0.5 text-xs text-muted-foreground">
+              {unit}
+            </span>
+          ) : null}
+        </div>
+      </div>
+      {showSlider && min != null && max != null ? (
+        <Slider
+          value={[clampNumber(value, min, max)]}
+          onValueChange={([val]) => onChange(val ?? min)}
+          min={min}
+          max={max}
+          step={step}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function DimInput({
+  label,
+  value,
+  onChange,
+  unit = "px",
+}: {
+  label: string;
+  value: number;
+  onChange: (next: number) => void;
+  unit?: string;
+}) {
+  const [draft, setDraft] = useState(String(Math.round(value)));
+
+  useEffect(() => {
+    setDraft(String(Math.round(value)));
+  }, [value]);
+
+  const commit = () => {
+    const parsed = Number(draft.replace(",", "."));
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      setDraft(String(Math.round(value)));
+      return;
+    }
+    const next = Math.round(parsed);
+    onChange(next);
+    setDraft(String(next));
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <div className={`${fieldShell} h-9 px-3`}>
+        <Input
+          type="text"
+          inputMode="decimal"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
+          className="h-7 flex-1 border-0 bg-transparent px-0.5 font-mono text-xs tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
+        />
+        <span className="shrink-0 text-xs text-muted-foreground">{unit}</span>
+      </div>
+    </div>
+  );
+}
+
 export function RightSidebar({
   isRightCollapsed,
   setIsRightCollapsed,
 }: RightSidebarProps) {
-  const { selectedObject, handleUpdateObject } = useCanvas();
-  const { manager } = useCanvasManager();
+  const { selectedObject, updateSelected } = useSelectedObject();
+  const manager = useCanvasManager();
   const [formValues, setFormValues] = useState<InspectedProperties | null>(
     null,
   );
   const [imageUrlInput, setImageUrlInput] = useState("");
+  const [bgRemoving, setBgRemoving] = useState(false);
+  const [bgProgress, setBgProgress] = useState<string | null>(null);
+  const [bgError, setBgError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!selectedObject) {
       setFormValues(null);
       setImageUrlInput("");
+      setBgRemoving(false);
+      setBgProgress(null);
+      setBgError(null);
       return;
     }
 
@@ -120,6 +356,9 @@ export function RightSidebar({
       angle,
       width,
       height,
+      isLocked: Boolean(
+        selectedObject.lockMovementX && selectedObject.lockMovementY,
+      ),
       hasShadow: !!shadow,
       shadowColor: shadow?.color ?? "#00000040",
       shadowBlur: shadow?.blur ?? 12,
@@ -130,6 +369,9 @@ export function RightSidebar({
     if (type === "text" || type === "i-text" || type === "textbox") {
       const textObj = selectedObject as unknown as FabricText;
       baseProps.text = textObj.text ?? "";
+      baseProps.fontFamily = normalizeFontFamily(
+        typeof textObj.fontFamily === "string" ? textObj.fontFamily : undefined,
+      );
       baseProps.fontSize = textObj.fontSize ?? 32;
       baseProps.lineHeight = textObj.lineHeight ?? 1.16;
       baseProps.textAlign = (textObj.textAlign as TextAlign) ?? "left";
@@ -141,6 +383,13 @@ export function RightSidebar({
         typeof textObj.backgroundColor === "string"
           ? textObj.backgroundColor
           : "transparent";
+
+      const family = baseProps.fontFamily;
+      if (family) {
+        void loadGoogleFont(family).then(() => {
+          manager?.canvas.requestRenderAll();
+        });
+      }
     }
 
     if (type === "rect") {
@@ -159,7 +408,7 @@ export function RightSidebar({
     setFormValues(baseProps);
   }, [selectedObject]);
 
-  const canvas = manager?.getCanvas();
+  const canvas = manager?.canvas;
 
   const updateProp = (
     key: keyof InspectedProperties,
@@ -167,7 +416,7 @@ export function RightSidebar({
     fabricKey: string = key,
   ) => {
     setFormValues((prev) => (prev ? { ...prev, [key]: value } : null));
-    handleUpdateObject({
+    updateSelected({
       [fabricKey]: value,
     } as unknown as Partial<FabricObject>);
   };
@@ -178,14 +427,13 @@ export function RightSidebar({
     setFormValues((prev) => (prev ? { ...prev, rx: radius } : null));
 
     if (selectedObject.type === "rect") {
-      handleUpdateObject({
+      updateSelected({
         rx: radius,
         ry: radius,
       } as unknown as Partial<FabricObject>);
     } else if (selectedObject.type === "image") {
       const img = selectedObject as FabricImage;
 
-      // Use .set() instead of direct property assignment:
       img.set("rx" as keyof FabricImage, radius);
 
       if (radius > 0) {
@@ -266,33 +514,65 @@ export function RightSidebar({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
+    void fileToDataUrl(file)
+      .then((dataUrl) => {
         changeImageSource(dataUrl);
         setImageUrlInput("");
-      }
-    };
-    reader.readAsDataURL(file);
+      })
+      .catch((err) => console.error(err));
     e.target.value = "";
+  };
+
+  const handleRemoveBackground = async () => {
+    if (!selectedObject || selectedObject.type !== "image") return;
+
+    const imgObj = selectedObject as unknown as FabricImage;
+    const src =
+      (typeof imgObj.getSrc === "function" ? imgObj.getSrc() : "") ||
+      formValues?.src ||
+      "";
+    if (!src) {
+      setBgError("No image source");
+      return;
+    }
+
+    setBgRemoving(true);
+    setBgError(null);
+    setBgProgress("Preparing the model…");
+
+    try {
+      const result = await removeImageBackground(src, {
+        onProgress: ({ key, current, total }) => {
+          const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+          setBgProgress(
+            pct >= 100 ? "Processing…" : `Loading ${key}: ${pct}%`,
+          );
+        },
+      });
+      changeImageSource(result);
+      setBgProgress(null);
+    } catch (err) {
+      console.error(err);
+      setBgError("Couldn't remove the background. Try again.");
+      setBgProgress(null);
+    } finally {
+      setBgRemoving(false);
+    }
   };
 
   const handleCenterH = () => {
     const active = canvas?.getActiveObject();
-    if (active && canvas) {
-      canvas.centerObjectH(active);
-      active.setCoords();
-      canvas.requestRenderAll();
+    if (active && manager) {
+      manager.grid.centerObject(active, "horizontal");
+      manager.commit();
     }
   };
 
   const handleCenterV = () => {
     const active = canvas?.getActiveObject();
-    if (active && canvas) {
-      canvas.centerObjectV(active);
-      active.setCoords();
-      canvas.requestRenderAll();
+    if (active && manager) {
+      manager.grid.centerObject(active, "vertical");
+      manager.commit();
     }
   };
 
@@ -301,6 +581,7 @@ export function RightSidebar({
     if (active && canvas) {
       canvas.bringObjectForward(active);
       canvas.requestRenderAll();
+      manager?.commit();
     }
   };
 
@@ -309,6 +590,43 @@ export function RightSidebar({
     if (active && canvas) {
       canvas.sendObjectBackwards(active);
       canvas.requestRenderAll();
+      manager?.commit();
+    }
+  };
+
+  const handleToggleLock = () => {
+    if (!selectedObject || !formValues) return;
+    const next = !formValues.isLocked;
+    setFormValues((prev) => (prev ? { ...prev, isLocked: next } : null));
+    selectedObject.set({
+      lockMovementX: next,
+      lockMovementY: next,
+      lockRotation: next,
+      lockScalingX: next,
+      lockScalingY: next,
+      lockSkewingX: next,
+      lockSkewingY: next,
+      hasControls: !next,
+    });
+    canvas?.requestRenderAll();
+    manager?.commit();
+  };
+
+  const setWidth = (val: number) => {
+    setFormValues((p) => (p ? { ...p, width: val } : null));
+    if (selectedObject && val > 0) {
+      selectedObject.scaleToWidth(val);
+      canvas?.requestRenderAll();
+      canvas?.fire("object:modified");
+    }
+  };
+
+  const setHeight = (val: number) => {
+    setFormValues((p) => (p ? { ...p, height: val } : null));
+    if (selectedObject && val > 0) {
+      selectedObject.scaleToHeight(val);
+      canvas?.requestRenderAll();
+      canvas?.fire("object:modified");
     }
   };
 
@@ -321,6 +639,18 @@ export function RightSidebar({
   const isImage = formValues?.type === "image";
   const canHaveRadius = isRect || isImage;
 
+  const typeLabel: Record<string, string> = {
+    rect: "Rectangle",
+    circle: "Circle",
+    triangle: "Triangle",
+    image: "Image",
+    text: "Text",
+    "i-text": "Text",
+    textbox: "Text",
+    path: "Shape",
+    group: "Group",
+  };
+
   const alignIcons: Record<TextAlign, React.ElementType> = {
     left: AlignLeft,
     center: AlignCenter,
@@ -329,89 +659,114 @@ export function RightSidebar({
   };
 
   return (
-    <div className="flex h-full bg-background border-l border-border overflow-y-scroll relative">
+    <div className="relative flex h-full overflow-hidden border-l border-border bg-background">
       <div
-        className={`flex flex-col transition-all duration-200 ease-in-out overflow-y-scroll ${
-          isRightCollapsed ? "w-0 opacity-0" : "w-64 opacity-100 p-4"
+        className={`flex flex-col overflow-y-auto transition-all duration-200 ease-in-out ${
+          isRightCollapsed ? "w-0 opacity-0" : "w-72 opacity-100"
         }`}
       >
-        <div className="h-8 flex items-center justify-between px-1 border-b border-border/40 mb-3">
-          <span className="text-xs font-semibold tracking-tight uppercase">
-            {formValues ? formValues.type : "Свойства"}
+        <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-3.5">
+          <span className="truncate text-xs font-semibold text-foreground">
+            {formValues
+              ? (typeLabel[formValues.type] ?? formValues.type)
+              : "Properties"}
           </span>
         </div>
 
-        <ScrollArea className="flex-1 pr-1">
+        <ScrollArea className="flex-1">
           {!formValues ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground gap-2">
-              <MousePointerClick className="w-6 h-6 stroke-[1.5] text-muted-foreground/60" />
-              <p className="text-xs">
-                Выберите объект на холсте для редактирования
+            <div className="flex flex-col items-center justify-center gap-3 px-5 py-16 text-center text-muted-foreground">
+              <MousePointerClick className="size-7 stroke-[1.5] text-muted-foreground/60" />
+              <p className="text-sm leading-snug">
+                Select an object on the canvas to change its properties
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4 text-xs">
-              {/* ── Геометрия: Размеры и Угол ── */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    W (px)
-                  </span>
-                  <Input
-                    type="number"
-                    value={formValues.width}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setFormValues((p) => (p ? { ...p, width: val } : null));
-                      if (selectedObject) {
-                        selectedObject.scaleToWidth(val);
-                        canvas?.requestRenderAll();
-                      }
-                    }}
-                    className="h-7 text-xs px-2 font-mono bg-muted/20"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    H (px)
-                  </span>
-                  <Input
-                    type="number"
-                    value={formValues.height}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setFormValues((p) => (p ? { ...p, height: val } : null));
-                      if (selectedObject) {
-                        selectedObject.scaleToHeight(val);
-                        canvas?.requestRenderAll();
-                      }
-                    }}
-                    className="h-7 text-xs px-2 font-mono bg-muted/20"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
-                    <RotateCw className="w-2.5 h-2.5" /> Угол
-                  </span>
-                  <Input
-                    type="number"
-                    value={formValues.angle}
-                    onChange={(e) =>
-                      updateProp("angle", Number(e.target.value))
-                    }
-                    className="h-7 text-xs px-2 font-mono bg-muted/20"
-                  />
-                </div>
+            <div className="flex flex-col pb-3">
+              <div className="flex items-center gap-1 border-b border-border/60 px-2.5 py-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={`size-8 ${btnRound}`}
+                  onClick={handleCenterH}
+                  title="Center horizontally"
+                >
+                  <AlignHorizontalDistributeCenter className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={`size-8 ${btnRound}`}
+                  onClick={handleCenterV}
+                  title="Center vertically"
+                >
+                  <AlignVerticalDistributeCenter className="size-4" />
+                </Button>
+                <div className="mx-1.5 h-5 w-px bg-border/70" />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={`size-8 ${btnRound}`}
+                  onClick={handleBringForward}
+                  title="Bring forward"
+                >
+                  <BringToFront className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={`size-8 ${btnRound}`}
+                  onClick={handleSendBackwards}
+                  title="Send backwards"
+                >
+                  <SendToBack className="size-4" />
+                </Button>
+                <div className="mx-1.5 h-5 w-px bg-border/70" />
+                <Button
+                  type="button"
+                  variant={formValues.isLocked ? "secondary" : "ghost"}
+                  size="icon"
+                  className={`size-8 ${btnRound}`}
+                  onClick={handleToggleLock}
+                  title={formValues.isLocked ? "Unlock" : "Lock"}
+                >
+                  {formValues.isLocked ? (
+                    <Lock className="size-4" />
+                  ) : (
+                    <Unlock className="size-4" />
+                  )}
+                </Button>
               </div>
 
-              {/* ── Настройки картинки ── */}
-              {isImage && (
-                <div className="flex flex-col gap-2.5 pt-2 border-t border-border/40">
-                  <label className="text-muted-foreground font-medium flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    Замена изображения
-                  </label>
+              <CollapsibleGroup id="rs-position" title="Size and angle">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <DimInput
+                    label="Width"
+                    value={formValues.width}
+                    onChange={setWidth}
+                  />
+                  <DimInput
+                    label="Height"
+                    value={formValues.height}
+                    onChange={setHeight}
+                  />
+                </div>
+                <NumberField
+                  label="Rotation"
+                  value={formValues.angle}
+                  onChange={(v) => updateProp("angle", v)}
+                  min={-180}
+                  max={360}
+                  unit="°"
+                />
+              </CollapsibleGroup>
 
+              {isImage && (
+                <CollapsibleGroup id="rs-image" title="Image">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -419,24 +774,24 @@ export function RightSidebar({
                     accept="image/*"
                     className="hidden"
                   />
-
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="w-full justify-center gap-2 h-8 rounded-xl text-xs"
+                    className={`h-9 w-full justify-center gap-2 text-sm ${btnRound}`}
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={bgRemoving}
                   >
-                    <Upload className="w-3.5 h-3.5" />
-                    Загрузить файл
+                    <Upload className="size-4" />
+                    Upload file
                   </Button>
-
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-2">
                     <Input
                       value={imageUrlInput}
                       onChange={(e) => setImageUrlInput(e.target.value)}
-                      placeholder="https://..."
-                      className="h-8 text-xs rounded-xl px-2.5 bg-muted/30 border-border/60"
+                      placeholder="Image URL"
+                      className="h-9 border border-border bg-transparent px-3 text-sm dark:bg-transparent"
+                      disabled={bgRemoving}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && imageUrlInput.trim()) {
                           changeImageSource(imageUrlInput.trim());
@@ -447,65 +802,87 @@ export function RightSidebar({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-8 px-2.5 rounded-xl text-xs"
-                      disabled={!imageUrlInput.trim()}
+                      className={`h-9 px-3 text-sm ${btnRound}`}
+                      disabled={bgRemoving || !imageUrlInput.trim()}
                       onClick={() => changeImageSource(imageUrlInput.trim())}
                     >
-                      ОК
+                      OK
                     </Button>
                   </div>
-                </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className={`h-9 w-full justify-center gap-2 text-sm ${btnRound}`}
+                    onClick={() => void handleRemoveBackground()}
+                    disabled={bgRemoving}
+                  >
+                    {bgRemoving ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <WandSparkles className="size-4" />
+                    )}
+                    {bgRemoving ? "Removing background…" : "Remove background"}
+                  </Button>
+                  {bgProgress && (
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      {bgProgress}
+                    </p>
+                  )}
+                  {bgError && (
+                    <p className="text-xs text-destructive leading-snug">
+                      {bgError}
+                    </p>
+                  )}
+                </CollapsibleGroup>
               )}
 
-              {/* ── Текстовые поля ── */}
               {isText && (
-                <>
-                  <div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
-                    <label className="text-muted-foreground font-medium">
-                      Текст
-                    </label>
+                <CollapsibleGroup id="rs-text" title="Text">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-xs text-muted-foreground">
+                      Content
+                    </span>
                     <textarea
-                      rows={2}
+                      rows={3}
                       value={formValues.text ?? ""}
                       onChange={(e) => updateProp("text", e.target.value)}
-                      className="p-2 rounded-xl bg-muted/30 text-xs text-foreground focus:outline-none border border-border/50 resize-none"
+                      className="resize-none rounded-2xl border border-border bg-transparent p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                     />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-muted-foreground font-medium">
-                      Стиль текста
-                    </label>
-                    <div className="flex gap-1">
+                    <span className="text-xs text-muted-foreground">Style</span>
+                    <div className="flex gap-1.5">
                       <Button
                         type="button"
                         variant={formValues.isBold ? "secondary" : "outline"}
                         size="icon"
-                        className="h-7 w-7 rounded-lg"
+                        className={`size-8 ${btnRound}`}
                         onClick={() => {
                           const next = !formValues.isBold;
                           updateProp("isBold", next, "fontWeight");
-                          handleUpdateObject({
+                          updateSelected({
                             fontWeight: next ? "bold" : "normal",
                           } as unknown as Partial<FabricObject>);
                         }}
                       >
-                        <Bold className="w-3.5 h-3.5" />
+                        <Bold className="size-4" />
                       </Button>
                       <Button
                         type="button"
                         variant={formValues.isItalic ? "secondary" : "outline"}
                         size="icon"
-                        className="h-7 w-7 rounded-lg"
+                        className={`size-8 ${btnRound}`}
                         onClick={() => {
                           const next = !formValues.isItalic;
                           updateProp("isItalic", next, "fontStyle");
-                          handleUpdateObject({
+                          updateSelected({
                             fontStyle: next ? "italic" : "normal",
                           } as unknown as Partial<FabricObject>);
                         }}
                       >
-                        <Italic className="w-3.5 h-3.5" />
+                        <Italic className="size-4" />
                       </Button>
                       <Button
                         type="button"
@@ -513,349 +890,244 @@ export function RightSidebar({
                           formValues.isUnderline ? "secondary" : "outline"
                         }
                         size="icon"
-                        className="h-7 w-7 rounded-lg"
+                        className={`size-8 ${btnRound}`}
                         onClick={() => {
                           const next = !formValues.isUnderline;
                           updateProp("isUnderline", next, "underline");
                         }}
                       >
-                        <Underline className="w-3.5 h-3.5" />
+                        <Underline className="size-4" />
                       </Button>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span className="font-medium">Размер текста</span>
-                      <span className="font-mono">
-                        {Math.round(formValues.fontSize ?? 32)}px
-                      </span>
-                    </div>
-                    <Slider
-                      value={[formValues.fontSize ?? 32]}
-                      onValueChange={([val]) =>
-                        updateProp("fontSize", val ?? 32)
-                      }
-                      min={10}
-                      max={140}
-                      step={1}
-                    />
-                  </div>
+                  <FontSelect
+                    value={formValues.fontFamily ?? "Inter"}
+                    onChange={(family) => {
+                      setFormValues((prev) =>
+                        prev ? { ...prev, fontFamily: family } : null,
+                      );
+                      updateSelected({
+                        fontFamily: family,
+                      } as unknown as Partial<FabricObject>);
+                      // After the webfont finishes painting, force one more
+                      // layout pass so metrics match the newly loaded face.
+                      void document.fonts.ready.then(() => {
+                        const active = manager?.getActiveObject() as
+                          | (FabricObject & {
+                              initDimensions?: () => void;
+                              dirty?: boolean;
+                            })
+                          | null
+                          | undefined;
+                        if (!active) return;
+                        const type = active.type;
+                        if (
+                          type === "textbox" ||
+                          type === "text" ||
+                          type === "i-text"
+                        ) {
+                          active.initDimensions?.();
+                          active.dirty = true;
+                          active.setCoords();
+                          manager?.canvas.requestRenderAll();
+                        }
+                      });
+                    }}
+                  />
 
-                  <div className="flex flex-col gap-2">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span className="font-medium">Межстрочный интервал</span>
-                      <span className="font-mono">
-                        {(formValues.lineHeight ?? 1.16).toFixed(2)}
-                      </span>
-                    </div>
-                    <Slider
-                      value={[(formValues.lineHeight ?? 1.16) * 100]}
-                      onValueChange={([val]) =>
-                        updateProp("lineHeight", (val ?? 116) / 100)
-                      }
-                      min={80}
-                      max={250}
-                      step={5}
-                    />
-                  </div>
+                  <NumberField
+                    label="Font size"
+                    value={formValues.fontSize ?? 32}
+                    onChange={(v) => updateProp("fontSize", v)}
+                    min={10}
+                    max={140}
+                    unit="px"
+                  />
+
+                  <NumberField
+                    label="Line height"
+                    value={formValues.lineHeight ?? 1.16}
+                    onChange={(v) => updateProp("lineHeight", v)}
+                    min={0.8}
+                    max={2.5}
+                    step={0.05}
+                    decimals={2}
+                  />
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-muted-foreground font-medium">
-                      Выравнивание
-                    </label>
-                    <div className="flex bg-muted/40 rounded-xl p-0.5 border border-border/40">
-                      {(["left", "center", "right", "justify"] as const).map(
-                        (align) => {
-                          const Icon = alignIcons[align];
-                          return (
-                            <button
-                              key={align}
-                              type="button"
-                              onClick={() => updateProp("textAlign", align)}
-                              className={`flex-1 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                                formValues.textAlign === align
-                                  ? "bg-background text-foreground font-medium border border-border/60 shadow-2xs"
-                                  : "text-muted-foreground hover:text-foreground"
-                              }`}
-                            >
-                              <Icon className="w-3.5 h-3.5" />
-                            </button>
-                          );
-                        },
-                      )}
+                    <span className="text-xs text-muted-foreground">
+                      Alignment
+                    </span>
+                    <div className="flex rounded-full border border-border bg-transparent p-1">
+                      {(
+                        ["left", "center", "right", "justify"] as const
+                      ).map((align) => {
+                        const Icon = alignIcons[align];
+                        return (
+                          <button
+                            key={align}
+                            type="button"
+                            onClick={() => updateProp("textAlign", align)}
+                            className={`flex h-7 flex-1 items-center justify-center rounded-full transition-colors ${
+                              formValues.textAlign === align
+                                ? "bg-muted text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            <Icon className="size-4" />
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-                </>
+                </CollapsibleGroup>
               )}
 
-              {/* ── Цвета (Заливка и Фон) ── */}
-              <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
-                {!isImage && (
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-muted-foreground">
-                      Цвет {isText ? "текста" : "заливки"}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={formValues.fill}
-                        onChange={(e) => updateProp("fill", e.target.value)}
-                        className="w-6 h-6 rounded-md cursor-pointer border border-border/60 bg-transparent p-0"
-                      />
-                      <span className="font-mono text-[11px] text-muted-foreground uppercase">
-                        {formValues.fill}
-                      </span>
-                    </div>
-                  </div>
+              <CollapsibleGroup id="rs-fill" title="Fill">
+                {!isImage ? (
+                  <ColorField
+                    label={isText ? "Text color" : "Fill color"}
+                    value={formValues.fill}
+                    onChange={(hex) => updateProp("fill", hex)}
+                  />
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    The image has no fill — replace the file in the section above.
+                  </p>
                 )}
-
                 {isText && (
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-muted-foreground">
-                      Фон текста
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={
-                          formValues.backgroundColor === "transparent"
-                            ? "#ffffff"
-                            : formValues.backgroundColor
-                        }
-                        onChange={(e) =>
-                          updateProp("backgroundColor", e.target.value)
-                        }
-                        className="w-6 h-6 rounded-md cursor-pointer border border-border/60 bg-transparent p-0"
-                      />
+                  <ColorField
+                    label="Text background"
+                    value={
+                      formValues.backgroundColor === "transparent"
+                        ? ""
+                        : (formValues.backgroundColor ?? "")
+                    }
+                    onChange={(hex) => updateProp("backgroundColor", hex)}
+                    trailing={
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-6 px-1.5 text-[10px]"
+                        className={`h-7 px-2 text-xs ${btnRound}`}
                         onClick={() =>
                           updateProp("backgroundColor", "transparent")
                         }
                       >
-                        Сброс
+                        Reset
                       </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* ── Обводка ── */}
-              <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-muted-foreground">
-                    Обводка
-                  </span>
-                  <input
-                    type="color"
-                    value={formValues.stroke}
-                    onChange={(e) => updateProp("stroke", e.target.value)}
-                    className="w-6 h-6 rounded-md cursor-pointer border border-border/60 bg-transparent p-0"
+                    }
                   />
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Толщина обводки</span>
-                  <span className="font-mono">
-                    {Math.round(formValues.strokeWidth)}px
-                  </span>
-                </div>
-                <Slider
-                  value={[formValues.strokeWidth]}
-                  onValueChange={([val]) => updateProp("strokeWidth", val ?? 0)}
+                )}
+              </CollapsibleGroup>
+
+              <CollapsibleGroup id="rs-stroke" title="Stroke">
+                <ColorField
+                  label="Stroke color"
+                  value={formValues.stroke}
+                  onChange={(hex) => updateProp("stroke", hex)}
+                />
+                <NumberField
+                  label="Thickness"
+                  value={formValues.strokeWidth}
+                  onChange={(v) => updateProp("strokeWidth", v)}
                   min={0}
                   max={20}
-                  step={1}
+                  unit="px"
                 />
-              </div>
+              </CollapsibleGroup>
 
-              {/* ── Скругление углов (Border Radius) ── */}
-              {canHaveRadius && (
-                <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span className="font-medium">
-                      Border Radius (скругление)
-                    </span>
-                    <span className="font-mono">
-                      {Math.round(formValues.rx ?? 0)}px
-                    </span>
-                  </div>
-                  <Slider
-                    value={[formValues.rx ?? 0]}
-                    onValueChange={([val]) => updateCornerRadius(val ?? 0)}
-                    min={0}
-                    max={120}
-                    step={1}
-                  />
-                </div>
-              )}
-
-              {/* ── Внутренний отступ (Padding) ── */}
-              <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
-                <div className="flex justify-between text-muted-foreground">
-                  <span className="font-medium">
-                    Внутренний отступ (Padding)
-                  </span>
-                  <span className="font-mono">
-                    {Math.round(formValues.padding)}px
-                  </span>
-                </div>
-                <Slider
-                  value={[formValues.padding]}
-                  onValueChange={([val]) => updateProp("padding", val ?? 0)}
-                  min={0}
-                  max={60}
-                  step={1}
-                />
-              </div>
-
-              {/* ── Тень (Drop Shadow) ── */}
-              <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-muted-foreground flex items-center gap-1.5">
-                    Тень
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={formValues.hasShadow}
-                    onChange={(e) => toggleShadow(e.target.checked)}
-                    className="rounded border-border accent-primary cursor-pointer"
-                  />
-                </div>
-
-                {formValues.hasShadow && (
-                  <div className="flex flex-col gap-2 mt-1 bg-muted/20 p-2 rounded-xl border border-border/40">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">
-                        Цвет тени
-                      </span>
-                      <input
-                        type="color"
-                        value={formValues.shadowColor.slice(0, 7)}
-                        onChange={(e) =>
-                          updateShadowProp("shadowColor", e.target.value)
-                        }
-                        className="w-5 h-5 rounded cursor-pointer border border-border/60 bg-transparent p-0"
-                      />
-                    </div>
-                    <div className="flex justify-between text-[11px] text-muted-foreground">
-                      <span>Размытие (Blur)</span>
-                      <span className="font-mono">
-                        {formValues.shadowBlur}px
-                      </span>
-                    </div>
-                    <Slider
-                      value={[formValues.shadowBlur]}
-                      onValueChange={([val]) =>
-                        updateShadowProp("shadowBlur", val ?? 0)
-                      }
-                      min={0}
-                      max={50}
-                      step={1}
-                    />
-
-                    <div className="flex justify-between text-[11px] text-muted-foreground">
-                      <span>Смещение Y</span>
-                      <span className="font-mono">
-                        {formValues.shadowOffsetY}px
-                      </span>
-                    </div>
-                    <Slider
-                      value={[formValues.shadowOffsetY]}
-                      onValueChange={([val]) =>
-                        updateShadowProp("shadowOffsetY", val ?? 0)
-                      }
-                      min={-30}
-                      max={50}
-                      step={1}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* ── Непрозрачность (Opacity) ── */}
-              <div className="flex flex-col gap-2 pt-2 border-t border-border/40">
-                <div className="flex justify-between text-muted-foreground">
-                  <span className="font-medium">Непрозрачность</span>
-                  <span className="font-mono">
-                    {Math.round(formValues.opacity * 100)}%
-                  </span>
-                </div>
-                <Slider
-                  value={[formValues.opacity * 100]}
-                  onValueChange={([val]) =>
-                    updateProp("opacity", (val ?? 100) / 100)
-                  }
+              <CollapsibleGroup id="rs-appearance" title="Appearance">
+                <NumberField
+                  label="Opacity"
+                  value={Math.round(formValues.opacity * 100)}
+                  onChange={(v) => updateProp("opacity", v / 100)}
                   min={0}
                   max={100}
-                  step={1}
+                  unit="%"
                 />
-              </div>
 
-              {/* ── Позиционирование и слои ── */}
-              <div className="flex flex-col gap-1.5 pt-2 border-t border-border/40">
-                <label className="text-muted-foreground font-medium">
-                  Положение на холсте
-                </label>
-                <div className="flex flex-row gap-1.5">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    onClick={handleCenterH}
-                    title="Выровнять по центру горизонтально"
-                  >
-                    <AlignHorizontalDistributeCenter className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    onClick={handleCenterV}
-                    title="Выровнять по центру вертикально"
-                  >
-                    <AlignVerticalDistributeCenter className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    onClick={handleBringForward}
-                    title="На слой выше"
-                  >
-                    <BringToFront className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    onClick={handleSendBackwards}
-                    title="На слой ниже"
-                  >
-                    <SendToBack className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
+                {canHaveRadius && (
+                  <NumberField
+                    label="Corner radius"
+                    value={formValues.rx ?? 0}
+                    onChange={updateCornerRadius}
+                    min={0}
+                    max={120}
+                    unit="px"
+                  />
+                )}
+
+                <NumberField
+                  label="Padding"
+                  value={formValues.padding}
+                  onChange={(v) => updateProp("padding", v)}
+                  min={0}
+                  max={60}
+                  unit="px"
+                />
+              </CollapsibleGroup>
+
+              <CollapsibleGroup
+                id="rs-effects"
+                title="Shadow"
+                headerRight={
+                  <Switch
+                    size="sm"
+                    checked={formValues.hasShadow}
+                    onCheckedChange={toggleShadow}
+                    aria-label="Enable shadow"
+                  />
+                }
+              >
+                {formValues.hasShadow ? (
+                  <div className="flex flex-col gap-3">
+                    <ColorField
+                      label="Shadow color"
+                      value={formValues.shadowColor.slice(0, 7)}
+                      onChange={(hex) => updateShadowProp("shadowColor", hex)}
+                    />
+                    <NumberField
+                      label="Blur"
+                      value={formValues.shadowBlur}
+                      onChange={(v) => updateShadowProp("shadowBlur", v)}
+                      min={0}
+                      max={50}
+                      unit="px"
+                    />
+                    <NumberField
+                      label="Vertical offset"
+                      value={formValues.shadowOffsetY}
+                      onChange={(v) => updateShadowProp("shadowOffsetY", v)}
+                      min={-30}
+                      max={50}
+                      unit="px"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Enable the switch on the right to add a shadow.
+                  </p>
+                )}
+              </CollapsibleGroup>
             </div>
           )}
         </ScrollArea>
       </div>
 
-      <aside className="w-10 flex flex-col items-center justify-start py-3 border-l border-border/50 bg-muted/20">
+      <aside className="flex w-10 shrink-0 flex-col items-center justify-start border-l border-border/50 py-3">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground"
+          className={`size-8 text-muted-foreground hover:text-foreground ${btnRound}`}
           onClick={() => setIsRightCollapsed(!isRightCollapsed)}
-          title={isRightCollapsed ? "Развернуть панель" : "Свернуть панель"}
+          title={isRightCollapsed ? "Expand panel" : "Collapse panel"}
         >
           {isRightCollapsed ? (
-            <PanelRightOpen className="w-4 h-4" />
+            <PanelRightOpen className="size-4" />
           ) : (
-            <PanelRightClose className="w-4 h-4" />
+            <PanelRightClose className="size-4" />
           )}
         </Button>
       </aside>

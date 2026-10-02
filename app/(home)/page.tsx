@@ -1,25 +1,85 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
+
 import { Header } from "@/components/header";
 import { LeftSidebar } from "@/components/canvas/left-sidebar";
 import { CanvasToolbar } from "@/components/canvas/canvas-toolbar";
 import { CanvasView } from "@/components/canvas/canvas-view";
+import { ReferencePanel } from "@/components/canvas/reference-panel";
+import { AutoFlowPrompt } from "@/components/canvas/auto-flow-prompt";
 import { RightSidebar } from "@/components/canvas/right-sidebar";
 import { PreviewModal } from "@/components/canvas/preview-modal";
 import type { NavId } from "@/components/canvas/left-sidebar";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import dynamic from "next/dynamic";
+import { useProject } from "@/hooks/use-project";
+import { useSlidesController } from "@/context/canvas-manager";
 
 const SlideNavigator = dynamic(
   () => import("@/components/canvas/slide-navigator").then((mod) => mod.SlideNavigator),
-  { ssr: false }
+  { ssr: false },
 );
+
+function ProjectBootstrap() {
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get("project");
+  const { loadProject, persist } = useProject();
+  const slidesController = useSlidesController();
+
+  // Hydrate once from the URL only if nothing is selected yet.
+  // Do not re-apply searchParams when currentProjectId changes: sidebar uses
+  // history.replaceState, so Next.js params stay stale and would bounce back.
+  useEffect(() => {
+    if (!slidesController) return;
+
+    const storeId = useCanvasStore.getState().currentProjectId;
+    if (storeId) return;
+    if (!projectId) return;
+
+    void loadProject(projectId);
+  }, [projectId, slidesController, loadProject]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void persist();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [persist]);
+
+  return null;
+}
+
+function AuthLinkHandler() {
+  const searchParams = useSearchParams();
+  const verify = searchParams.get("verify");
+  const reset = searchParams.get("reset");
+
+  useEffect(() => {
+    if (!verify && !reset) return;
+    window.dispatchEvent(
+      new CustomEvent("swibp:auth-link", {
+        detail: { verify, reset },
+      }),
+    );
+    const url = new URL(window.location.href);
+    url.searchParams.delete("verify");
+    url.searchParams.delete("reset");
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(null, "", next);
+  }, [verify, reset]);
+
+  return null;
+}
 
 export default function CarouselStudio() {
   const [activeNav, setActiveNav] = useState<NavId>("templates");
   const [showDotGrid, setShowDotGrid] = useState(true);
-  const [projectName, setProjectName] = useState("Untitled Carousel");
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const [isRightCollapsed, setIsRightCollapsed] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -27,7 +87,18 @@ export default function CarouselStudio() {
 
   return (
     <div className="flex flex-col h-screen w-full bg-background text-foreground font-sans overflow-hidden select-none">
-      <Header projectName={projectName} onProjectNameChange={setProjectName} />
+      <Header
+        onPreview={() => {
+          const storeCurrentId = useCanvasStore.getState().currentSlideId;
+          setPreviewSlideId(storeCurrentId);
+          setShowPreviewModal(true);
+        }}
+      />
+
+      <Suspense fallback={null}>
+        <ProjectBootstrap />
+        <AuthLinkHandler />
+      </Suspense>
 
       <div className="flex flex-1 min-h-0">
         <LeftSidebar
@@ -51,15 +122,13 @@ export default function CarouselStudio() {
               : {}
           }
         >
-          <CanvasToolbar
-            onPreview={() => {
-              const storeCurrentId = useCanvasStore.getState().currentSlideId;
-              setPreviewSlideId(storeCurrentId);
-              setShowPreviewModal(true);
-            }}
-          />
+          <CanvasToolbar />
 
-          <CanvasView />
+          <div className="flex flex-1 min-h-0 relative">
+            <CanvasView />
+            <ReferencePanel />
+            <AutoFlowPrompt />
+          </div>
           <SlideNavigator />
         </main>
 

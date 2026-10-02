@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import { useCanvasManager } from "@/context/canvas-manager";
+import { useSlidesController } from "@/context/canvas-manager";
 import { Canvas as FabricCanvas } from "fabric";
 
 interface PreviewModalProps {
@@ -15,72 +15,88 @@ interface PreviewModalProps {
 
 interface SlideSnapshot {
   id: number;
+  /** High-res image for the main stage */
+  preview: string | null;
+  /** Compact image for the filmstrip */
   thumbnail: string | null;
   loading: boolean;
 }
 
+/** Target long-edge for the main preview (~retina-friendly on ~860px stage). */
+const PREVIEW_LONG_EDGE = 1600;
+const THUMB_LONG_EDGE = 280;
+
 export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProps) {
   const slides = useCanvasStore((s) => s.slides);
   const canvasDimensions = useCanvasStore((s) => s.canvasDimensions);
-  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
-  const updateSlideJSONById = useCanvasStore((s) => s.updateSlideJSONById);
   const updateSlideThumbnail = useCanvasStore((s) => s.updateSlideThumbnail);
 
-  const { manager } = useCanvasManager();
+  const slidesController = useSlidesController();
 
   const [activeId, setActiveId] = useState(initialSlideId);
   const [snapshots, setSnapshots] = useState<SlideSnapshot[]>([]);
   const [rendering, setRendering] = useState(false);
+  const [view, setView] = useState<"slides" | "phone">("slides");
+  const swipeStart = useRef<number | null>(null);
 
   const isMountedRef = useRef(true);
+  const offscreenRef = useRef<FabricCanvas | null>(null);
 
   const slideIds = slides.map((s) => s.id);
   const activeIdx = Math.max(0, slideIds.indexOf(activeId));
   const aspectRatio = canvasDimensions.width / canvasDimensions.height;
 
-  // Синхронизация текущего состояния и генерация миниатюр
   useEffect(() => {
     if (!open) return;
     isMountedRef.current = true;
 
-    // 1. Сохраняем текущее актуальное состояние активного слайда перед открытием
-    if (manager) {
-      const currentJson = manager.io.exportAsJSON();
-      updateSlideJSONById(currentSlideId, currentJson);
-    }
+    slidesController?.saveCurrent();
 
     const freshSlides = useCanvasStore.getState().slides;
+    const { width, height } = canvasDimensions;
+    const longEdge = Math.max(width, height);
 
-    // Инициализируем снапшоты
-    const initialSnapshots: SlideSnapshot[] = freshSlides.map((s) => ({
-      id: s.id,
-      thumbnail: s.thumbnail ?? null,
-      loading: !s.thumbnail && !!s.canvasJSON,
-    }));
-
+    // Always re-render sharp previews for the modal — store thumbs are too small.
     setActiveId(initialSlideId);
-    setSnapshots(initialSnapshots);
+    setSnapshots(
+      freshSlides.map((s) => ({
+        id: s.id,
+        preview: null,
+        thumbnail: s.thumbnail ?? null,
+        loading: !!s.canvasJSON,
+      })),
+    );
 
-    const slidesNeedingRender = freshSlides.filter((s) => !s.thumbnail && s.canvasJSON);
-    if (slidesNeedingRender.length === 0) return;
+    if (freshSlides.length === 0) return;
 
     setRendering(true);
 
-    // 2. Рендерим отсутствующие миниатюры через скрытый offscreen-канвас, не трогая рабочий
     const offscreenEl = document.createElement("canvas");
-    offscreenEl.width = canvasDimensions.width;
-    offscreenEl.height = canvasDimensions.height;
+    offscreenEl.width = width;
+    offscreenEl.height = height;
 
     const offscreenCanvas = new FabricCanvas(offscreenEl, {
-      width: canvasDimensions.width,
-      height: canvasDimensions.height,
+      width,
+      height,
       renderOnAddRemove: false,
+      enableRetinaScaling: false,
     });
+    offscreenRef.current = offscreenCanvas;
+
+    const previewMultiplier = Math.min(2, PREVIEW_LONG_EDGE / longEdge);
+    const thumbMultiplier = Math.min(1, THUMB_LONG_EDGE / longEdge);
 
     (async () => {
-      for (const slide of slidesNeedingRender) {
+      for (const slide of freshSlides) {
         if (!isMountedRef.current) break;
-        if (!slide.canvasJSON) continue;
+        if (!slide.canvasJSON) {
+          if (isMountedRef.current) {
+            setSnapshots((prev) =>
+              prev.map((s) => (s.id === slide.id ? { ...s, loading: false } : s)),
+            );
+          }
+          continue;
+        }
 
         try {
           await offscreenCanvas.loadFromJSON(slide.canvasJSON);
@@ -88,54 +104,56 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
           if (!offscreenCanvas.backgroundColor) {
             offscreenCanvas.backgroundColor = "#ffffff";
           }
-          offscreenCanvas.renderAll();
+          offscreenCanvas.requestRenderAll();
 
-          // Формируем оптимизированное превью
-          const dataURL = offscreenCanvas.toDataURL({
-            format: "png",
-            multiplier: Math.min(1, 300 / canvasDimensions.width),
-            quality: 0.8,
+          const previewURL = offscreenCanvas.toDataURL({
+            format: "jpeg",
+            multiplier: previewMultiplier,
+            quality: 0.92,
           });
 
-          if (isMountedRef.current) {
-            updateSlideThumbnail(slide.id, dataURL);
-            setSnapshots((prev) =>
-              prev.map((s) =>
-                s.id === slide.id ? { ...s, thumbnail: dataURL, loading: false } : s
-              )
-            );
-          }
+          const thumbURL = offscreenCanvas.toDataURL({
+            format: "jpeg",
+            multiplier: thumbMultiplier,
+            quality: 0.72,
+          });
+
+          if (!isMountedRef.current) break;
+
+          updateSlideThumbnail(slide.id, thumbURL);
+          setSnapshots((prev) =>
+            prev.map((s) =>
+              s.id === slide.id
+                ? { ...s, preview: previewURL, thumbnail: thumbURL, loading: false }
+                : s,
+            ),
+          );
         } catch (error) {
-          console.error(`Ошибка рендеринга слайда ${slide.id}:`, error);
+          console.error(`Failed to render slide ${slide.id}:`, error);
           if (isMountedRef.current) {
             setSnapshots((prev) =>
-              prev.map((s) => (s.id === slide.id ? { ...s, loading: false } : s))
+              prev.map((s) => (s.id === slide.id ? { ...s, loading: false } : s)),
             );
           }
         }
       }
 
-      offscreenCanvas.dispose();
-      if (isMountedRef.current) {
-        setRendering(false);
+      if (offscreenRef.current === offscreenCanvas) {
+        offscreenCanvas.dispose();
+        offscreenRef.current = null;
       }
+      if (isMountedRef.current) setRendering(false);
     })();
 
     return () => {
       isMountedRef.current = false;
-      offscreenCanvas.dispose();
+      if (offscreenRef.current) {
+        offscreenRef.current.dispose();
+        offscreenRef.current = null;
+      }
     };
-  }, [
-    open,
-    manager,
-    initialSlideId,
-    currentSlideId,
-    canvasDimensions,
-    updateSlideJSONById,
-    updateSlideThumbnail,
-  ]);
+  }, [open, slidesController, initialSlideId, canvasDimensions, updateSlideThumbnail]);
 
-  // Навигация с клавиатуры
   useEffect(() => {
     if (!open) return;
 
@@ -162,6 +180,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
   if (!open) return null;
 
   const activeSnap = snapshots.find((s) => s.id === activeId);
+  const activeImage = activeSnap?.preview ?? activeSnap?.thumbnail ?? null;
 
   const goPrev = () => {
     setActiveId((id) => slideIds[Math.max(0, slideIds.indexOf(id) - 1)] ?? id);
@@ -176,18 +195,36 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
 
   return (
     <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex flex-col select-none animate-in fade-in-0 duration-200">
-      {/* ── Верхняя панель ── */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border/40 shrink-0">
+      <div className="grid grid-cols-3 items-center px-6 py-4 shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-medium text-foreground tracking-wide">Предпросмотр</span>
           {rendering && (
-            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              Подготовка слайдов…
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" />
+              Preparing slides…
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-self-center rounded-full bg-muted p-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => setView("slides")}
+            className={`h-7 rounded-full px-3 transition-colors ${
+              view === "slides" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
+            }`}
+          >
+            Slides
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("phone")}
+            className={`h-7 rounded-full px-3 transition-colors ${
+              view === "phone" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
+            }`}
+          >
+            Phone
+          </button>
+        </div>
+        <div className="flex items-center justify-self-end gap-3">
           <span className="text-xs font-mono text-muted-foreground">
             {activeIdx + 1} / {slides.length}
           </span>
@@ -202,7 +239,6 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
         </div>
       </div>
 
-      {/* ── Основная область просмотра слайда ── */}
       <div className="flex-1 flex items-center justify-center gap-4 px-8 min-h-0">
         <Button
           variant="ghost"
@@ -214,35 +250,97 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
           <ChevronLeft className="w-5 h-5" />
         </Button>
 
-        {/* Рамка текущего слайда */}
-        <div
-          className="relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-background transition-all duration-200"
-          style={{
-            aspectRatio,
-            height: aspectRatio < 1 ? "min(72vh, 680px)" : undefined,
-            width: aspectRatio >= 1 ? "min(72vw, 860px)" : undefined,
-            maxHeight: "72vh",
-            maxWidth: "88vw",
-          }}
-        >
-          {activeSnap?.loading ? (
-            <div className="absolute inset-0 bg-muted/40 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        {view === "phone" ? (
+          <div
+            className="relative flex shrink-0 flex-col overflow-hidden rounded-[2.2rem] border border-foreground/15 bg-zinc-950 p-2 shadow-2xl"
+            style={{ height: "min(72vh, 700px)", aspectRatio: "9 / 19.5" }}
+            onPointerDown={(e) => {
+              swipeStart.current = e.clientX;
+            }}
+            onPointerUp={(e) => {
+              if (swipeStart.current == null) return;
+              const dx = e.clientX - swipeStart.current;
+              swipeStart.current = null;
+              if (dx <= -36) goNext();
+              else if (dx >= 36) goPrev();
+            }}
+            onPointerCancel={() => {
+              swipeStart.current = null;
+            }}
+          >
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.7rem] bg-background">
+              <div className="flex h-7 shrink-0 items-center justify-center">
+                <div className="h-1 w-14 rounded-full bg-foreground/15" />
+              </div>
+              <div className="px-3 pt-2">
+                <div
+                  className="relative w-full overflow-hidden bg-muted/30"
+                  style={{ aspectRatio }}
+                >
+                  {activeSnap?.loading && !activeImage ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : activeImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={activeImage}
+                      alt={`Slide ${activeIdx + 1} on phone`}
+                      className="h-full w-full object-cover"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs text-muted-foreground">Empty slide</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-center gap-1 py-2.5">
+                  {snapshots.map((snap, i) => (
+                    <button
+                      key={snap.id}
+                      type="button"
+                      aria-label={`Slide ${i + 1}`}
+                      onClick={() => setActiveId(snap.id)}
+                      className={`h-1.5 rounded-full transition-all ${
+                        snap.id === activeId ? "w-4 bg-foreground" : "w-1.5 bg-foreground/25"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-          ) : activeSnap?.thumbnail ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={activeSnap.thumbnail}
-              alt={`Слайд ${activeIdx + 1}`}
-              className="w-full h-full object-cover"
-              draggable={false}
-            />
-          ) : (
-            <div className="absolute inset-0 bg-background flex items-center justify-center border border-dashed border-border/60">
-              <span className="text-xs text-muted-foreground">Пустой слайд</span>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div
+            className="relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-muted/20 transition-all duration-200"
+            style={{
+              aspectRatio,
+              height: aspectRatio < 1 ? "min(72vh, 680px)" : undefined,
+              width: aspectRatio >= 1 ? "min(72vw, 860px)" : undefined,
+              maxHeight: "72vh",
+              maxWidth: "88vw",
+            }}
+          >
+            {activeSnap?.loading && !activeImage ? (
+              <div className="absolute inset-0 bg-muted/40 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : activeImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={activeImage}
+                alt={`Slide ${activeIdx + 1}`}
+                className="w-full h-full object-contain"
+                draggable={false}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-background flex items-center justify-center border border-dashed border-border/60">
+                <span className="text-xs text-muted-foreground">Empty slide</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <Button
           variant="ghost"
@@ -255,10 +353,10 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
         </Button>
       </div>
 
-      {/* ── Нижняя лента миниатюр ── */}
       <div className="shrink-0 py-4 px-6 flex items-center justify-center gap-2 overflow-x-auto border-t border-border/40">
         {snapshots.map((snap, i) => {
           const isActive = snap.id === activeId;
+          const stripSrc = snap.thumbnail ?? snap.preview;
           return (
             <button
               key={snap.id}
@@ -271,15 +369,15 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
               }`}
               style={{ width: thumbW, height: thumbH }}
             >
-              {snap.loading ? (
+              {snap.loading && !stripSrc ? (
                 <div className="w-full h-full bg-muted flex items-center justify-center">
                   <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
                 </div>
-              ) : snap.thumbnail ? (
+              ) : stripSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={snap.thumbnail}
-                  alt={`Превью ${i + 1}`}
+                  src={stripSrc}
+                  alt={`Preview ${i + 1}`}
                   className="w-full h-full object-cover"
                   draggable={false}
                 />

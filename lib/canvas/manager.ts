@@ -1,172 +1,206 @@
-import { FabricObject, PencilBrush } from "fabric";
-import type { BackgroundConfig, CanvasState, ExportOptions } from "./types";
+import { Canvas, FabricObject, PencilBrush } from "fabric";
+import type { BackgroundConfig, CanvasState } from "./types";
 import { CanvasCore } from "./core";
 import { GridManager } from "./grid";
-import { HistoryManager } from "./history";
+import { HistoryStack } from "./history";
 import { ImportExportManager } from "./import_export";
 import { ObjectFactory } from "./objects";
 import { EffectsManager } from "./effects";
-import { LayoutManager, LayoutTemplate } from "./layouts";
+import { LayoutManager } from "./layouts";
 import { ArrowManager, ConnectorArrow } from "./arrow";
+import { Emitter } from "./events";
+import { captureCanvasThumbnail } from "./thumbnail";
 
+const DEFAULT_BACKGROUND = "#ffffff";
+
+export interface CanvasManagerEvents {
+  /** The document was changed by the user or by undo/redo and should be persisted. */
+  change: CanvasState;
+  /** The whole document was replaced via `loadState` (e.g. slide switch). */
+  load: CanvasState;
+  selection: FabricObject | null;
+}
+
+/**
+ * Facade over a single Fabric canvas.
+ *
+ * Feature modules are exposed as-is (`manager.objects.addCircle()`), the manager itself
+ * only owns what spans the whole document: state load/save, history, events, selection.
+ *
+ * Any mutation that does not fire Fabric's `object:added|modified|removed`
+ * (background, reordering, etc.) must be followed by `commit()`.
+ */
 export class CanvasManager {
-  public core: CanvasCore;
-  public history: HistoryManager;
-  public grid: GridManager;
-  public factory: ObjectFactory;
-  public io: ImportExportManager;
-  public effects: EffectsManager;
-  public layoutManager: LayoutManager;
-  public arrowManager: ArrowManager;
+  readonly canvas: Canvas;
+  readonly core: CanvasCore;
+  readonly grid: GridManager;
+  readonly objects: ObjectFactory;
+  readonly io: ImportExportManager;
+  readonly effects: EffectsManager;
+  readonly layouts: LayoutManager;
+  readonly arrows: ArrowManager;
+
+  private readonly history = new HistoryStack<CanvasState>();
+  private readonly events = new Emitter<CanvasManagerEvents>();
+  private silentDepth = 0;
+  private disposed = false;
+  private loadAbort: AbortController | null = null;
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.core = new CanvasCore(canvasElement);
-    this.history = new HistoryManager(this.core.canvas);
-    this.grid = new GridManager(this.core.canvas);
-    this.factory = new ObjectFactory(this.core.canvas);
-    this.io = new ImportExportManager(this.core.canvas);
-    this.effects = new EffectsManager(this.core.canvas);
-    this.layoutManager = new LayoutManager(this.core.canvas);
-    this.grid.setLayoutManager(this.layoutManager);
-    this.arrowManager = new ArrowManager(this.core.canvas);
+    this.canvas = this.core.canvas;
+    this.grid = new GridManager(this.canvas);
+    this.objects = new ObjectFactory(this.canvas);
+    this.io = new ImportExportManager(this.canvas);
+    this.effects = new EffectsManager(this.canvas);
+    this.layouts = new LayoutManager(this.canvas);
+    this.arrows = new ArrowManager(this.canvas);
+    this.grid.setLayoutManager(this.layouts);
+
+    this.history.reset(this.getState());
+    this.bindCanvasEvents();
   }
 
-  public connectSelectedObjects(): ConnectorArrow | null {
-    const active = this.core.canvas.getActiveObjects();
-    if (active.length >= 2) {
-      return this.arrowManager.connect(active[0], active[1]);
+  get isDisposed(): boolean {
+    return this.disposed;
+  }
+
+  on<K extends keyof CanvasManagerEvents>(
+    event: K,
+    handler: (payload: CanvasManagerEvents[K]) => void,
+  ): () => void {
+    return this.events.on(event, handler);
+  }
+
+  getState(): CanvasState {
+    return this.io.toJSON();
+  }
+
+  /** Replaces the document without recording history or emitting `change`. */
+  async loadState(state: CanvasState | null): Promise<void> {
+    if (this.disposed) return;
+    await this.replaceContent(state);
+    if (this.disposed) return;
+    const loaded = this.getState();
+    this.history.reset(loaded);
+    this.events.emit("load", loaded);
+  }
+
+  /** Records the current document as a new history step and notifies subscribers. */
+  commit(): void {
+    if (this.silentDepth > 0) return;
+    const state = this.getState();
+    this.history.push(state);
+    this.events.emit("change", state);
+  }
+
+  async undo(): Promise<void> {
+    const state = this.history.undo();
+    if (state) await this.restoreFromHistory(state);
+  }
+
+  async redo(): Promise<void> {
+    const state = this.history.redo();
+    if (state) await this.restoreFromHistory(state);
+  }
+
+  get canUndo(): boolean {
+    return this.history.canUndo;
+  }
+
+  get canRedo(): boolean {
+    return this.history.canRedo;
+  }
+
+  getActiveObject(): FabricObject | null {
+    return this.canvas.getActiveObject() ?? null;
+  }
+
+  updateActiveObject(updates: Partial<FabricObject>): FabricObject | null {
+    const active = this.getActiveObject();
+    if (!active) return null;
+
+    active.set(updates);
+
+    // Typography changes need an explicit layout pass — otherwise Fabric keeps
+    // the previous font metrics until another property forces a reflow.
+    if (
+      "fontFamily" in updates ||
+      "fontSize" in updates ||
+      "fontWeight" in updates ||
+      "fontStyle" in updates ||
+      "lineHeight" in updates ||
+      "charSpacing" in updates
+    ) {
+      const textLike = active as FabricObject & {
+        initDimensions?: () => void;
+        dirty?: boolean;
+      };
+      const type = active.type;
+      if (type === "textbox" || type === "text" || type === "i-text") {
+        textLike.initDimensions?.();
+        textLike.dirty = true;
+      }
     }
-    return null;
-  }
-  public get canvas() {
-    return this.core.canvas;
-  }
-  public connectObjects(
-    from: FabricObject,
-    to: FabricObject,
-  ): ConnectorArrow | null {
-    return this.arrowManager.connect(from, to);
+
+    active.setCoords();
+    this.canvas.requestRenderAll();
+    this.commit();
+    this.events.emit("selection", active);
+    return active;
   }
 
-  public setVignette(intensity: number) {
-    this.effects.setVignette(intensity);
+  selectObject(obj: FabricObject): void {
+    this.canvas.setActiveObject(obj);
+    this.canvas.requestRenderAll();
   }
-  public applyLayout(template: LayoutTemplate) {
-    this.layoutManager.applyLayout(template);
+
+  removeObject(obj: FabricObject): void {
+    this.canvas.remove(obj);
+    this.canvas.discardActiveObject();
+    this.canvas.requestRenderAll();
   }
-  public clearLayout() {
-    this.layoutManager.clearLayout();
+
+  moveObjectTo(obj: FabricObject, index: number): void {
+    this.canvas.moveObjectTo(obj, index);
+    this.canvas.requestRenderAll();
+    this.commit();
   }
-  public isLayoutActive(): boolean {
-    return this.layoutManager.getIsLayoutActive();
+
+  async setBackground(config: BackgroundConfig): Promise<void> {
+    await this.io.setBackground(config);
+    this.commit();
   }
-  public getLayoutFrames() {
-    return this.layoutManager.getFrames();
+
+  connectSelectedObjects(): ConnectorArrow | null {
+    const [from, to] = this.canvas.getActiveObjects();
+    if (!from || !to) return null;
+    return this.arrows.connect(from, to);
   }
-  public setNoise(intensity: number) {
-    this.effects.setNoise(intensity);
-  }
-  public setBlur(amount: number) {
-    this.effects.setBlur(amount);
-  }
-  public clearEffects() {
-    this.effects.clearAll();
-  }
-  public getCanvas() {
-    return this.core.canvas;
-  }
-  public setRatio(w: number, h: number) {
-    this.core.resize(w, h);
-  }
-  public setZoom(scale: number, nativeW: number, nativeH: number) {
+
+  /** Fits the logical canvas (nativeW × nativeH) into the screen at `scale`. */
+  setViewportScale(scale: number, nativeW: number, nativeH: number): void {
     this.core.setZoom(scale, nativeW, nativeH);
-  }
-  public clear() {
-    this.arrowManager?.clear();
-    this.core.clear(); // или this.core.canvas.clear()
-
-    // Явно восстанавливаем белый фон и перерисовываем
-    this.core.canvas.backgroundColor = "#ffffff";
-    this.core.canvas.renderAll();
-  }
-  public dispose() {
-    this.core.dispose();
-  }
-  public getDimensions() {
-    return this.core.getDimensions();
-  }
-  public undo() {
-    return this.history.undo();
-  }
-  public redo() {
-    return this.history.redo();
-  }
-  public toggleGrid() {
-    this.grid.toggleGrid();
-  }
-  public isGridEnabled() {
-    return this.grid["isGridVisible"];
-  }
-  public addRectangle(x?: number, y?: number) {
-    return this.factory.addRectangle(x, y);
-  }
-  public addCircle(x?: number, y?: number) {
-    return this.factory.addCircle(x, y);
-  }
-  public addTriangle(x?: number, y?: number) {
-    return this.factory.addTriangle(x, y);
-  }
-  public addLine(x?: number, y?: number) {
-    return this.factory.addLine(x, y);
-  }
-  public addArrow(x?: number, y?: number) {
-    return this.factory.addArrow(x, y);
-  }
-  public addText(text: string, x?: number, y?: number) {
-    return this.factory.addText(text, x, y);
-  }
-  public addImage(url: string, x?: number, y?: number) {
-    return this.factory.addImage(url);
-  }
-  public deleteSelected() {
-    this.factory.deleteSelected();
-  }
-  public duplicateSelected() {
-    this.factory.duplicateSelected();
-  }
-  public addSVG(content: string) {
-    return this.io.addSVG(content);
-  }
-  public setGridSize(size: number) {
-    this.grid.setGridSize(size);
-  }
-  public setGridColor(color: string) {
-    this.grid.setGridColor(color);
-  }
-  public setBackground(config: BackgroundConfig) {
-    this.io.setBackground(config);
-  }
-  public exportAsImage(opts: ExportOptions) {
-    return this.io.exportAsImage(opts);
-  }
-  public exportAsJSON() {
-    return this.io.exportAsJSON();
+    this.effects.onCanvasResize();
   }
 
-  public exportThumbnail(multiplier = 1): string {
-    const canvas = this.core.canvas;
+  /** Snapshot used for slide strips and project cards. Keeps the previous thumb if export fails. */
+  captureThumbnail(): string | null {
+    return captureCanvasThumbnail(this.canvas, this.disposed);
+  }
+
+  exportThumbnail(multiplier = 1): string {
+    const canvas = this.canvas;
     const currentZoom = canvas.getZoom();
     const nativeW = (canvas.width || 1080) / currentZoom;
     const nativeH = (canvas.height || 1080) / currentZoom;
 
-    // Reset to native resolution
     canvas.setZoom(1);
     canvas.setDimensions({ width: nativeW, height: nativeH });
     canvas.renderAll();
 
     const dataURL = canvas.toDataURL({ format: "png", multiplier, quality: 1 });
 
-    // Restore zoomed size
     canvas.setZoom(currentZoom);
     canvas.setDimensions({
       width: Math.round(nativeW * currentZoom),
@@ -176,67 +210,86 @@ export class CanvasManager {
 
     return dataURL;
   }
-  public enableDrawingMode() {
-    this.core.canvas.isDrawingMode = true;
-    this.core.canvas.freeDrawingBrush = new PencilBrush(this.core.canvas);
-    if (this.core.canvas.freeDrawingBrush) {
-      this.core.canvas.freeDrawingBrush.width = 5;
-      this.core.canvas.freeDrawingBrush.color = "#000000";
+
+  enableDrawingMode(): void {
+    this.canvas.isDrawingMode = true;
+    const brush = new PencilBrush(this.canvas);
+    brush.width = 5;
+    brush.color = "#000000";
+    this.canvas.freeDrawingBrush = brush;
+  }
+
+  disableDrawingMode(): void {
+    this.canvas.isDrawingMode = false;
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.loadAbort?.abort();
+    this.loadAbort = null;
+    this.events.clear();
+    this.grid.dispose();
+    this.core.dispose();
+  }
+
+  private async restoreFromHistory(state: CanvasState): Promise<void> {
+    if (this.disposed) return;
+    await this.replaceContent(state);
+    if (this.disposed) return;
+    this.events.emit("change", this.getState());
+  }
+
+  private async replaceContent(state: CanvasState | null): Promise<void> {
+    // Fabric's InteractiveCanvas.clear() calls clearContext(contextTop). After dispose
+    // (or while upper.ctx is temporarily unset) that throws "clearRect of undefined".
+    if (this.disposed || !this.canvas.contextTop) return;
+
+    this.loadAbort?.abort();
+    const abort = new AbortController();
+    this.loadAbort = abort;
+
+    this.silentDepth++;
+    try {
+      this.canvas.discardActiveObject();
+      if (state) {
+        await this.canvas.loadFromJSON(state, undefined, { signal: abort.signal });
+      } else if (this.canvas.contextTop) {
+        this.canvas.clear();
+      }
+      if (this.disposed || abort.signal.aborted || !this.canvas.contextTop) return;
+      if (!this.canvas.backgroundColor) {
+        this.canvas.backgroundColor = DEFAULT_BACKGROUND;
+      }
+      this.grid.redraw();
+      this.canvas.requestRenderAll();
+      this.events.emit("selection", null);
+    } catch (error) {
+      if (this.disposed || abort.signal.aborted) return;
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      throw error;
+    } finally {
+      if (this.loadAbort === abort) this.loadAbort = null;
+      this.silentDepth--;
     }
   }
-  public disableDrawingMode() {
-    this.core.canvas.isDrawingMode = false;
-  }
-  public toJSON() {
-    return this.core.canvas.toJSON();
-  }
-  public async loadFromJSON(json: CanvasState | string) {
-    const data = typeof json === "string" ? JSON.parse(json) : json;
 
-    await this.core.canvas.loadFromJSON(data);
+  private bindCanvasEvents(): void {
+    // Callers also fire "object:modified" manually without a payload.
+    const onMutation = (e?: { target?: FabricObject }) => {
+      if (e?.target?.excludeFromExport) return;
+      this.commit();
+    };
+    const onSelection = () => {
+      if (this.silentDepth > 0) return;
+      this.events.emit("selection", this.getActiveObject());
+    };
 
-    if (!this.core.canvas.backgroundColor) {
-      this.core.canvas.backgroundColor = "#ffffff";
-    }
-
-    this.core.canvas.renderAll();
-  }
-
-  // ── NEW ELEMENT METHODS ──
-  public addHeading(text?: string, x?: number, y?: number) {
-    return this.factory.addHeading(text, x, y);
-  }
-  public addSubtitle(text?: string, x?: number, y?: number) {
-    return this.factory.addSubtitle(text, x, y);
-  }
-  public addParagraph(text?: string, x?: number, y?: number) {
-    return this.factory.addParagraph(text, x, y);
-  }
-  public addQuote(text?: string, x?: number, y?: number) {
-    return this.factory.addQuote(text, x, y);
-  }
-  public addCodeBlock(code?: string, x?: number, y?: number) {
-    return this.factory.addCodeBlock(code, x, y);
-  }
-  public addTag(label?: string, x?: number, y?: number) {
-    return this.factory.addTag(label, x, y);
-  }
-  public addStarRating(text?: string, x?: number, y?: number) {
-    return this.factory.addStarRating(text, x, y);
-  }
-  public addSwipeTag(label?: string, x?: number, y?: number) {
-    return this.factory.addSwipeTag(label, x, y);
-  }
-  public addCTAButton(label?: string, x?: number, y?: number) {
-    return this.factory.addCTAButton(label, x, y);
-  }
-  public addBadge(label?: string, x?: number, y?: number) {
-    return this.factory.addBadge(label, x, y);
-  }
-  public addHandle(username?: string, x?: number, y?: number) {
-    return this.factory.addHandle(username, x, y);
-  }
-  public addDividerLine(x?: number, y?: number) {
-    return this.factory.addDividerLine(x, y);
+    this.canvas.on("object:added", onMutation);
+    this.canvas.on("object:removed", onMutation);
+    this.canvas.on("object:modified", onMutation);
+    this.canvas.on("selection:created", onSelection);
+    this.canvas.on("selection:updated", onSelection);
+    this.canvas.on("selection:cleared", onSelection);
   }
 }
