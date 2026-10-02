@@ -17,11 +17,29 @@ model User {
   password  String?
   name      String?
   image     String?
+  /// Set when the user confirms the inbox, or for accounts that existed before verification.
+  emailVerified DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   projects      Project[]
   savedProjects SavedProject[]
+  authTokens    AuthToken[]
+}
+
+/// One-time links for email confirmation and password reset.
+model AuthToken {
+  id        String   @id @default(cuid())
+  email     String
+  tokenHash String   @unique
+  type      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, type])
 }
 
 model Project {

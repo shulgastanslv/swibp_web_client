@@ -6,15 +6,40 @@ import {
   Line,
   Textbox,
   Text,
+  IText,
   Polygon,
   Group,
   Object as FabricObject,
   Image,
 } from "fabric";
 
-/** 4K crop of a public Unsplash photo (CORS-enabled). */
 const CODE_BLOCK_BG_4K =
   "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=3840&h=2160&q=80";
+
+export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+export type Side = "left" | "right";
+export type SlideNumberStyle = "1" | "01" | "1 / 8";
+
+const CORNER_MARGIN = 64;
+const CORNER_FONT = "Inter, sans-serif";
+const CORNER_MUTED = "#64748b";
+const CORNER_INK = "#0f172a";
+
+export function formatSlideNumber(
+  style: SlideNumberStyle,
+  index: number,
+  total: number,
+): string {
+  const n = index + 1;
+  switch (style) {
+    case "01":
+      return String(n).padStart(2, "0");
+    case "1 / 8":
+      return `${n} / ${total}`;
+    default:
+      return String(n);
+  }
+}
 
 export class ObjectFactory {
   private canvas: Canvas;
@@ -36,6 +61,133 @@ export class ObjectFactory {
     }
     const c = this.getCenter();
     return { left: c.x, top: c.y, originX: "center" as const, originY: "center" as const };
+  }
+
+  /** Logical (unzoomed) slide size. */
+  private getLogicalSize() {
+    const zoom = this.canvas.getZoom() || 1;
+    return {
+      width: (this.canvas.width || 1080) / zoom,
+      height: (this.canvas.height || 1080) / zoom,
+    };
+  }
+
+  /** Position + origin so an object hugs the given corner with CORNER_MARGIN inset. */
+  private getCornerPosition(corner: Corner) {
+    const { width, height } = this.getLogicalSize();
+    const isRight = corner.endsWith("right");
+    const isBottom = corner.startsWith("bottom");
+    return {
+      left: isRight ? width - CORNER_MARGIN : CORNER_MARGIN,
+      top: isBottom ? height - CORNER_MARGIN : CORNER_MARGIN,
+      originX: (isRight ? "right" : "left") as "left" | "right",
+      originY: (isBottom ? "bottom" : "top") as "top" | "bottom",
+    };
+  }
+
+  // ── CORNER BLOCKS ──────────────────────────────────────────────────
+
+  /** Slide counter pinned to a corner (default: top-left). */
+  addSlideNumber(
+    style: SlideNumberStyle,
+    index: number,
+    total: number,
+    corner: Corner = "top-left",
+  ): IText {
+    const text = new IText(formatSlideNumber(style, index, total), {
+      ...this.getCornerPosition(corner),
+      fontSize: 25,
+      fontFamily: CORNER_FONT,
+      fontWeight: "400",
+      fill: CORNER_MUTED,
+    });
+    this.addToCanvas(text);
+    return text;
+  }
+
+  /**
+   * Author handle at the top edge, aligned left or right.
+   * Optional platform label (Telegram, Threads…) sits in a muted line above the handle.
+   */
+  addCornerHandle(
+    handle = "@username",
+    side: Side = "right",
+    platform?: string,
+  ): Group {
+    const corner: Corner = side === "right" ? "top-right" : "top-left";
+    const pos = this.getCornerPosition(corner);
+    const align = side === "right" ? "right" : "left";
+
+    const parts: FabricObject[] = [];
+    let cursorY = 0;
+
+    if (platform) {
+      const label = new IText(platform, {
+        originX: align,
+        originY: "top",
+        left: 0,
+        top: cursorY,
+        fontSize: 22,
+        fontFamily: CORNER_FONT,
+        fontWeight: "500",
+        fill: CORNER_MUTED,
+        textAlign: align,
+      });
+      parts.push(label);
+      cursorY += label.height + 6;
+    }
+
+    parts.push(
+      new IText(handle, {
+        originX: align,
+        originY: "top",
+        left: 0,
+        top: cursorY,
+        fontSize: 32,
+        fontFamily: CORNER_FONT,
+        fontWeight: "600",
+        fill: CORNER_INK,
+        textAlign: align,
+      }),
+    );
+
+    const group = new Group(parts, {
+      ...pos,
+      subTargetCheck: true,
+      interactive: true,
+    });
+    this.addToCanvas(group);
+    return group;
+  }
+
+  /** Text swipe cue (e.g. "->") pinned bottom-right. */
+  addSwipeArrow(text = "->", corner: Corner = "bottom-right"): IText {
+    const arrow = new IText(text, {
+      ...this.getCornerPosition(corner),
+      fontSize: 56,
+      fontFamily: "Consolas, 'Courier New', monospace",
+      fontWeight: "700",
+      fill: CORNER_INK,
+    });
+    this.addToCanvas(arrow);
+    return arrow;
+  }
+
+  /** Bottom-left "// info" caption plus a bottom-right swipe arrow. */
+  addSwipeInfo(
+    info = "info",
+    arrowText = "->",
+  ): { info: IText; arrow: IText } {
+    const caption = new IText(`// ${info}`, {
+      ...this.getCornerPosition("bottom-left"),
+      fontSize: 28,
+      fontFamily: "Consolas, 'Courier New', monospace",
+      fontWeight: "500",
+      fill: CORNER_MUTED,
+    });
+    this.canvas.add(caption);
+    const arrow = this.addSwipeArrow(arrowText);
+    return { info: caption, arrow };
   }
 
   // ── EXISTING METHODS (keep exactly as before) ──────────────────────
@@ -197,16 +349,15 @@ export class ObjectFactory {
       fontWeight: "bold",
       fontFamily: "Inter, sans-serif",
       fill: "#0f172a",
-      lineHeight: 1.1,
+      lineHeight: 0.8,
     });
 
     tb.initDimensions();
 
     const actualWidth = Math.ceil(tb.calcTextWidth()) + 4;
 
-    // Устанавливаем ширину ровно под текст
     tb.set({ width: actualWidth });
-    tb.setCoords(); // Обязательно обновляем синюю рамку выделения
+    tb.setCoords();
 
     this.addToCanvas(tb);
     this.canvas.renderAll();
@@ -222,7 +373,7 @@ export class ObjectFactory {
       fontFamily: "Inter, sans-serif",
       fill: "#64748b",
       width: 700,
-      lineHeight: 1.4,
+      lineHeight: 0.8,
     });
     this.addToCanvas(tb);
     const actualWidth = tb.calcTextWidth();
@@ -241,8 +392,8 @@ export class ObjectFactory {
       fontFamily: "Inter, sans-serif",
       fill: "#334155",
       width: 700,
-      lineHeight: 1.6,
-    });
+      lineHeight: 0.8,
+        });
     this.addToCanvas(tb);
     const actualWidth = tb.calcTextWidth();
     if (actualWidth < tb.width) {
@@ -457,206 +608,6 @@ export class ObjectFactory {
     return group;
   }
 
-  /** Topic: title + subtitle text block. */
-  addTag(
-    title = "Your topic title",
-    x?: number,
-    y?: number,
-  ): Group {
-    const pos = this.getPosition(x, y);
-    const w = 820;
-
-    const heading = new Textbox(title, {
-      left: -w / 2,
-      top: -70,
-      width: w,
-      fontSize: 64,
-      fontFamily: "Inter, sans-serif",
-      fontWeight: "600",
-      fill: "#111111",
-      lineHeight: 1.1,
-    });
-
-    const subtitle = new Textbox("Your subtitle goes here", {
-      left: -w / 2,
-      top: 20,
-      width: w,
-      fontSize: 32,
-      fontFamily: "Inter, sans-serif",
-      fontWeight: "400",
-      fill: "#737373",
-      lineHeight: 1.35,
-    });
-
-    const group = new Group([heading, subtitle], pos);
-    this.addToCanvas(group);
-    return group;
-  }
-
-  addStarRating(text = "★★★★★  5.0", x?: number, y?: number): Textbox {
-    const pos = this.getPosition(x, y);
-    const tb = new Textbox(text, {
-      ...pos,
-      fontSize: 52,
-      fontFamily: "Inter, sans-serif",
-      fill: "#111111",
-      width: 500,
-    });
-    this.addToCanvas(tb);
-    const actualWidth = tb.calcTextWidth();
-    if (actualWidth < tb.width) {
-      tb.set({ width: actualWidth });
-      this.canvas.renderAll();
-    }
-    return tb;
-  }
-
-  /** Swipe cue: label + right arrow. */
-  addSwipeTag(label = "Swipe", x?: number, y?: number): Group {
-    const pos = this.getPosition(x, y);
-
-   
-
-    const shaft = new Line([-28, 0, 36, 0], {
-      stroke: "#111111",
-      strokeWidth: 4,
-      strokeLineCap: "round",
-    });
-
-    const head = new Polygon(
-      [
-        { x: 36, y: 0 },
-        { x: 18, y: -14 },
-        { x: 18, y: 14 },
-      ],
-      { fill: "#111111" },
-    );
-
-    const group = new Group([shaft, head], pos);
-    this.addToCanvas(group);
-    return group;
-  }
-
-  /** CTA: subscribe title + social icons row. */
-  addCTAButton(
-    label = "Subscribe",
-    x?: number,
-    y?: number,
-  ): Group {
-    const pos = this.getPosition(x, y);
-    const w = 720;
-    const socials = [
-      { key: "IG", name: "Instagram" },
-      { key: "TT", name: "TikTok" },
-      { key: "YT", name: "YouTube" },
-      { key: "X", name: "X" },
-    ] as const;
-
-    const title = new Textbox(label, {
-      left: -w / 2,
-      top: -90,
-      width: w,
-      fontSize: 48,
-      fontFamily: "Inter, sans-serif",
-      fontWeight: "600",
-      fill: "#111111",
-      textAlign: "center",
-    });
-
-    const hint = new Textbox("on social", {
-      left: -w / 2,
-      top: -28,
-      width: w,
-      fontSize: 24,
-      fontFamily: "Inter, sans-serif",
-      fontWeight: "400",
-      fill: "#737373",
-      textAlign: "center",
-    });
-
-    const iconSize = 56;
-    const gap = 20;
-    const rowW = socials.length * iconSize + (socials.length - 1) * gap;
-    const startX = -rowW / 2;
-
-    const socialObjects: FabricObject[] = [];
-    socials.forEach((social, i) => {
-      const cx = startX + i * (iconSize + gap) + iconSize / 2;
-      const cy = 48;
-
-      const circle = new Circle({
-        left: cx,
-        top: cy,
-        originX: "center",
-        originY: "center",
-        radius: iconSize / 2,
-        fill: "#111111",
-      });
-
-      const letter = new Textbox(social.key, {
-        left: cx - iconSize / 2,
-        top: cy - 11,
-        width: iconSize,
-        fontSize: social.key.length > 1 ? 16 : 20,
-        fontFamily: "Inter, sans-serif",
-        fontWeight: "600",
-        fill: "#ffffff",
-        textAlign: "center",
-      });
-
-      const name = new Textbox(social.name, {
-        left: cx - 48,
-        top: cy + iconSize / 2 + 12,
-        width: 96,
-        fontSize: 16,
-        fontFamily: "Inter, sans-serif",
-        fontWeight: "400",
-        fill: "#737373",
-        textAlign: "center",
-      });
-
-      socialObjects.push(circle, letter, name);
-    });
-
-    const group = new Group([title, hint, ...socialObjects], pos);
-    this.addToCanvas(group);
-    return group;
-  }
-
-  /** Step number for carousel sequences. */
-  addBadge(step = "01", x?: number, y?: number): Group {
-    const pos = this.getPosition(x, y);
-
-    const number = new Textbox(step, {
-      left: -80,
-      top: -70,
-      width: 160,
-      fontSize: 120,
-      fontFamily: "Inter, sans-serif",
-      fontWeight: "600",
-      fill: "#111111",
-      textAlign: "center",
-      lineHeight: 1,
-    });
-
-    const caption = new Textbox("STEP", {
-      left: -80,
-      top: 60,
-      width: 160,
-      fontSize: 22,
-      fontFamily: "Inter, sans-serif",
-      fontWeight: "500",
-      fill: "#737373",
-      textAlign: "center",
-      charSpacing: 200,
-    });
-
-    const group = new Group([number, caption], pos);
-    this.addToCanvas(group);
-    return group;
-  }
-
-  /** Handle: @username + channel label. */
   addHandle(username = "@username", x?: number, y?: number): Group {
     const pos = this.getPosition(x, y);
     const w = 480;
@@ -701,7 +652,6 @@ export class ObjectFactory {
     return line;
   }
 
-  // ── Private helpers ────────────────────────────────────────────────
 
   private addToCanvas(obj: FabricObject) {
     this.canvas.add(obj);

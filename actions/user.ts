@@ -1,7 +1,10 @@
 "use server"
 
-import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+
+import { sendVerificationEmail } from "@/actions/auth-email";
+import { isValidEmail, normalizeEmail } from "@/lib/email";
+import { prisma } from "@/lib/prisma";
 
 interface RegisterInput {
   name: string;
@@ -11,8 +14,9 @@ interface RegisterInput {
 
 export async function registerUser({ name, email, password }: RegisterInput) {
   try {
-    if (!email || !password) {
-      return { error: "Email and password are required" };
+    const normalized = normalizeEmail(email);
+    if (!isValidEmail(normalized) || !password) {
+      return { error: "Enter a valid email and a password" };
     }
 
     if (password.length < 6) {
@@ -20,7 +24,7 @@ export async function registerUser({ name, email, password }: RegisterInput) {
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: normalized },
     });
 
     if (existingUser) {
@@ -29,20 +33,29 @@ export async function registerUser({ name, email, password }: RegisterInput) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         name,
-        email: email.toLowerCase(),
+        email: normalized,
         password: hashedPassword,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
       },
     });
 
-    return { success: true, user };
+    const mailed = await sendVerificationEmail(normalized);
+    if ("error" in mailed && mailed.error) {
+      return {
+        success: true as const,
+        needsVerification: true as const,
+        delivered: false,
+        error: mailed.error,
+      };
+    }
+
+    return {
+      success: true as const,
+      needsVerification: true as const,
+      delivered: "delivered" in mailed ? mailed.delivered : false,
+    };
   } catch (err) {
     console.error("Register user error:", err);
     return { error: "Something went wrong on the server" };

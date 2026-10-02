@@ -36,6 +36,8 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
   const [activeId, setActiveId] = useState(initialSlideId);
   const [snapshots, setSnapshots] = useState<SlideSnapshot[]>([]);
   const [rendering, setRendering] = useState(false);
+  const [view, setView] = useState<"slides" | "phone">("slides");
+  const swipeStart = useRef<number | null>(null);
 
   const isMountedRef = useRef(true);
   const offscreenRef = useRef<FabricCanvas | null>(null);
@@ -193,7 +195,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
 
   return (
     <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex flex-col select-none animate-in fade-in-0 duration-200">
-      <div className="flex items-center justify-between px-6 py-4 shrink-0">
+      <div className="grid grid-cols-3 items-center px-6 py-4 shrink-0">
         <div className="flex items-center gap-3">
           {rendering && (
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -202,7 +204,27 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-self-center rounded-full bg-muted p-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => setView("slides")}
+            className={`h-7 rounded-full px-3 transition-colors ${
+              view === "slides" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
+            }`}
+          >
+            Slides
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("phone")}
+            className={`h-7 rounded-full px-3 transition-colors ${
+              view === "phone" ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
+            }`}
+          >
+            Phone
+          </button>
+        </div>
+        <div className="flex items-center justify-self-end gap-3">
           <span className="text-xs font-mono text-muted-foreground">
             {activeIdx + 1} / {slides.length}
           </span>
@@ -228,34 +250,97 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
           <ChevronLeft className="w-5 h-5" />
         </Button>
 
-        <div
-          className="relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-muted/20 transition-all duration-200"
-          style={{
-            aspectRatio,
-            height: aspectRatio < 1 ? "min(72vh, 680px)" : undefined,
-            width: aspectRatio >= 1 ? "min(72vw, 860px)" : undefined,
-            maxHeight: "72vh",
-            maxWidth: "88vw",
-          }}
-        >
-          {activeSnap?.loading && !activeImage ? (
-            <div className="absolute inset-0 bg-muted/40 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        {view === "phone" ? (
+          <div
+            className="relative flex shrink-0 flex-col overflow-hidden rounded-[2.2rem] border border-foreground/15 bg-zinc-950 p-2 shadow-2xl"
+            style={{ height: "min(72vh, 700px)", aspectRatio: "9 / 19.5" }}
+            onPointerDown={(e) => {
+              swipeStart.current = e.clientX;
+            }}
+            onPointerUp={(e) => {
+              if (swipeStart.current == null) return;
+              const dx = e.clientX - swipeStart.current;
+              swipeStart.current = null;
+              if (dx <= -36) goNext();
+              else if (dx >= 36) goPrev();
+            }}
+            onPointerCancel={() => {
+              swipeStart.current = null;
+            }}
+          >
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.7rem] bg-background">
+              <div className="flex h-7 shrink-0 items-center justify-center">
+                <div className="h-1 w-14 rounded-full bg-foreground/15" />
+              </div>
+              <div className="px-3 pt-2">
+                <div
+                  className="relative w-full overflow-hidden bg-muted/30"
+                  style={{ aspectRatio }}
+                >
+                  {activeSnap?.loading && !activeImage ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : activeImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={activeImage}
+                      alt={`Slide ${activeIdx + 1} on phone`}
+                      className="h-full w-full object-cover"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs text-muted-foreground">Empty slide</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-center gap-1 py-2.5">
+                  {snapshots.map((snap, i) => (
+                    <button
+                      key={snap.id}
+                      type="button"
+                      aria-label={`Slide ${i + 1}`}
+                      onClick={() => setActiveId(snap.id)}
+                      className={`h-1.5 rounded-full transition-all ${
+                        snap.id === activeId ? "w-4 bg-foreground" : "w-1.5 bg-foreground/25"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-          ) : activeImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={activeImage}
-              alt={`Slide ${activeIdx + 1}`}
-              className="w-full h-full object-contain"
-              draggable={false}
-            />
-          ) : (
-            <div className="absolute inset-0 bg-background flex items-center justify-center border border-dashed border-border/60">
-              <span className="text-xs text-muted-foreground">Empty slide</span>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div
+            className="relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-muted/20 transition-all duration-200"
+            style={{
+              aspectRatio,
+              height: aspectRatio < 1 ? "min(72vh, 680px)" : undefined,
+              width: aspectRatio >= 1 ? "min(72vw, 860px)" : undefined,
+              maxHeight: "72vh",
+              maxWidth: "88vw",
+            }}
+          >
+            {activeSnap?.loading && !activeImage ? (
+              <div className="absolute inset-0 bg-muted/40 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : activeImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={activeImage}
+                alt={`Slide ${activeIdx + 1}`}
+                className="w-full h-full object-contain"
+                draggable={false}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-background flex items-center justify-center border border-dashed border-border/60">
+                <span className="text-xs text-muted-foreground">Empty slide</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <Button
           variant="ghost"

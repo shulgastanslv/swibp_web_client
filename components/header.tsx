@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   User,
   HelpCircle,
   Send,
-  AtSign,
   ChevronRight,
   LogOut,
   ArrowUp,
@@ -28,6 +27,7 @@ import {
 import Logo from "@/components/logo";
 import { useSession, signOut } from "next-auth/react";
 import { AuthModal } from "@/components/auth";
+import { SocialSubscribeDialog } from "@/components/social-subscribe-dialog";
 import { NewProjectModal } from "@/components/new-project-modal";
 import { WhatsNewModal } from "@/components/whats-new-modal";
 import { HelpDialog } from "@/components/help-dialog";
@@ -61,6 +61,10 @@ interface HeaderProps {
 
 export function Header({ onPreview }: HeaderProps) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authVerifyToken, setAuthVerifyToken] = useState<string | null>(null);
+  const [authResetToken, setAuthResetToken] = useState<string | null>(null);
+  const [isSocialOpen, setIsSocialOpen] = useState(false);
+  const authOpenRef = useRef(false);
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -81,6 +85,36 @@ export function Header({ onPreview }: HeaderProps) {
   useEffect(() => {
     setName(projectTitle);
   }, [projectTitle]);
+
+  useEffect(() => {
+    const onAuthLink = (event: Event) => {
+      const detail = (event as CustomEvent<{ verify?: string | null; reset?: string | null }>).detail;
+      if (detail?.verify) setAuthVerifyToken(detail.verify);
+      if (detail?.reset) setAuthResetToken(detail.reset);
+      if (detail?.verify || detail?.reset) setIsAuthModalOpen(true);
+    };
+    window.addEventListener("swibp:auth-link", onAuthLink);
+    return () => window.removeEventListener("swibp:auth-link", onAuthLink);
+  }, []);
+
+  useEffect(() => {
+    authOpenRef.current = isAuthModalOpen;
+  }, [isAuthModalOpen]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    if (window.localStorage.getItem("swibp:social-prompt")) return;
+    const timer = window.setTimeout(() => {
+      if (authOpenRef.current) return;
+      setIsSocialOpen(true);
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [status]);
+
+  const closeSocial = (open: boolean) => {
+    setIsSocialOpen(open);
+    if (!open) window.localStorage.setItem("swibp:social-prompt", "1");
+  };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
@@ -366,27 +400,12 @@ export function Header({ onPreview }: HeaderProps) {
                   <span>Publish template</span>
                 </DropdownMenuItem>
                 <ThemeSwitcherMenu />
-                <DropdownMenuItem asChild className="cursor-pointer text-xs">
-                  <a
-                    href="https://t.me/your_channel"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 w-full"
-                  >
-                    <Send className="w-3.5 h-3.5 text-sky-500" />
-                    <span>Telegram</span>
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="cursor-pointer text-xs">
-                  <a
-                    href="https://threads.net/@your_account"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 w-full"
-                  >
-                    <AtSign className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>Threads</span>
-                  </a>
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs"
+                  onClick={() => setIsSocialOpen(true)}
+                >
+                  <Send className="w-3.5 h-3.5 mr-2 text-sky-500" />
+                  <span>Telegram & Threads</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -420,6 +439,13 @@ export function Header({ onPreview }: HeaderProps) {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <ThemeSwitcherMenu />
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs"
+                  onClick={() => setIsSocialOpen(true)}
+                >
+                  <Send className="w-3.5 h-3.5 mr-2 text-sky-500" />
+                  <span>Telegram & Threads</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -428,7 +454,19 @@ export function Header({ onPreview }: HeaderProps) {
         </div>
       </header>
 
-      <AuthModal isOpen={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        verifyToken={authVerifyToken}
+        resetToken={authResetToken}
+        onOpenChange={(open) => {
+          setIsAuthModalOpen(open);
+          if (!open) {
+            setAuthVerifyToken(null);
+            setAuthResetToken(null);
+          }
+        }}
+      />
+      <SocialSubscribeDialog open={isSocialOpen} onOpenChange={closeSocial} />
       <NewProjectModal
         open={isNewProjectOpen}
         onOpenChange={setIsNewProjectOpen}

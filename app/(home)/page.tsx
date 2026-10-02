@@ -55,6 +55,28 @@ function ProjectBootstrap() {
   return null;
 }
 
+function AuthLinkHandler() {
+  const searchParams = useSearchParams();
+  const verify = searchParams.get("verify");
+  const reset = searchParams.get("reset");
+
+  useEffect(() => {
+    if (!verify && !reset) return;
+    window.dispatchEvent(
+      new CustomEvent("swibp:auth-link", {
+        detail: { verify, reset },
+      }),
+    );
+    const url = new URL(window.location.href);
+    url.searchParams.delete("verify");
+    url.searchParams.delete("reset");
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(null, "", next);
+  }, [verify, reset]);
+
+  return null;
+}
+
 export default function CarouselStudio() {
   const [activeNav, setActiveNav] = useState<NavId>("templates");
   const [showDotGrid, setShowDotGrid] = useState(true);
@@ -75,6 +97,7 @@ export default function CarouselStudio() {
 
       <Suspense fallback={null}>
         <ProjectBootstrap />
+        <AuthLinkHandler />
       </Suspense>
 
       <div className="flex flex-1 min-h-0">

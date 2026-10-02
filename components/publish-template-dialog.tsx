@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Check, Loader2 } from "lucide-react";
 
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { publishTemplate } from "@/actions/templates";
 import { useSlidesController } from "@/context/canvas-manager";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import { renderSlidesToImages } from "@/lib/export/carousel";
 import { cn } from "@/lib/utils";
 
 interface PublishTemplateDialogProps {
@@ -33,6 +34,20 @@ const CATEGORIES = [
 
 type Category = (typeof CATEGORIES)[number];
 
+async function captureFirstSlidePreview(): Promise<string | null> {
+  const state = useCanvasStore.getState();
+  const first = state.slides[0];
+  if (!first) return null;
+
+  const multiplier = Math.min(1, 540 / Math.max(1, state.canvasDimensions.width));
+  const [rendered] = await renderSlidesToImages(
+    [{ id: first.id, canvasJSON: first.canvasJSON }],
+    state.canvasDimensions,
+    { format: "jpeg", quality: 0.82, multiplier },
+  );
+  return rendered?.dataUrl ?? null;
+}
+
 export function PublishTemplateDialog({
   open,
   onOpenChange,
@@ -47,9 +62,35 @@ export function PublishTemplateDialog({
 
   const [title, setTitle] = useState(projectTitle);
   const [category, setCategory] = useState<Category>("Other");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setPreviewLoading(true);
+    setPreviewUrl(null);
+    slidesController?.saveCurrent();
+
+    void captureFirstSlidePreview()
+      .then((url) => {
+        if (!cancelled) setPreviewUrl(url);
+      })
+      .catch((err) => {
+        console.error(err);
+        if (!cancelled) setPreviewUrl(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, slidesController]);
 
   const handleOpenChange = (next: boolean) => {
     if (next) {
@@ -72,6 +113,14 @@ export function PublishTemplateDialog({
     setError(null);
     slidesController?.saveCurrent();
 
+    let preview = previewUrl;
+    try {
+      preview = (await captureFirstSlidePreview()) ?? preview;
+      setPreviewUrl(preview);
+    } catch (err) {
+      console.error(err);
+    }
+
     const state = useCanvasStore.getState();
     const res = await publishTemplate({
       title: title.trim() || state.projectTitle,
@@ -80,7 +129,7 @@ export function PublishTemplateDialog({
       canvasJSON: {
         slides: state.slides.map((s) => s.canvasJSON),
       },
-      previewUrl: state.slides[0]?.thumbnail ?? null,
+      previewUrl: preview,
     });
 
     setLoading(false);
@@ -119,6 +168,28 @@ export function PublishTemplateDialog({
         ) : (
           <>
             <div className="space-y-3">
+              <div className="overflow-hidden rounded-xl bg-muted/40">
+                <div className="flex h-36 w-full items-center justify-center">
+                  {previewLoading && !previewUrl ? (
+                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                  ) : previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={previewUrl}
+                      alt="First slide preview"
+                      className="max-h-36 max-w-full object-contain"
+                    />
+                  ) : (
+                    <p className="px-4 text-center text-xs text-muted-foreground">
+                      First slide preview unavailable
+                    </p>
+                  )}
+                </div>
+                <p className="px-3 py-2 text-xs text-muted-foreground">
+                  Preview is the first slide
+                </p>
+              </div>
+
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
