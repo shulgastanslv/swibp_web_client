@@ -15,6 +15,7 @@ interface HelpDialogProps {
 
 const SHORTCUTS = [
   ["Slides", "bottom of the canvas — carousel frames"],
+  ["Ctrl / ⌘ + C / V", "copy and paste elements, images, or text"],
   ["Ctrl / ⌘ + drag", "edge and center binding"],
   ["Save", "save project"],
   ["Export", "PNG / JPEG → ZIP"],

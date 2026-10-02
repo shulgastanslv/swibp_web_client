@@ -146,7 +146,7 @@ export const authOptions: AuthOptions = {
         token.sub = dbUser.id;
         token.email = dbUser.email;
         token.name = dbUser.name;
-        token.picture = dbUser.image;
+        token.image = dbUser.image;
         return token;
       }
 

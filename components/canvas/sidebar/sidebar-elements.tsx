@@ -146,6 +146,7 @@ export function SidebarElements() {
         <button
           type="button"
           disabled={!manager}
+          title="Upload, drop, or paste an image with Ctrl+V"
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();

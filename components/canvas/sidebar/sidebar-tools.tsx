@@ -192,8 +192,8 @@ export function SidebarTools() {
     manager?.objects.addCornerHandle(handle.trim() || "@username", side, platform ?? undefined);
 
   return (
-    <div className="flex flex-col gap-3 px-1 py-1 text-xs text-foreground">
-      <section className="space-y-2 p-2">
+    <div className="flex flex-col gap-3 p-2 text-xs text-foreground">
+      <section className="space-y-2">
         <h3 className="px-1.5 pt-1 text-xs font-semibold text-foreground/90">AI generation</h3>
         <textarea
           value={prompt}

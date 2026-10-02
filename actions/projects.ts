@@ -86,6 +86,17 @@ function emptyCanvasJSON(): FabricCanvasJSON {
   return { version: "6.0.0", objects: [], background: "#ffffff" };
 }
 
+/** Project.canvasJSON is required; keep it in sync with the first slide. */
+function projectSnapshot(
+  slides: Array<{ canvasJSON: FabricCanvasJSON; thumbnail?: string | null }>,
+) {
+  const first = slides[0];
+  return {
+    canvasJSON: (first?.canvasJSON ?? emptyCanvasJSON()) as unknown as Prisma.InputJsonValue,
+    thumbnail: first?.thumbnail ?? null,
+  };
+}
+
 export async function getUserProjects(): Promise<
   ActionResult<{ projects: ProjectListItem[] }>
 > {
@@ -143,6 +154,7 @@ export async function createProject(input?: {
         aspectRatio,
         width: dims.width,
         height: dims.height,
+        ...projectSnapshot([{ canvasJSON: emptyCanvasJSON() }]),
         slides: {
           create: {
             order: 0,
@@ -289,6 +301,7 @@ export async function saveProject(
           aspectRatio: input.aspectRatio,
           width: dims.width,
           height: dims.height,
+          ...projectSnapshot(input.slides),
         },
         select: { updatedAt: true },
       });
@@ -324,6 +337,7 @@ export async function saveAsNewProject(
         aspectRatio: input.aspectRatio,
         width: dims.width,
         height: dims.height,
+        ...projectSnapshot(input.slides),
         slides: {
           create: input.slides.map((slide, order) => ({
             order,

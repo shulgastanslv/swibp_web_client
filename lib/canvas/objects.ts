@@ -72,6 +72,12 @@ export class ObjectFactory {
     };
   }
 
+  /** Center of the slide in logical coordinates (ignores viewport zoom). */
+  getLogicalCenter() {
+    const { width, height } = this.getLogicalSize();
+    return { x: width / 2, y: height / 2 };
+  }
+
   /** Position + origin so an object hugs the given corner with CORNER_MARGIN inset. */
   private getCornerPosition(corner: Corner) {
     const { width, height } = this.getLogicalSize();
@@ -129,7 +135,7 @@ export class ObjectFactory {
         top: cursorY,
         fontSize: 22,
         fontFamily: CORNER_FONT,
-        fontWeight: "500",
+        fontWeight: "400",
         fill: CORNER_MUTED,
         textAlign: align,
       });
@@ -143,9 +149,9 @@ export class ObjectFactory {
         originY: "top",
         left: 0,
         top: cursorY,
-        fontSize: 32,
+        fontSize: 22,
         fontFamily: CORNER_FONT,
-        fontWeight: "600",
+        fontWeight: "400",
         fill: CORNER_INK,
         textAlign: align,
       }),
@@ -207,16 +213,15 @@ export class ObjectFactory {
 
   async addImage(
     url: string,
-    options?: { maxSize?: number },
+    options?: { maxSize?: number; dx?: number; dy?: number },
   ): Promise<void> {
     const isRemote = /^https?:\/\//i.test(url);
     const img = await Image.fromURL(
       url,
       isRemote ? { crossOrigin: "anonymous" } : undefined,
     );
-    const zoom = this.canvas.getZoom() || 1;
-    const width = (this.canvas.width || 1080) / zoom;
-    const height = (this.canvas.height || 1080) / zoom;
+    const { width, height } = this.getLogicalSize();
+    const center = this.getLogicalCenter();
     const scale = options?.maxSize
       ? Math.min(
           options.maxSize / (img.width || 1),
@@ -229,8 +234,8 @@ export class ObjectFactory {
           1,
         );
     img.set({
-      left: width / 2,
-      top: height / 2,
+      left: center.x + (options?.dx ?? 0),
+      top: center.y + (options?.dy ?? 0),
       originX: "center",
       originY: "center",
       scaleX: scale,

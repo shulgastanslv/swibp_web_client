@@ -6,7 +6,6 @@ import { Search, X, Loader2, Sparkles } from "lucide-react";
 import {
   getTemplates,
   getTemplateCategories,
-  seedBuiltinTemplates,
   type TemplateListItem,
 } from "@/actions/templates";
 import { useApplyTemplate } from "@/hooks/use-apply-template";
@@ -21,7 +20,6 @@ export function SidebarTemplates() {
   const [categories, setCategories] = useState<string[]>([]);
   const [templates, setTemplates] = useState<TemplateListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [seeding, setSeeding] = useState(false);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,24 +54,14 @@ export function SidebarTemplates() {
     }, search ? 220 : 0);
     return () => window.clearTimeout(t);
   }, [fetchTemplates, search]);
-
+ 
   useEffect(() => {
     const onChanged = () => void fetchTemplates();
     window.addEventListener("swibp:templates-changed", onChanged);
     return () => window.removeEventListener("swibp:templates-changed", onChanged);
   }, [fetchTemplates]);
 
-  const handleSeed = async () => {
-    setSeeding(true);
-    const res = await seedBuiltinTemplates();
-    setSeeding(false);
-    if (!res.success) {
-      alert("Couldn't seed templates");
-      return;
-    }
-    await fetchTemplates();
-  };
-
+ 
   const handleApply = async (id: string) => {
     if (applyingId) return;
     setApplyingId(id);
@@ -152,19 +140,6 @@ export function SidebarTemplates() {
           <p className="text-xs text-muted-foreground">
             No templates found. Seed built-in presets or publish your own through Publish.
           </p>
-          <button
-            type="button"
-            disabled={seeding}
-            onClick={() => void handleSeed()}
-            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full text-xs font-medium bg-foreground text-background hover:opacity-90 disabled:opacity-60"
-          >
-            {seeding ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : (
-              <Sparkles className="size-3" />
-            )}
-            Seed Built-in
-          </button>
         </div>
       ) : (
         <div className="flex flex-col gap-2">

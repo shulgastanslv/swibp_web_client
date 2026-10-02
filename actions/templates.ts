@@ -7,7 +7,6 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { prisma } from "@/lib/prisma";
 import type { FabricCanvasJSON, RatioKey } from "@/lib/types";
-import { TEMPLATES } from "@/lib/templates/templates-data";
 import {
   isRatioKey,
   parseTemplateCanvasJSON,
@@ -182,61 +181,6 @@ export async function publishTemplate(
   }
 }
 
-/** Upserts local presets from `templates-data.ts` into the Template table. */
-export async function seedBuiltinTemplates(): Promise<
-  ActionResult<{ created: number; skipped: number }>
-> {
-  try {
-    let created = 0;
-    let skipped = 0;
-
-    for (const preset of TEMPLATES) {
-      const existing = await prisma.template.findFirst({
-        where: {
-          title: preset.name,
-          category: "Built-in",
-          badge: preset.badge,
-        },
-        select: { id: true },
-      });
-
-      if (existing) {
-        skipped += 1;
-        continue;
-      }
-
-      let canvasJSON: unknown;
-      try {
-        canvasJSON = JSON.parse(preset.json);
-      } catch {
-        skipped += 1;
-        continue;
-      }
-
-      const parsed = parseTemplateCanvasJSON(canvasJSON);
-
-      await prisma.template.create({
-        data: {
-          title: preset.name,
-          category: "Built-in",
-          badge: preset.badge,
-          aspectRatio: "1:1",
-          canvasJSON: {
-            slides: parsed.slides,
-            aspectRatio: "1:1",
-          } as unknown as Prisma.InputJsonValue,
-        },
-      });
-      created += 1;
-    }
-
-    revalidatePath("/");
-    return { success: true, created, skipped };
-  } catch (err) {
-    console.error("seedBuiltinTemplates error:", err);
-    return { success: false, error: "Couldn't seed templates" };
-  }
-}
 
 export async function getTemplateCategories(): Promise<
   ActionResult<{ categories: string[] }>
