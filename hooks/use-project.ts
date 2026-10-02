@@ -8,9 +8,11 @@ import {
   getProjectById,
   saveAsNewProject,
   saveProject,
+  saveProjectThumbnails,
   updateProjectTitle,
 } from "@/actions/projects";
 import { useSlidesController } from "@/context/canvas-manager";
+import { renderMissingThumbnails } from "@/lib/canvas/thumbnail";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import type { RatioKey } from "@/lib/types";
 
@@ -19,6 +21,64 @@ function setProjectInUrl(projectId: string) {
   const url = new URL(window.location.href);
   url.searchParams.set("project", projectId);
   window.history.replaceState({}, "", url.toString());
+}
+
+function notifyProjectsChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("swibp:projects-changed"));
+}
+
+function scheduleThumbnailHydration(projectId: string | null, persistToDb: boolean) {
+  const start = useCanvasStore.getState();
+  const snapshot = start.slides.map((slide) => ({
+    id: slide.id,
+    canvasJSON: slide.canvasJSON,
+    thumbnail: slide.thumbnail ?? null,
+  }));
+  if (!snapshot.some((slide) => !slide.thumbnail)) return;
+
+  void (async () => {
+    let rendered: Array<{ id: number; dataUrl: string }> = [];
+    try {
+      rendered = await renderMissingThumbnails(snapshot, start.canvasDimensions);
+    } catch (err) {
+      console.error(err);
+      return;
+    }
+    if (rendered.length === 0) return;
+
+    const current = useCanvasStore.getState();
+    if (current.currentProjectId !== projectId) return;
+
+    const byId = new Map(rendered.map((shot) => [shot.id, shot.dataUrl]));
+    for (const slide of snapshot) {
+      const thumb = byId.get(slide.id);
+      if (!thumb) continue;
+      const now = current.slides.find((item) => item.id === slide.id);
+      if (!now || now.thumbnail || now.canvasJSON !== slide.canvasJSON) continue;
+      current.updateSlideThumbnail(slide.id, thumb);
+    }
+
+    const after = useCanvasStore.getState();
+    const unchanged =
+      persistToDb &&
+      !!projectId &&
+      !after.isDirty &&
+      after.currentProjectId === projectId &&
+      after.slides.length === snapshot.length &&
+      after.slides.every(
+        (slide, index) =>
+          slide.id === snapshot[index]?.id &&
+          slide.canvasJSON === snapshot[index]?.canvasJSON,
+      );
+    if (!unchanged || !projectId) return;
+
+    const saved = await saveProjectThumbnails(
+      projectId,
+      after.slides.map((slide) => slide.thumbnail ?? null),
+    );
+    if (saved.success && saved.updated) notifyProjectsChanged();
+  })();
 }
 
 export function useProject() {
@@ -67,6 +127,7 @@ export function useProject() {
       }
 
       useCanvasStore.getState().markSaved();
+      scheduleThumbnailHydration(projectId, res.isOwner);
       return { success: true as const };
     },
     [slidesController],
@@ -109,6 +170,7 @@ export function useProject() {
         const res = await saveProject(projectId, payload);
         if (!res.success) return res;
         useCanvasStore.getState().markSaved();
+        notifyProjectsChanged();
         return { success: true as const, projectId };
       }
 
@@ -118,6 +180,7 @@ export function useProject() {
       useCanvasStore.getState().setCurrentProjectId(res.projectId);
       useCanvasStore.getState().markSaved();
       setProjectInUrl(res.projectId);
+      notifyProjectsChanged();
 
       return { success: true as const, projectId: res.projectId };
     } finally {
@@ -141,6 +204,8 @@ export function useProject() {
       await slidesController?.loadCurrent();
       useCanvasStore.getState().markSaved();
       setProjectInUrl(res.projectId);
+      notifyProjectsChanged();
+      scheduleThumbnailHydration(res.projectId, true);
 
       return res;
     },

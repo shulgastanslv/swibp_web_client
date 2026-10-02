@@ -3,6 +3,7 @@ import { CANVAS_RATIOS } from "@/lib/types";
 
 export interface TemplateCarouselPayload {
   slides: FabricCanvasJSON[];
+  thumbnails: Array<string | null>;
   aspectRatio?: RatioKey;
 }
 
@@ -18,42 +19,64 @@ export function isRatioKey(value: string): value is RatioKey {
   return value in CANVAS_RATIOS;
 }
 
-/** Supports published `{ slides: [...] }` and legacy single-canvas Fabric JSON. */
+function emptySlide(): FabricCanvasJSON {
+  return { version: "6.0.0", objects: [], background: "#ffffff" };
+}
+
+function thumbnailAt(raw: unknown, index: number): string | null {
+  if (!Array.isArray(raw)) return null;
+  const value = raw[index];
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+/** Supports published `{ slides, thumbnails }` and legacy single-canvas Fabric JSON. */
 export function parseTemplateCanvasJSON(raw: unknown): TemplateCarouselPayload {
   if (isRecord(raw) && Array.isArray(raw.slides)) {
-    const slides = raw.slides.filter(isFabricJSON);
+    const slides: FabricCanvasJSON[] = [];
+    const thumbnails: Array<string | null> = [];
+    raw.slides.forEach((slide, index) => {
+      if (!isFabricJSON(slide)) return;
+      slides.push(slide);
+      thumbnails.push(thumbnailAt(raw.thumbnails, index));
+    });
     const aspectRatio =
       typeof raw.aspectRatio === "string" && isRatioKey(raw.aspectRatio)
         ? raw.aspectRatio
         : undefined;
-    return {
-      slides:
-        slides.length > 0
-          ? slides
-          : [{ version: "6.0.0", objects: [], background: "#ffffff" }],
-      aspectRatio,
-    };
+    if (slides.length === 0) {
+      return { slides: [emptySlide()], thumbnails: [null], aspectRatio };
+    }
+    return { slides, thumbnails, aspectRatio };
   }
 
   if (typeof raw === "string") {
     try {
       return parseTemplateCanvasJSON(JSON.parse(raw));
     } catch {
-      return { slides: [{ version: "6.0.0", objects: [], background: "#ffffff" }] };
+      return { slides: [emptySlide()], thumbnails: [null] };
     }
   }
 
   if (isFabricJSON(raw)) {
-    return { slides: [raw] };
+    return { slides: [raw], thumbnails: [null] };
   }
 
-  return { slides: [{ version: "6.0.0", objects: [], background: "#ffffff" }] };
+  return { slides: [emptySlide()], thumbnails: [null] };
 }
 
-export function templateSlidesToItems(slides: FabricCanvasJSON[]): SlideItem[] {
-  return slides.map((canvasJSON, index) => ({
-    id: index + 1,
-    canvasJSON,
-    thumbnail: null,
-  }));
+export function templateSlidesToItems(
+  slides: FabricCanvasJSON[],
+  thumbnails?: Array<string | null> | null,
+  previewUrl?: string | null,
+): SlideItem[] {
+  return slides.map((canvasJSON, index) => {
+    const stored = thumbnails?.[index];
+    const thumbnail =
+      typeof stored === "string" && stored.length > 0
+        ? stored
+        : index === 0 && previewUrl
+          ? previewUrl
+          : null;
+    return { id: index + 1, canvasJSON, thumbnail };
+  });
 }

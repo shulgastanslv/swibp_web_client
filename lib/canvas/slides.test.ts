@@ -12,6 +12,7 @@ const labelOf = (state: CanvasState | null | undefined) =>
 class FakeCanvas implements SlideCanvas {
   content: CanvasState = doc("empty");
   loads: string[] = [];
+  captureThumbnail: (() => string | null) | undefined;
 
   getState() {
     return this.content;
@@ -147,6 +148,33 @@ test("the last slide cannot be removed", async () => {
   await controller.remove(1);
 
   assert.equal(store.getState().slides.length, 1);
+});
+
+test("updating slide JSON keeps its thumbnail", () => {
+  const { store } = setup(["a"]);
+  store.getState().updateSlideThumbnail(1, "thumb");
+  store.getState().updateSlideJSONById(1, doc("a-edited"));
+  assert.equal(store.getState().slides[0]?.thumbnail, "thumb");
+  assert.equal(labelOf(store.getState().slides[0]?.canvasJSON), "a-edited");
+});
+
+test("saveCurrent stores a fresh thumbnail without dropping the previous one when capture fails", () => {
+  const { store, canvas, controller } = setup(["a"]);
+  store.getState().updateSlideThumbnail(1, "old");
+  canvas.content = doc("a-edited");
+  canvas.captureThumbnail = () => "new";
+
+  controller.saveCurrent();
+
+  assert.equal(store.getState().slides[0]?.thumbnail, "new");
+  assert.equal(labelOf(store.getState().slides[0]?.canvasJSON), "a-edited");
+
+  canvas.captureThumbnail = () => null;
+  canvas.content = doc("a-again");
+  controller.saveCurrent();
+
+  assert.equal(store.getState().slides[0]?.thumbnail, "new");
+  assert.equal(labelOf(store.getState().slides[0]?.canvasJSON), "a-again");
 });
 
 test("dispose cancels pending loads without changing the current slide", async () => {

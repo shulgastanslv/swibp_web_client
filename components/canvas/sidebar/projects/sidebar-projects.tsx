@@ -46,6 +46,14 @@ export function SidebarProjects() {
     if (userId) void fetchProjects();
   }, [userId, fetchProjects]);
 
+  useEffect(() => {
+    const onChanged = () => {
+      if (userId) void fetchProjects();
+    };
+    window.addEventListener("swibp:projects-changed", onChanged);
+    return () => window.removeEventListener("swibp:projects-changed", onChanged);
+  }, [userId, fetchProjects]);
+
   const handleToggleSave = async (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
     if (!userId) return;

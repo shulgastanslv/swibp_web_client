@@ -5,29 +5,14 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Copy, Plus, Trash2 } from "lucide-react";
 import { useSlides } from "@/hooks/use-slides";
 import { useCanvasManager } from "@/context/canvas-manager";
+import { captureCanvasThumbnail } from "@/lib/canvas/thumbnail";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import type { CanvasManager } from "@/lib/canvas/manager";
 
 const THUMB_HEIGHT = 52;
-const THUMB_TARGET_WIDTH = 96;
 
-function captureLiveThumbnail(
-  manager: CanvasManager,
-  nativeWidth: number,
-): string | null {
-  try {
-    const canvas = manager.canvas;
-    if (manager.isDisposed || !canvas.lowerCanvasEl) return null;
-    const zoom = canvas.getZoom() || 1;
-    const multiplier = THUMB_TARGET_WIDTH / Math.max(1, nativeWidth * zoom);
-    return canvas.toDataURL({
-      format: "jpeg",
-      quality: 0.72,
-      multiplier: Math.min(1, Math.max(0.05, multiplier)),
-    });
-  } catch {
-    return null;
-  }
+function captureLiveThumbnail(manager: CanvasManager): string | null {
+  return captureCanvasThumbnail(manager.canvas, manager.isDisposed);
 }
 
 export function SlideNavigator() {
@@ -74,7 +59,7 @@ export function SlideNavigator() {
     const refresh = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        const dataUrl = captureLiveThumbnail(manager, canvasDimensions.width);
+        const dataUrl = captureLiveThumbnail(manager);
         if (!dataUrl) return;
         const id = useCanvasStore.getState().currentSlideId;
         setLiveThumb(dataUrl);

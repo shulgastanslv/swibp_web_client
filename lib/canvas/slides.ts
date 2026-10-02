@@ -6,6 +6,8 @@ export interface SlideCanvas {
   getState(): CanvasState;
   loadState(state: CanvasState | null): Promise<void>;
   readonly isDisposed?: boolean;
+  /** JPEG of the canvas as it is right now. Missing on test doubles. */
+  captureThumbnail?(): string | null;
 }
 
 export interface SlidesState {
@@ -13,6 +15,7 @@ export interface SlidesState {
   currentSlideId: number;
   setCurrentSlideId: (id: number) => void;
   updateSlideJSONById: (id: number, json: CanvasState) => void;
+  updateSlideThumbnail: (id: number, thumbnail: string) => void;
   addSlide: (afterId?: number) => number;
   duplicateSlide: (id?: number) => number | null;
   removeSlide: (id: number) => void;
@@ -43,8 +46,10 @@ export class SlidesController {
 
   saveCurrent(): void {
     if (this.disposed || this.canvas.isDisposed) return;
-    const { currentSlideId, updateSlideJSONById } = this.store.getState();
+    const { currentSlideId, updateSlideJSONById, updateSlideThumbnail } = this.store.getState();
     updateSlideJSONById(currentSlideId, this.canvas.getState());
+    const thumbnail = this.canvas.captureThumbnail?.();
+    if (thumbnail) updateSlideThumbnail(currentSlideId, thumbnail);
   }
 
   loadCurrent(): Promise<void> {

@@ -18,6 +18,7 @@ export interface PublishTemplateInput {
   badge?: string;
   aspectRatio: RatioKey;
   canvasJSON: FabricCanvasJSON | { slides: FabricCanvasJSON[] };
+  thumbnails?: Array<string | null>;
   previewUrl?: string | null;
 }
 
@@ -41,6 +42,7 @@ export interface TemplateDetail {
   previewUrl: string | null;
   aspectRatio: RatioKey;
   slides: FabricCanvasJSON[];
+  thumbnails: Array<string | null>;
   createdAt: string;
 }
 
@@ -48,8 +50,19 @@ type ActionResult<T extends object = object> =
   | ({ success: true } & T)
   | { success: false; error: string };
 
-function slideCountFromJSON(raw: unknown): number {
-  return parseTemplateCanvasJSON(raw).slides.length;
+function containsPattern(value: string): string {
+  return `%${value.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+}
+
+interface TemplateListRow {
+  id: string;
+  title: string;
+  category: string;
+  badge: string | null;
+  previewUrl: string | null;
+  aspectRatio: string;
+  slideCount: number;
+  createdAt: Date;
 }
 
 export async function getTemplates(options?: {
@@ -59,34 +72,38 @@ export async function getTemplates(options?: {
   try {
     const search = options?.search?.trim();
     const category = options?.category?.trim();
+    const filters: Prisma.Sql[] = [Prisma.sql`TRUE`];
 
-    const rows = await prisma.template.findMany({
-      where: {
-        AND: [
-          category && category !== "all" ? { category } : {},
-          search
-            ? {
-                OR: [
-                  { title: { contains: search, mode: "insensitive" } },
-                  { badge: { contains: search, mode: "insensitive" } },
-                  { category: { contains: search, mode: "insensitive" } },
-                ],
-              }
-            : {},
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        title: true,
-        category: true,
-        badge: true,
-        previewUrl: true,
-        aspectRatio: true,
-        canvasJSON: true,
-        createdAt: true,
-      },
-    });
+    if (category && category !== "all") {
+      filters.push(Prisma.sql`category = ${category}`);
+    }
+    if (search) {
+      const pattern = containsPattern(search);
+      filters.push(Prisma.sql`(
+        title ILIKE ${pattern} ESCAPE '\\'
+        OR COALESCE(badge, '') ILIKE ${pattern} ESCAPE '\\'
+        OR category ILIKE ${pattern} ESCAPE '\\'
+      )`);
+    }
+
+    const rows = await prisma.$queryRaw<TemplateListRow[]>`
+      SELECT
+        id,
+        title,
+        category,
+        badge,
+        "previewUrl",
+        "aspectRatio",
+        "createdAt",
+        CASE
+          WHEN jsonb_typeof("canvasJSON"->'slides') = 'array'
+            THEN GREATEST(jsonb_array_length("canvasJSON"->'slides'), 1)
+          ELSE 1
+        END::int AS "slideCount"
+      FROM "Template"
+      WHERE ${Prisma.join(filters, " AND ")}
+      ORDER BY "createdAt" DESC
+    `;
 
     const templates: TemplateListItem[] = rows.map((row) => ({
       id: row.id,
@@ -95,8 +112,8 @@ export async function getTemplates(options?: {
       badge: row.badge,
       previewUrl: row.previewUrl,
       aspectRatio: row.aspectRatio,
-      slideCount: slideCountFromJSON(row.canvasJSON),
-      createdAt: row.createdAt.toISOString(),
+      slideCount: Number(row.slideCount) || 1,
+      createdAt: new Date(row.createdAt).toISOString(),
       builtin: row.category === "Built-in",
     }));
 
@@ -134,6 +151,7 @@ export async function getTemplateById(
         previewUrl: row.previewUrl,
         aspectRatio,
         slides: parsed.slides,
+        thumbnails: parsed.thumbnails,
         createdAt: row.createdAt.toISOString(),
       },
     };
@@ -156,6 +174,11 @@ export async function publishTemplate(
     const category = input.category.trim() || "Other";
     if (!title) return { success: false, error: "Enter a template name" };
 
+    const slides = Array.isArray((input.canvasJSON as { slides?: unknown }).slides)
+      ? (input.canvasJSON as { slides: FabricCanvasJSON[] }).slides
+      : [input.canvasJSON as FabricCanvasJSON];
+    const thumbnails = slides.map((_, index) => input.thumbnails?.[index] || null);
+
     const template = await prisma.template.create({
       data: {
         title,
@@ -164,9 +187,8 @@ export async function publishTemplate(
         aspectRatio: input.aspectRatio,
         previewUrl: input.previewUrl ?? null,
         canvasJSON: {
-          slides: Array.isArray((input.canvasJSON as { slides?: unknown }).slides)
-            ? (input.canvasJSON as { slides: FabricCanvasJSON[] }).slides
-            : [input.canvasJSON as FabricCanvasJSON],
+          slides,
+          thumbnails,
           aspectRatio: input.aspectRatio,
         } as unknown as Prisma.InputJsonValue,
       },

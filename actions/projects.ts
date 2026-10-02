@@ -74,11 +74,12 @@ function toFabricJSON(value: unknown): FabricCanvasJSON {
 
 function mapSlidesForClient(
   slides: Array<{ canvasJSON: unknown; thumbnail: string | null }>,
+  projectThumbnail?: string | null,
 ): SlideItem[] {
   return slides.map((slide, index) => ({
     id: index + 1,
     canvasJSON: toFabricJSON(slide.canvasJSON),
-    thumbnail: slide.thumbnail,
+    thumbnail: slide.thumbnail || (index === 0 ? projectThumbnail || null : null),
   }));
 }
 
@@ -125,7 +126,7 @@ export async function getUserProjects(): Promise<
       updatedAt: p.updatedAt.toISOString(),
       isSaved: p.savedBy.length > 0,
       slideCount: p._count.slides,
-      previewUrl: p.slides[0]?.thumbnail ?? null,
+      previewUrl: p.slides[0]?.thumbnail || p.thumbnail || null,
     }));
 
     return { success: true, projects };
@@ -222,7 +223,12 @@ export async function getProjectById(
         height: project.height,
         isPublic: project.isPublic,
         updatedAt: project.updatedAt.toISOString(),
-        slides: mapSlidesForClient(project.slides),
+        slides: mapSlidesForClient(
+          project.slides.length > 0
+            ? project.slides
+            : [{ canvasJSON: project.canvasJSON, thumbnail: project.thumbnail }],
+          project.thumbnail,
+        ),
       },
     };
   } catch (err) {
@@ -358,6 +364,67 @@ export async function saveAsNewProject(
   } catch (err) {
     console.error("saveAsNewProject error:", err);
     return { success: false, error: "Couldn't save the project" };
+  }
+}
+
+/** Patch slide/project previews without rewriting canvas JSON. */
+export async function saveProjectThumbnails(
+  projectId: string,
+  thumbnails: Array<string | null>,
+): Promise<ActionResult<{ updated: boolean }>> {
+  try {
+    const userId = await requireUserId();
+    if (!userId) return { success: false, error: "Sign in" };
+    if (!projectId) return { success: false, error: "projectId is required" };
+    if (!thumbnails.length) {
+      return { success: false, error: "At least one slide is required" };
+    }
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId },
+      select: {
+        thumbnail: true,
+        updatedAt: true,
+        slides: {
+          orderBy: { order: "asc" },
+          select: { id: true, thumbnail: true },
+        },
+      },
+    });
+    if (!project) return { success: false, error: "Project not found" };
+    if (project.slides.length !== thumbnails.length) {
+      return { success: false, error: "Slide count changed" };
+    }
+
+    const first = thumbnails[0] || null;
+    const slideWrites = project.slides.flatMap((slide, index) => {
+      const next = thumbnails[index] || null;
+      if (next === (slide.thumbnail ?? null)) return [];
+      return [{ id: slide.id, thumbnail: next }];
+    });
+    const projectThumbChanged = (project.thumbnail ?? null) !== first;
+    if (slideWrites.length === 0 && !projectThumbChanged) {
+      return { success: true, updated: false };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (const slide of slideWrites) {
+        await tx.slide.update({
+          where: { id: slide.id },
+          data: { thumbnail: slide.thumbnail },
+        });
+      }
+      if (projectThumbChanged) {
+        await tx.project.update({
+          where: { id: projectId },
+          data: { thumbnail: first, updatedAt: project.updatedAt },
+        });
+      }
+    });
+    return { success: true, updated: true };
+  } catch (err) {
+    console.error("saveProjectThumbnails error:", err);
+    return { success: false, error: "Couldn't save thumbnails" };
   }
 }
 

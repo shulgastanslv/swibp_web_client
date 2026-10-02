@@ -5,8 +5,9 @@ import { useCallback } from "react";
 import { getTemplateById } from "@/actions/templates";
 import { useSlidesController } from "@/context/canvas-manager";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import { renderMissingThumbnails } from "@/lib/canvas/thumbnail";
 import { templateSlidesToItems } from "@/lib/templates/parse";
-import type { FabricCanvasJSON, RatioKey } from "@/lib/types";
+import type { FabricCanvasJSON, RatioKey, SlideItem } from "@/lib/types";
 
 export function useApplyTemplate() {
   const slidesController = useSlidesController();
@@ -16,15 +17,36 @@ export function useApplyTemplate() {
       title?: string;
       aspectRatio: RatioKey;
       slides: FabricCanvasJSON[];
+      thumbnails?: Array<string | null> | null;
+      previewUrl?: string | null;
     }) => {
       slidesController?.saveCurrent();
 
-      const items = templateSlidesToItems(payload.slides);
       const store = useCanvasStore.getState();
+      store.setCurrentRatio(payload.aspectRatio);
+      const size = useCanvasStore.getState().canvasDimensions;
+      let items: SlideItem[] = templateSlidesToItems(
+        payload.slides,
+        payload.thumbnails,
+        payload.previewUrl,
+      );
+
+      try {
+        const rendered = await renderMissingThumbnails(items, size);
+        if (rendered.length > 0) {
+          const byId = new Map(rendered.map((shot) => [shot.id, shot.dataUrl]));
+          items = items.map((slide) =>
+            slide.thumbnail || !byId.has(slide.id)
+              ? slide
+              : { ...slide, thumbnail: byId.get(slide.id) ?? null },
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      }
 
       store.setSlides(items);
       store.setCurrentSlideId(items[0]?.id ?? 1);
-      store.setCurrentRatio(payload.aspectRatio);
       store.setDirty(true);
 
       await slidesController?.loadCurrent();
@@ -42,6 +64,8 @@ export function useApplyTemplate() {
         title: res.template.title,
         aspectRatio: res.template.aspectRatio,
         slides: res.template.slides,
+        thumbnails: res.template.thumbnails,
+        previewUrl: res.template.previewUrl,
       });
 
       return { success: true as const, title: res.template.title };

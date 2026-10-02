@@ -100,9 +100,7 @@ export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> =
 
     updateSlideJSONById: (id: number, json: FabricCanvasJSON) => {
       set({
-        slides: get().slides.map((s) =>
-          s.id === id ? { ...s, canvasJSON: json, thumbnail: null } : s,
-        ),
+        slides: get().slides.map((s) => (s.id === id ? { ...s, canvasJSON: json } : s)),
       });
       markDirty();
     },

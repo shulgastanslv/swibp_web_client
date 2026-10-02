@@ -9,6 +9,7 @@ import { EffectsManager } from "./effects";
 import { LayoutManager } from "./layouts";
 import { ArrowManager, ConnectorArrow } from "./arrow";
 import { Emitter } from "./events";
+import { captureCanvasThumbnail } from "./thumbnail";
 
 const DEFAULT_BACKGROUND = "#ffffff";
 
@@ -181,6 +182,11 @@ export class CanvasManager {
   setViewportScale(scale: number, nativeW: number, nativeH: number): void {
     this.core.setZoom(scale, nativeW, nativeH);
     this.effects.onCanvasResize();
+  }
+
+  /** Snapshot used for slide strips and project cards. Keeps the previous thumb if export fails. */
+  captureThumbnail(): string | null {
+    return captureCanvasThumbnail(this.canvas, this.disposed);
   }
 
   exportThumbnail(multiplier = 1): string {

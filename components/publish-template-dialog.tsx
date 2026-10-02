@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { publishTemplate } from "@/actions/templates";
 import { useSlidesController } from "@/context/canvas-manager";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import { THUMB_TARGET_WIDTH } from "@/lib/canvas/thumbnail";
 import { renderSlidesToImages } from "@/lib/export/carousel";
 import { cn } from "@/lib/utils";
 
@@ -34,18 +35,40 @@ const CATEGORIES = [
 
 type Category = (typeof CATEGORIES)[number];
 
-async function captureFirstSlidePreview(): Promise<string | null> {
+async function captureTemplateAssets(): Promise<{
+  previewUrl: string | null;
+  thumbnails: Array<string | null>;
+}> {
   const state = useCanvasStore.getState();
-  const first = state.slides[0];
-  if (!first) return null;
+  const slides = state.slides.map((slide) => ({
+    id: slide.id,
+    canvasJSON: slide.canvasJSON,
+  }));
+  if (slides.length === 0) return { previewUrl: null, thumbnails: [] };
 
-  const multiplier = Math.min(1, 540 / Math.max(1, state.canvasDimensions.width));
-  const [rendered] = await renderSlidesToImages(
-    [{ id: first.id, canvasJSON: first.canvasJSON }],
-    state.canvasDimensions,
-    { format: "jpeg", quality: 0.82, multiplier },
+  const width = Math.max(1, state.canvasDimensions.width);
+  const thumbs = await renderSlidesToImages(slides, state.canvasDimensions, {
+    format: "jpeg",
+    quality: 0.72,
+    multiplier: Math.min(1, Math.max(0.05, THUMB_TARGET_WIDTH / width)),
+  });
+  const thumbnails = slides.map(
+    (slide) => thumbs.find((shot) => shot.id === slide.id)?.dataUrl ?? null,
   );
-  return rendered?.dataUrl ?? null;
+
+  let previewUrl = thumbnails[0] ?? null;
+  try {
+    const [preview] = await renderSlidesToImages(slides.slice(0, 1), state.canvasDimensions, {
+      format: "jpeg",
+      quality: 0.82,
+      multiplier: Math.min(1, 540 / width),
+    });
+    previewUrl = preview?.dataUrl ?? previewUrl;
+  } catch (err) {
+    console.error(err);
+  }
+
+  return { previewUrl, thumbnails };
 }
 
 export function PublishTemplateDialog({
@@ -75,9 +98,9 @@ export function PublishTemplateDialog({
     setPreviewUrl(null);
     slidesController?.saveCurrent();
 
-    void captureFirstSlidePreview()
-      .then((url) => {
-        if (!cancelled) setPreviewUrl(url);
+    void captureTemplateAssets()
+      .then((assets) => {
+        if (!cancelled) setPreviewUrl(assets.previewUrl);
       })
       .catch((err) => {
         console.error(err);
@@ -114,9 +137,17 @@ export function PublishTemplateDialog({
     slidesController?.saveCurrent();
 
     let preview = previewUrl;
+    let thumbnails: Array<string | null> | undefined;
     try {
-      preview = (await captureFirstSlidePreview()) ?? preview;
+      const assets = await captureTemplateAssets();
+      preview = assets.previewUrl ?? preview;
+      thumbnails = assets.thumbnails;
       setPreviewUrl(preview);
+      const live = useCanvasStore.getState();
+      assets.thumbnails.forEach((thumb, index) => {
+        const slide = live.slides[index];
+        if (slide && thumb) live.updateSlideThumbnail(slide.id, thumb);
+      });
     } catch (err) {
       console.error(err);
     }
@@ -129,6 +160,7 @@ export function PublishTemplateDialog({
       canvasJSON: {
         slides: state.slides.map((s) => s.canvasJSON),
       },
+      thumbnails,
       previewUrl: preview,
     });
 
