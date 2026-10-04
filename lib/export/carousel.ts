@@ -1,5 +1,6 @@
 import { Canvas as FabricCanvas } from "fabric";
 import type { FabricCanvasJSON } from "@/lib/types";
+import { withRemoteImageCors } from "@/lib/canvas/image-cors";
 
 export type ExportFormat = "png" | "jpeg";
 
@@ -67,11 +68,20 @@ export async function renderSlidesToImages(
       if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
       const slide = slides[i];
-      await canvas.loadFromJSON(slide.canvasJSON);
+      await canvas.loadFromJSON(withRemoteImageCors(slide.canvasJSON));
       if (!canvas.backgroundColor) canvas.backgroundColor = "#ffffff";
       canvas.requestRenderAll();
 
-      const dataUrl = canvas.toDataURL({ format, quality, multiplier });
+      let dataUrl: string;
+      try {
+        dataUrl = canvas.toDataURL({ format, quality, multiplier });
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "SecurityError") {
+          onProgress?.(i + 1, slides.length);
+          continue;
+        }
+        throw err;
+      }
       results.push({
         index: i,
         id: slide.id,

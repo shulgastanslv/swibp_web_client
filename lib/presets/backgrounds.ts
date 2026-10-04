@@ -17,10 +17,7 @@ export interface SuggestedSet {
   card: string;
 }
 
-/**
- * Neutrals first, then soft pastels.
- * Pastels stay high-lightness and low-saturation: blush, cream, sage, ice, lilac.
- */
+/** White, black, and the grays between them. */
 export const SOLID_PRESETS: SolidPreset[] = [
   { type: "solid", color: "#000000" },
   { type: "solid", color: "#0a0a0a" },
@@ -45,47 +42,6 @@ export const SOLID_PRESETS: SolidPreset[] = [
   { type: "solid", color: "#f5f5f5" },
   { type: "solid", color: "#f9f9f9" },
   { type: "solid", color: "#ffffff" },
-  // Soft pastels, lightest to a little deeper. Eight hues across each row.
-  { type: "solid", color: "#fbf6f6" },
-  { type: "solid", color: "#fbf5f0" },
-  { type: "solid", color: "#fbf7f0" },
-  { type: "solid", color: "#f5f7f4" },
-  { type: "solid", color: "#f3f7f7" },
-  { type: "solid", color: "#f4f5f9" },
-  { type: "solid", color: "#f6f5f9" },
-  { type: "solid", color: "#f9f5f7" },
-  { type: "solid", color: "#f7e8e8" },
-  { type: "solid", color: "#f7e9dc" },
-  { type: "solid", color: "#f6edd6" },
-  { type: "solid", color: "#e7f0e6" },
-  { type: "solid", color: "#dff0ef" },
-  { type: "solid", color: "#e6e8f6" },
-  { type: "solid", color: "#ece6f4" },
-  { type: "solid", color: "#f3e6ee" },
-  { type: "solid", color: "#f0d6d6" },
-  { type: "solid", color: "#f0d8c6" },
-  { type: "solid", color: "#edd9b8" },
-  { type: "solid", color: "#d5e6d4" },
-  { type: "solid", color: "#cce6e4" },
-  { type: "solid", color: "#d4d6ee" },
-  { type: "solid", color: "#e0d4ec" },
-  { type: "solid", color: "#ebcfe0" },
-  { type: "solid", color: "#e6c4c4" },
-  { type: "solid", color: "#e6c8b2" },
-  { type: "solid", color: "#e2cc9e" },
-  { type: "solid", color: "#c4d8c4" },
-  { type: "solid", color: "#b8d8d6" },
-  { type: "solid", color: "#c4c6e4" },
-  { type: "solid", color: "#d2c2e0" },
-  { type: "solid", color: "#e0bcd2" },
-  { type: "solid", color: "#dcb4b4" },
-  { type: "solid", color: "#dcb8a4" },
-  { type: "solid", color: "#d6bc90" },
-  { type: "solid", color: "#b4ccb4" },
-  { type: "solid", color: "#a8cccc" },
-  { type: "solid", color: "#b4b6d8" },
-  { type: "solid", color: "#c4b0d0" },
-  { type: "solid", color: "#d4aac4" },
 ];
 
 export const GRADIENT_PRESETS: GradientPreset[] = [
@@ -105,17 +61,9 @@ export const GRADIENT_PRESETS: GradientPreset[] = [
   { type: "gradient", colors: ["#f1f1f1", "#c8c8c8"] },
   { type: "gradient", colors: ["#e5e5e5", "#ffffff"] },
   { type: "gradient", colors: ["#181818", "#303030"] },
-  { type: "gradient", colors: ["#fbf6f6", "#f0d6d6"] },
-  { type: "gradient", colors: ["#fbf5f0", "#f0d8c6"] },
-  { type: "gradient", colors: ["#fbf7f0", "#edd9b8"] },
-  { type: "gradient", colors: ["#f5f7f4", "#d5e6d4"] },
-  { type: "gradient", colors: ["#f3f7f7", "#cce6e4"] },
-  { type: "gradient", colors: ["#f4f5f9", "#d4d6ee"] },
-  { type: "gradient", colors: ["#f6f5f9", "#e0d4ec"] },
-  { type: "gradient", colors: ["#f9f5f7", "#ebcfe0"] },
 ];
 
-/** Full carousel palettes that stay inside the same neutral range. */
+/** Carousel sets built only from that same neutral range. */
 export const SUGGESTED_SETS: SuggestedSet[] = [
   {
     id: "white",
@@ -180,53 +128,5 @@ export const SUGGESTED_SETS: SuggestedSet[] = [
     text: "#fafafa",
     accent: "#e5e5e5",
     card: "#141414",
-  },
-  {
-    id: "blush",
-    label: "Blush",
-    background: "#f7e8e8",
-    text: "#2a2222",
-    accent: "#c4a0a0",
-    card: "#fbf6f6",
-  },
-  {
-    id: "peach",
-    label: "Peach",
-    background: "#f7e9dc",
-    text: "#2a241c",
-    accent: "#c4aa90",
-    card: "#fbf5f0",
-  },
-  {
-    id: "cream",
-    label: "Cream",
-    background: "#f6edd6",
-    text: "#262218",
-    accent: "#b8a888",
-    card: "#fbf7f0",
-  },
-  {
-    id: "sage",
-    label: "Sage",
-    background: "#e7f0e6",
-    text: "#1c2620",
-    accent: "#8eaa94",
-    card: "#f5f7f4",
-  },
-  {
-    id: "ice",
-    label: "Ice",
-    background: "#dff0ef",
-    text: "#1a2426",
-    accent: "#88a8a8",
-    card: "#f3f7f7",
-  },
-  {
-    id: "lilac",
-    label: "Lilac",
-    background: "#ece6f4",
-    text: "#221e28",
-    accent: "#a498b4",
-    card: "#f6f5f9",
   },
 ];

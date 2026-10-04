@@ -1,4 +1,5 @@
-import { Canvas, FabricObject, PencilBrush } from "fabric";
+import { Canvas, FabricObject, Pattern, PencilBrush } from "fabric";
+import { drawPatternTile, type BackgroundPatternId } from "./background-patterns";
 import type { BackgroundConfig, CanvasState } from "./types";
 import { CanvasCore } from "./core";
 import { GridManager } from "./grid";
@@ -10,6 +11,7 @@ import { LayoutManager } from "./layouts";
 import { ArrowManager, ConnectorArrow } from "./arrow";
 import { Emitter } from "./events";
 import { captureCanvasThumbnail } from "./thumbnail";
+import { withRemoteImageCors } from "./image-cors";
 import { ImageCropSession } from "./crop-session";
 
 const DEFAULT_BACKGROUND = "#ffffff";
@@ -179,6 +181,24 @@ export class CanvasManager {
     this.commit();
   }
 
+  /** Repeating pattern painted over the current slide color. */
+  applyBackgroundPattern(
+    id: BackgroundPatternId,
+    options?: { fallback?: string; scale?: number; opacity?: number; color?: string | null; commit?: boolean },
+  ): void {
+    const current = this.canvas.backgroundColor;
+    const base = typeof current === "string" ? current : (options?.fallback ?? "#ffffff");
+    const tile = drawPatternTile(id, base, {
+      scale: options?.scale,
+      opacity: options?.opacity,
+      color: options?.color,
+    });
+    this.canvas.backgroundImage = undefined;
+    this.canvas.backgroundColor = new Pattern({ source: tile, repeat: "repeat" });
+    this.canvas.requestRenderAll();
+    if (options?.commit !== false) this.commit();
+  }
+
   connectSelectedObjects(): ConnectorArrow | null {
     const [from, to] = this.canvas.getActiveObjects();
     if (!from || !to) return null;
@@ -261,7 +281,7 @@ export class CanvasManager {
     try {
       this.canvas.discardActiveObject();
       if (state) {
-        await this.canvas.loadFromJSON(state, undefined, { signal: abort.signal });
+        await this.canvas.loadFromJSON(withRemoteImageCors(state), undefined, { signal: abort.signal });
       } else if (this.canvas.contextTop) {
         this.canvas.clear();
       }

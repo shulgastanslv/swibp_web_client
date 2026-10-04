@@ -117,6 +117,18 @@ export function SidebarProjects() {
     );
   }
 
+
+  const formatDate = (date: string) => {
+    const diff = new Date().getTime() - new Date(date).getTime();
+    if (diff < 1000 * 60 * 60 * 24) {
+      return "Today";
+    } else if (diff < 1000 * 60 * 60 * 24 * 2) {
+      return "Yesterday";
+    } else {
+      return new Date(date).toLocaleDateString();
+    }
+  }
+  
   return (
     <div className="flex flex-col gap-3 p-2">
       <div className="flex items-center justify-between gap-2">
@@ -215,7 +227,7 @@ export function SidebarProjects() {
                 <CarouselStack
                   slideCount={p.slideCount}
                   previewUrl={p.previewUrl}
-                  createdAt={"Вчера"}
+                  createdAt={formatDate(p.createdAt)}
                   busy={busy}
                 >
                   <div className="absolute top-1.5 right-1.5 flex items-start gap-0.5 z-10">

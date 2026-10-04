@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, X, Loader2, LayoutGrid } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Search, X, Loader2, LayoutGrid, FileJson } from "lucide-react";
 
 import {
   getTemplates,
@@ -9,12 +9,15 @@ import {
   type TemplateListItem,
 } from "@/actions/templates";
 import { useApplyTemplate } from "@/hooks/use-apply-template";
+import { parseImportedTemplate } from "@/lib/templates/parse";
+import { useCanvasStore } from "@/store/useCanvasStore";
 import { cn } from "@/lib/utils";
 import { CarouselStack } from "@/components/canvas/sidebar/carousel-stack";
 import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
 
 export function SidebarTemplates() {
-  const { applyTemplateById } = useApplyTemplate();
+  const { applyTemplateById, applyPayload } = useApplyTemplate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
@@ -22,6 +25,7 @@ export function SidebarTemplates() {
   const [templates, setTemplates] = useState<TemplateListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchTemplates = useCallback(async () => {
@@ -55,14 +59,46 @@ export function SidebarTemplates() {
     }, search ? 220 : 0);
     return () => window.clearTimeout(t);
   }, [fetchTemplates, search]);
- 
+
   useEffect(() => {
     const onChanged = () => void fetchTemplates();
     window.addEventListener("core:templates-changed", onChanged);
     return () => window.removeEventListener("core:templates-changed", onChanged);
   }, [fetchTemplates]);
 
- 
+
+  const handleImportFile = async (file: File | undefined) => {
+    if (!file || importing) return;
+    setImporting(true);
+    setError(null);
+    try {
+      const parsed = parseImportedTemplate(await file.text());
+      if (parsed.ok === false) {
+        setError(parsed.error);
+        return;
+      }
+
+      const store = useCanvasStore.getState();
+      await applyPayload({
+        title: parsed.template.title,
+        aspectRatio: parsed.template.aspectRatio ?? store.currentRatio,
+        slides: parsed.template.slides,
+        thumbnails: parsed.template.thumbnails,
+        previewUrl: parsed.template.previewUrl,
+      });
+      const title = parsed.template.title?.trim();
+      if (title) useCanvasStore.getState().setProjectTitle(title);
+    } catch (err) {
+      console.error(err);
+      setError("Couldn't import that template");
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+
+
   const handleApply = async (id: string) => {
     if (applyingId) return;
     setApplyingId(id);
@@ -87,6 +123,18 @@ export function SidebarTemplates() {
           </span>
         </div>
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          void handleImportFile(file);
+        }}
+      />
+
 
       <div className="flex min-w-0 items-center gap-1.5">
         <div className="relative min-w-0 flex-1">
@@ -122,6 +170,25 @@ export function SidebarTemplates() {
             },
           ]}
         />
+        <button
+          type="button"
+          disabled={importing}
+          title="Import a template from a JSON file"
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            const file = event.dataTransfer.files?.[0];
+            void handleImportFile(file);
+          }}
+          className="flex h-8 items-center justify-center gap-1.5 rounded-full  px-2 text-xs font-medium text-foreground transition-colors hover:bg-muted/40 disabled:opacity-60"
+        >
+          {importing ? (
+            <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+          ) : (
+            <FileJson className="size-3.5 text-muted-foreground" />
+          )}
+        </button>
       </div>
 
       {error && (
@@ -157,7 +224,6 @@ export function SidebarTemplates() {
                 <CarouselStack
                   slideCount={tpl.slideCount}
                   previewUrl={tpl.previewUrl}
-                  badge="Template"
                   busy={busy}
                 />
 

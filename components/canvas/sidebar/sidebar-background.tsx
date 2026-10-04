@@ -22,6 +22,8 @@ import { useCanvasManager } from "@/context/canvas-manager";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScreenSplit } from "@/components/canvas/sidebar/screen-split";
+import { BackgroundPattern } from "@/components/canvas/sidebar/background-pattern";
 
 type Tab = "color" | "gradient" | "image";
 
@@ -159,6 +161,7 @@ export function SidebarBackground() {
 
   return (
     <div className="flex min-w-0 flex-col gap-4 overflow-hidden p-2 text-xs">
+      <ScreenSplit />
       <section className="flex min-w-0 flex-col gap-2">
         <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)} className="gap-2">
         <TabsList className="grid h-8 w-full grid-cols-3 rounded-full">
@@ -305,6 +308,9 @@ export function SidebarBackground() {
         </TabsContent>
         </Tabs>
       </section>
+
+      
+      <BackgroundPattern />
 
       <section className="flex min-w-0 flex-col gap-2 border-t border-border/50 pt-3">
         <div>

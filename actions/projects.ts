@@ -21,6 +21,7 @@ export interface ProjectListItem {
   updatedAt: string;
   isSaved: boolean;
   slideCount: number;
+  createdAt: string;
   previewUrl: string | null;
 }
 
@@ -139,6 +140,7 @@ export async function getUserProjects(): Promise<
       updatedAt: p.updatedAt.toISOString(),
       isSaved: p.savedBy.length > 0,
       slideCount: p._count.slides,
+      createdAt: p.createdAt.toISOString(),
       previewUrl: p.slides[0]?.thumbnail || p.thumbnail || null,
     }));
 

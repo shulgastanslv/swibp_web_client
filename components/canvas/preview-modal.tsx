@@ -7,6 +7,7 @@ import { useCanvasStore } from "@/store/useCanvasStore";
 import { useSlidesController } from "@/context/canvas-manager";
 import { Canvas as FabricCanvas } from "fabric";
 import { IPhoneMockup } from "react-device-mockup";
+import { withRemoteImageCors } from "@/lib/canvas/image-cors";
 
 interface PreviewModalProps {
   open: boolean;
@@ -100,7 +101,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
         }
 
         try {
-          await offscreenCanvas.loadFromJSON(slide.canvasJSON);
+          await offscreenCanvas.loadFromJSON(withRemoteImageCors(slide.canvasJSON));
 
           if (!offscreenCanvas.backgroundColor) {
             offscreenCanvas.backgroundColor = "#ffffff";
