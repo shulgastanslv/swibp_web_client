@@ -17,6 +17,9 @@ import { useCanvasStore } from "@/store/useCanvasStore";
 import { formatSlideNumber, type ChromeRole, type SlideNumberStyle } from "@/lib/canvas/chrome";
 import type { PaletteSlot, TextStyleDef, TextStyleId } from "@/lib/canvas/document";
 import "./fabric-props";
+import { isFrameKind, type FrameKind } from "@/lib/canvas/frames";
+import { MOCKUP_SCALE, renderDeviceMockup } from "@/lib/canvas/device-mockup";
+import { fileToDataUrl } from "@/lib/image/file-to-data-url";
 
 export type { SlideNumberStyle };
 export { formatSlideNumber };
@@ -416,6 +419,79 @@ export class ObjectFactory {
     const current = this.findSplit();
     if (!current) return;
     return this.fillFrameWithImage(current, source);
+  }
+
+  async addFrame(kind: FrameKind, x?: number, y?: number, screen?: string) {
+    const png = await renderDeviceMockup(kind, screen);
+    const img = await Image.fromURL(png);
+    img.set({
+      ...this.getPosition(x, y),
+      scaleX: 1 / MOCKUP_SCALE,
+      scaleY: 1 / MOCKUP_SCALE,
+    });
+    this.mark(img, { swibpRole: "frame", swibpFrameKind: kind });
+    this.addToCanvas(img);
+    return img;
+  }
+
+  private isFrame(obj: FabricObject | null | undefined): obj is Image {
+    if (!(obj instanceof Image)) return false;
+    return (obj as Image & { swibpRole?: string }).swibpRole === "frame";
+  }
+
+  private findFrame(prefer?: FabricObject | null) {
+    const active = prefer ?? this.canvas.getActiveObject();
+    if (this.isFrame(active)) return active;
+    const frames = this.canvas.getObjects().filter((obj) => this.isFrame(obj));
+    return frames[frames.length - 1] ?? null;
+  }
+
+  /** Opens a file picker and drops the picture into the device screen. */
+  pickFrameImage(target?: FabricObject | null) {
+    const frame = this.findFrame(target);
+    if (!frame) return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file?.type.startsWith("image/")) return;
+      void fileToDataUrl(file).then((source) => this.fillDeviceFrame(frame, source));
+    };
+    input.click();
+  }
+
+  /** Fills the selected device, or places a new iPhone when none is on the slide. */
+  async fillActiveFrame(source: string) {
+    const frame = this.findFrame();
+    if (!frame) return this.addFrame("iphone", undefined, undefined, source);
+    return this.fillDeviceFrame(frame, source);
+  }
+
+  /** Repaints the device with the picture covering its screen. */
+  async fillDeviceFrame(frame: Image, source: string) {
+    const kind = (frame as Image & { swibpFrameKind?: string }).swibpFrameKind;
+    if (!kind || !isFrameKind(kind)) return;
+
+    const png = await renderDeviceMockup(kind, source);
+    const visualW = Math.max(1, frame.getScaledWidth());
+    const visualH = Math.max(1, frame.getScaledHeight());
+    const { left, top, originX, originY, angle } = frame;
+    await frame.setSrc(png);
+    frame.set({
+      scaleX: visualW / (frame.width || 1),
+      scaleY: visualH / (frame.height || 1),
+      left,
+      top,
+      originX,
+      originY,
+      angle,
+    });
+    this.mark(frame, { swibpRole: "frame", swibpFrameKind: kind });
+    frame.setCoords();
+    this.canvas.setActiveObject(frame);
+    this.canvas.requestRenderAll();
+    return frame;
   }
 
   /** Opens a file picker and fills the selected shape with that picture. */

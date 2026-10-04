@@ -1,7 +1,7 @@
 import { FabricObject } from "fabric";
 
 /** Extra fields Fabric must keep in `toJSON` / `loadFromJSON`. */
-const EXTRA = ["swibpRole", "swibpNumberStyle", "swibpStyle", "swibpSlot"];
+const EXTRA = ["swibpRole", "swibpNumberStyle", "swibpStyle", "swibpSlot", "swibpFrameKind"];
 
 for (const key of EXTRA) {
   if (!FabricObject.customProperties.includes(key)) {

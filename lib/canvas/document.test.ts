@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  applyFontToSlide,
   applyTextStyleToSlide,
   paletteFromHarmony,
   slidesFromLines,
@@ -45,6 +46,30 @@ test("paletteFromHarmony assigns light, dark, and a saturated accent", () => {
   assert.equal(palette.text, "#0f172a");
   assert.equal(palette.accent, "#3b82f6");
   assert.notEqual(palette.card, palette.background);
+});
+
+test("applyFontToSlide changes every text face and keeps sizes", () => {
+  const json: FabricCanvasJSON = {
+    version: "6.0.0",
+    objects: [
+      { type: "Textbox", swibpStyle: "heading", fontSize: 80, text: "A" },
+      { type: "Textbox", swibpStyle: "body", fontSize: 28, text: "B" },
+      { type: "Rect", fill: "#111111" },
+      {
+        type: "Group",
+        objects: [{ type: "IText", fontSize: 18, text: "01" }],
+      },
+    ],
+  };
+  const next = applyFontToSlide(json, "Manrope");
+  assert.equal(next.objects[0]?.fontFamily, "Manrope");
+  assert.equal(next.objects[0]?.fontSize, 80);
+  assert.equal(next.objects[1]?.fontFamily, "Manrope");
+  assert.equal(next.objects[1]?.fontSize, 28);
+  assert.equal(next.objects[2]?.fontFamily, undefined);
+  const group = next.objects[3] as { objects: Record<string, unknown>[] };
+  assert.equal(group.objects[0]?.fontFamily, "Manrope");
+  assert.equal(group.objects[0]?.fontSize, 18);
 });
 
 test("applyTextStyleToSlide updates only the matching style", () => {

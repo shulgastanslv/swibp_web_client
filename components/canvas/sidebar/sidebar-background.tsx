@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScreenSplit } from "@/components/canvas/sidebar/screen-split";
 import { BackgroundPattern } from "@/components/canvas/sidebar/background-pattern";
+import { CollapsibleGroup } from "@/components/ui/collapsible-group";
 
 type Tab = "color" | "gradient" | "image";
 
@@ -160,9 +161,12 @@ export function SidebarBackground() {
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-4 overflow-hidden p-2 text-xs">
-      <ScreenSplit />
-      <section className="flex min-w-0 flex-col gap-2">
+    <div className="flex min-w-0 flex-col overflow-hidden text-xs text-foreground">
+      <CollapsibleGroup id="background-split" title="Screen split">
+        <ScreenSplit />
+      </CollapsibleGroup>
+
+      <CollapsibleGroup id="background-fill" title="Fill">
         <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)} className="gap-2">
         <TabsList className="grid h-8 w-full grid-cols-3 rounded-full">
           {FILL_TABS.map((item) => (
@@ -307,19 +311,16 @@ export function SidebarBackground() {
           </div>
         </TabsContent>
         </Tabs>
-      </section>
+      </CollapsibleGroup>
 
-      
-      <BackgroundPattern />
+      <CollapsibleGroup id="background-pattern" title="Pattern">
+        <BackgroundPattern />
+      </CollapsibleGroup>
 
-      <section className="flex min-w-0 flex-col gap-2 border-t border-border/50 pt-3">
-        <div>
-          <p className="font-medium text-foreground">Every slide</p>
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Text, accent, and cards use these colors on the whole carousel.
-          </p>
-        </div>
-
+      <CollapsibleGroup id="background-palette" title="Every slide">
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          Text, accent, and cards use these colors on the whole carousel.
+        </p>
         <div className="flex flex-col">
           {PALETTE_SLOTS.map((slot) => (
             <label
@@ -340,24 +341,23 @@ export function SidebarBackground() {
             </label>
           ))}
         </div>
+      </CollapsibleGroup>
 
-        <div className="flex flex-col gap-2 rounded-sm bg-muted/25 p-4">
-          <span className="font-medium text-foreground">Suggest a set</span>
-          <div className="flex flex-col gap-1">
-            {SUGGESTED_SETS.map((set) => (
-              <SuggestedSetRow
-                key={set.id}
-                set={set}
-                onFillSlide={() => applySolid(set.background)}
-                onApply={() => applyProjectPalette(set)}
-              />
-            ))}
-          </div>
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            The large swatch fills this slide. Apply sets Background, Text, Accent, and Card on every slide.
-          </p>
+      <CollapsibleGroup id="background-sets" title="Suggest a set">
+        <div className="flex flex-col gap-1">
+          {SUGGESTED_SETS.map((set) => (
+            <SuggestedSetRow
+              key={set.id}
+              set={set}
+              onFillSlide={() => applySolid(set.background)}
+              onApply={() => applyProjectPalette(set)}
+            />
+          ))}
         </div>
-      </section>
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          The large swatch fills this slide. Apply sets Background, Text, Accent, and Card on every slide.
+        </p>
+      </CollapsibleGroup>
     </div>
   );
 }

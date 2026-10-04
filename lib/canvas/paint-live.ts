@@ -25,6 +25,23 @@ export function paintSlotOnCanvas(canvas: Canvas, slot: PaletteSlot, color: stri
   canvas.requestRenderAll();
 }
 
+const TEXT_TYPES = new Set(["text", "i-text", "textbox"]);
+
+/** Repaints every text object on the open slide with one typeface. */
+export function applyFontOnCanvas(canvas: Canvas, fontFamily: string): void {
+  for (const obj of canvas.getObjects()) {
+    visit(obj, (node) => {
+      const type = (node.type || "").toLowerCase();
+      if (!TEXT_TYPES.has(type)) return;
+      node.set({ fontFamily });
+      node.initDimensions?.();
+      node.dirty = true;
+      node.setCoords();
+    });
+  }
+  canvas.requestRenderAll();
+}
+
 export function applyStyleOnCanvas(
   canvas: Canvas,
   styleId: TextStyleId,

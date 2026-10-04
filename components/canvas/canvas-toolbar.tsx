@@ -4,8 +4,6 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   SplitSquareVertical,
-  ZoomIn,
-  ZoomOut,
   Workflow,
   Check,
   FileCode2,
@@ -15,6 +13,7 @@ import { CANVAS_RATIOS, type RatioKey } from "@/lib/types";
 import { useCanvasManager } from "@/context/canvas-manager";
 import { GridControls } from "@/components/canvas/grid-controls";
 import { ClearCanvasButton } from "@/components/canvas/clear-canvas-button";
+import { ZoomControls } from "@/components/canvas/zoom-controls";
 
 const QUICK_RATIOS: { ratio: RatioKey; iconClass: string }[] = [
   { ratio: "4:5", iconClass: "w-2.5 h-3" },
@@ -29,8 +28,6 @@ export function CanvasToolbar() {
   const currentRatio = useCanvasStore((s) => s.currentRatio);
   const setCurrentRatio = useCanvasStore((s) => s.setCurrentRatio);
   const setCanvasDimensions = useCanvasStore((s) => s.setCanvasDimensions);
-  const zoom = useCanvasStore((s) => s.zoom);
-  const setZoom = useCanvasStore((s) => s.setZoom);
   const isReferenceOpen = useCanvasStore((s) => s.isReferenceOpen);
   const toggleReferenceOpen = useCanvasStore((s) => s.toggleReferenceOpen);
   const autoFlowEnabled = useCanvasStore((s) => s.autoFlowEnabled);
@@ -158,36 +155,7 @@ export function CanvasToolbar() {
           )}
         </Button>
         <ClearCanvasButton />
-        <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-full">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setZoom(Math.max(25, zoom - 10))}
-            title="Zoom out"
-          >
-            <ZoomOut className="w-3.5 h-3.5" />
-          </Button>
-
-          <button
-            type="button"
-            className="text-xs font-mono w-10 text-center text-foreground hover:text-primary transition-colors"
-            onClick={() => setZoom(100)}
-            title="Reset zoom"
-          >
-            {zoom}%
-          </button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setZoom(Math.min(200, zoom + 10))}
-            title="Zoom in"
-          >
-            <ZoomIn className="w-3.5 h-3.5" />
-          </Button>
-        </div>
+        <ZoomControls />
       </div>
     </div>
   );

@@ -14,6 +14,18 @@ const SYSTEM_FONTS = [
   "system-ui",
 ] as const;
 
+/** Curated faces with Cyrillic, offered as one-click carousel fonts. */
+export const SUGGESTED_FONTS = [
+  "Inter",
+  "Manrope",
+  "Montserrat",
+  "Unbounded",
+  "Oswald",
+  "Playfair Display",
+  "PT Serif",
+  "Comfortaa",
+] as const;
+
 const POPULAR_GOOGLE_FONTS = [
   "Roboto",
   "Open Sans",

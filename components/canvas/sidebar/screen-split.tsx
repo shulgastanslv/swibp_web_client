@@ -43,8 +43,7 @@ export function ScreenSplit() {
   };
 
   return (
-    <section className="space-y-1.5">
-      <h3 className="px-1 text-xs font-medium text-muted-foreground">Screen split</h3>
+    <div className="space-y-1.5">
       <div className="grid grid-cols-6 gap-1">
         {CANVAS_SPLITS.map((split) => (
           <button
@@ -72,6 +71,6 @@ export function ScreenSplit() {
       >
         Add image
       </button>
-    </section>
+    </div>
   );
 }

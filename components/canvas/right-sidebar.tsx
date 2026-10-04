@@ -65,6 +65,7 @@ import {
   type TextStyleId,
 } from "@/lib/canvas/document";
 import { applyStyleOnCanvas, paintSlotOnCanvas } from "@/lib/canvas/paint-live";
+import { applyCarouselFont } from "@/lib/canvas/apply-carousel-font";
 import { useCanvasStore } from "@/store/useCanvasStore";
 
 type TextAlign = "left" | "center" | "right" | "justify";
@@ -339,6 +340,7 @@ export function RightSidebar({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const palette = useCanvasStore((s) => s.palette);
   const [styleOffer, setStyleOffer] = useState<TextStyleId | null>(null);
+  const [fontOffer, setFontOffer] = useState<string | null>(null);
 
   useEffect(() => {
     setStyleOffer(null);
@@ -1113,7 +1115,7 @@ export function RightSidebar({
                       updateSelected({
                         fontFamily: family,
                       } as unknown as Partial<FabricObject>);
-                      noteStyleEdit();
+                      setFontOffer(family);
                       // After the webfont finishes painting, force one more
                       // layout pass so metrics match the newly loaded face.
                       void document.fonts.ready.then(() => {
@@ -1139,6 +1141,36 @@ export function RightSidebar({
                       });
                     }}
                   />
+
+                  {fontOffer && (
+                    <div className="flex flex-col gap-2 rounded-2xl bg-muted/40 p-2.5">
+                      <p className="text-xs leading-snug text-foreground">
+                        Use {fontOffer} on every text?
+                      </p>
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          onClick={() => {
+                            applyCarouselFont(fontOffer, manager);
+                            setFontOffer(null);
+                          }}
+                        >
+                          All slides
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          onClick={() => setFontOffer(null)}
+                        >
+                          Only this
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   <NumberField
                     label="Font size"

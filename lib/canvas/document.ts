@@ -194,6 +194,30 @@ function styleRecord(
   };
 }
 
+const TEXT_TYPES = new Set(["text", "i-text", "textbox", "itext"]);
+
+function isTextRecord(object: Record<string, unknown>) {
+  const type = typeof object.type === "string" ? object.type.toLowerCase() : "";
+  return TEXT_TYPES.has(type);
+}
+
+function withFont(object: Record<string, unknown>, fontFamily: string): Record<string, unknown> {
+  const children = Array.isArray(object.objects)
+    ? (object.objects as Record<string, unknown>[]).map((child) => withFont(child, fontFamily))
+    : undefined;
+  const next = children ? { ...object, objects: children } : { ...object };
+  if (!isTextRecord(object)) return next;
+  return { ...next, fontFamily };
+}
+
+/** Sets the typeface on every text object and leaves size, weight, and color alone. */
+export function applyFontToSlide(json: FabricCanvasJSON, fontFamily: string): FabricCanvasJSON {
+  return {
+    ...json,
+    objects: (json.objects ?? []).map((object) => withFont(object, fontFamily)),
+  };
+}
+
 export function applyTextStyleToSlide(
   json: FabricCanvasJSON,
   styleId: TextStyleId,

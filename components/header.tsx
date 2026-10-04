@@ -23,6 +23,7 @@ import {
   Loader2,
   Save,
   CloudOff,
+  Focus,
 } from "lucide-react";
 import Logo from "@/components/logo";
 import { useSession, signOut } from "next-auth/react";
@@ -57,9 +58,10 @@ import {
 interface HeaderProps {
   onPreview?: () => void;
   onPhonePreview?: () => void;
+  onFocus?: () => void;
 }
 
-export function Header({ onPreview }: HeaderProps) {
+export function Header({ onPreview, onFocus }: HeaderProps) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authVerifyToken, setAuthVerifyToken] = useState<string | null>(null);
   const [authResetToken, setAuthResetToken] = useState<string | null>(null);
@@ -271,6 +273,15 @@ export function Header({ onPreview }: HeaderProps) {
           >
             <Layers2 className="w-3 h-3 fill-current text-muted-foreground" />
             <span className="hidden sm:inline">Preview</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onFocus}
+            className="h-8 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
+            title="Hide the panels and keep the canvas"
+          >
+            <Focus className="w-3 h-3" />
           </Button>
         </div>
 

@@ -21,6 +21,7 @@
     "cn": "^0.2.5",
     "dotenv": "^17.4.2",
     "fabric": "^6.0.0",
+    "html2canvas": "^1.4.1",
     "iconoir": "^7.12.1",
     "iconoir-react": "^7.12.1",
     "jszip": "^3.10.2",

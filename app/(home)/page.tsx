@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { Header } from "@/components/header";
 import { LeftSidebar } from "@/components/canvas/left-sidebar";
 import { CanvasToolbar } from "@/components/canvas/canvas-toolbar";
+import { ElementsToolbar } from "@/components/canvas/elements-toolbar";
 import { CanvasView } from "@/components/canvas/canvas-view";
 import { ReferencePanel } from "@/components/canvas/reference-panel";
 import { AutoFlowPrompt } from "@/components/canvas/auto-flow-prompt";
@@ -15,7 +16,7 @@ import { PreviewModal } from "@/components/canvas/preview-modal";
 import type { NavId } from "@/components/canvas/left-sidebar";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { useProject } from "@/hooks/use-project";
-import { useSlidesController } from "@/context/canvas-manager";
+import { useCanvasManager, useSlidesController } from "@/context/canvas-manager";
 
 const SlideNavigator = dynamic(
   () => import("@/components/canvas/slide-navigator").then((mod) => mod.SlideNavigator),
@@ -84,16 +85,41 @@ export default function CarouselStudio() {
   const [isRightCollapsed, setIsRightCollapsed] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewSlideId, setPreviewSlideId] = useState<number>(0);
+  const [focusMode, setFocusMode] = useState(false);
+  const [focusInspector, setFocusInspector] = useState(false);
+  const manager = useCanvasManager();
+
+  useEffect(() => {
+    if (!focusMode || !manager) return;
+
+    setFocusInspector(manager.getActiveObject() != null);
+    const openForClick = (event: { target?: unknown }) => {
+      if (useCanvasStore.getState().handActive) return;
+      setFocusInspector(Boolean(event.target));
+    };
+    manager.canvas.on("mouse:down", openForClick);
+    const unsubscribe = manager.on("selection", (object) => {
+      setFocusInspector(object != null);
+    });
+
+    return () => {
+      manager.canvas.off("mouse:down", openForClick);
+      unsubscribe();
+    };
+  }, [focusMode, manager]);
 
   return (
     <div className="flex flex-col h-screen w-full bg-background text-foreground font-sans overflow-hidden select-none">
-      <Header
-        onPreview={() => {
-          const storeCurrentId = useCanvasStore.getState().currentSlideId;
-          setPreviewSlideId(storeCurrentId);
-          setShowPreviewModal(true);
-        }}
-      />
+      {!focusMode && (
+        <Header
+          onPreview={() => {
+            const storeCurrentId = useCanvasStore.getState().currentSlideId;
+            setPreviewSlideId(storeCurrentId);
+            setShowPreviewModal(true);
+          }}
+          onFocus={() => setFocusMode(true)}
+        />
+      )}
 
       <Suspense fallback={null}>
         <ProjectBootstrap />
@@ -101,14 +127,16 @@ export default function CarouselStudio() {
       </Suspense>
 
       <div className="flex flex-1 min-h-0">
-        <LeftSidebar
-          activeNav={activeNav}
-          setActiveNav={setActiveNav}
-          isLeftCollapsed={isLeftCollapsed}
-          setIsLeftCollapsed={setIsLeftCollapsed}
-          showDotGrid={showDotGrid}
-          setShowDotGrid={setShowDotGrid}
-        />
+        {!focusMode && (
+          <LeftSidebar
+            activeNav={activeNav}
+            setActiveNav={setActiveNav}
+            isLeftCollapsed={isLeftCollapsed}
+            setIsLeftCollapsed={setIsLeftCollapsed}
+            showDotGrid={showDotGrid}
+            setShowDotGrid={setShowDotGrid}
+          />
+        )}
 
         <main
           className="flex-1 flex flex-col bg-muted/50 overflow-hidden min-w-0 relative"
@@ -122,20 +150,33 @@ export default function CarouselStudio() {
               : {}
           }
         >
-          <CanvasToolbar />
+          {focusMode ? (
+            <ElementsToolbar onExit={() => setFocusMode(false)} />
+          ) : (
+            <CanvasToolbar />
+          )}
 
           <div className="flex flex-1 min-h-0 relative">
             <CanvasView />
-            <ReferencePanel />
-            <AutoFlowPrompt />
+            {!focusMode && <ReferencePanel />}
+            {!focusMode && <AutoFlowPrompt />}
           </div>
-          <SlideNavigator />
+          {!focusMode && <SlideNavigator />}
         </main>
 
-        <RightSidebar
-          isRightCollapsed={isRightCollapsed}
-          setIsRightCollapsed={setIsRightCollapsed}
-        />
+        {focusMode ? (
+          focusInspector && (
+            <RightSidebar
+              isRightCollapsed={false}
+              setIsRightCollapsed={() => setFocusInspector(false)}
+            />
+          )
+        ) : (
+          <RightSidebar
+            isRightCollapsed={isRightCollapsed}
+            setIsRightCollapsed={setIsRightCollapsed}
+          />
+        )}
       </div>
 
       <PreviewModal

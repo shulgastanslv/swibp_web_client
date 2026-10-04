@@ -1,134 +1,34 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  Circle,
-  Diamond,
-  Ellipse,
-  Hexagon,
-  Square,
-  Star,
-  Triangle,
-  Type,
-  Quote,
-  Minus,
-  AlignLeft,
-  Pencil,
-  ImagePlus,
-  Link2,
-  Loader2,
-} from "lucide-react";
+import { ImagePlus, Link2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CollapsibleGroup } from "@/components/ui/collapsible-group";
 import { cn } from "@/lib/utils";
-import { fileToDataUrl } from "@/lib/image/file-to-data-url";
-import { useCanvasManager } from "@/context/canvas-manager";
-
-interface ElementItem {
-  label: string;
-  icon: LucideIcon;
-  action: () => void;
-  title?: string;
-}
-
-interface ElementSection {
-  id: string;
-  title: string;
-  items: ElementItem[];
-}
+import { useElementLibrary } from "@/components/canvas/use-element-library";
 
 export function SidebarElements() {
-  const manager = useCanvasManager();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
-  const [urlLoading, setUrlLoading] = useState(false);
-  const [urlError, setUrlError] = useState<string | null>(null);
-
-  const addImageFromFile = (file: File) => {
-    if (!file.type.startsWith("image/") || !manager) return;
-    void fileToDataUrl(file)
-      .then((dataUrl) => manager.objects.addImage(dataUrl))
-      .catch((err) => {
-        console.error(err);
-      });
-  };
-
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) addImageFromFile(file);
-    e.target.value = "";
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) addImageFromFile(file);
-  };
-
-  const addImageFromUrl = async () => {
-    const trimmed = imageUrl.trim();
-    if (!trimmed || !manager) return;
-
-    let parsed: URL;
-    try {
-      parsed = new URL(trimmed);
-      if (!/^https?:$/i.test(parsed.protocol)) {
-        setUrlError("Use an http(s) link");
-        return;
-      }
-    } catch {
-      setUrlError("Invalid link");
-      return;
-    }
-
-    setUrlError(null);
-    setUrlLoading(true);
-    try {
-      await manager.objects.addImage(parsed.toString());
-      setImageUrl("");
-    } catch (err) {
-      console.error(err);
-      setUrlError("Couldn't load the image (CORS?)");
-    } finally {
-      setUrlLoading(false);
-    }
-  };
-
-  const sections: ElementSection[] = useMemo(
-    () => [
-      {
-        id: "elements-text",
-        title: "Text",
-        items: [
-          { label: "Heading", icon: Type, action: () => manager?.objects.addHeading() },
-          { label: "Subtitle", icon: Type, action: () => manager?.objects.addSubtitle() },
-          { label: "Paragraph", icon: AlignLeft, action: () => manager?.objects.addParagraph() },
-          { label: "Text", icon: Pencil, action: () => manager?.objects.addText("New text") },
-          { label: "Quote", icon: Quote, action: () => manager?.objects.addQuote() },
-        ],
-      },
-      {
-        id: "elements-shapes",
-        title: "Shapes",
-        items: [
-          { label: "Rectangle", icon: Square, action: () => manager?.objects.addRectangle() },
-          { label: "Circle", icon: Circle, action: () => manager?.objects.addCircle() },
-          { label: "Triangle", icon: Triangle, action: () => manager?.objects.addTriangle() },
-          { label: "Diamond", icon: Diamond, action: () => manager?.objects.addDiamond() },
-          { label: "Star", icon: Star, action: () => manager?.objects.addStar() },
-          { label: "Hexagon", icon: Hexagon, action: () => manager?.objects.addHexagon() },
-          { label: "Ellipse", icon: Ellipse, action: () => manager?.objects.addEllipse() },
-          { label: "Line", icon: Minus, action: () => manager?.objects.addLine() },
-          { label: "Divider", icon: Minus, action: () => manager?.objects.addDividerLine() },
-        ],
-      },
-    ],
-    [manager],
-  );
+  const {
+    manager,
+    sections,
+    frames,
+    fileInputRef,
+    frameInputRef,
+    frameDragging,
+    setFrameDragging,
+    isDragging,
+    setIsDragging,
+    imageUrl,
+    setImageUrl,
+    urlLoading,
+    urlError,
+    setUrlError,
+    addImageFromFile,
+    fillFrameFromFile,
+    handleImageFileChange,
+    handleFrameFileChange,
+    addImageFromUrl,
+  } = useElementLibrary();
 
   return (
     <div className="flex flex-col text-xs text-foreground">
@@ -152,6 +52,12 @@ export function SidebarElements() {
             if (manager) setIsDragging(true);
           }}
           onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) addImageFromFile(file);
+          }}
           className={cn(
             "flex h-9 w-full items-center gap-2 rounded-xl border border-dashed px-3 text-left transition-colors disabled:opacity-40",
             isDragging
@@ -199,6 +105,59 @@ export function SidebarElements() {
         {urlError && <p className="text-xs text-destructive">{urlError}</p>}
       </CollapsibleGroup>
 
+      <CollapsibleGroup id="elements-frames" title="Frames">
+        <input
+          type="file"
+          ref={frameInputRef}
+          onChange={handleFrameFileChange}
+          accept="image/*"
+          className="hidden"
+          disabled={!manager}
+        />
+        <div className="grid grid-cols-4 gap-1">
+          {frames.map(({ kind, label, icon: Icon }) => (
+            <button
+              key={kind}
+              type="button"
+              title={label}
+              disabled={!manager}
+              onClick={() => manager?.objects.addFrame(kind)}
+              className="flex flex-col items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            >
+              <Icon className="h-4 w-4" strokeWidth={1.5} />
+              <span className="max-w-full truncate text-xs leading-none">{label}</span>
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          disabled={!manager}
+          title="Puts the picture on the selected device screen. Double-click a device to pick one."
+          onClick={() => frameInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (manager) setFrameDragging(true);
+          }}
+          onDragLeave={() => setFrameDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setFrameDragging(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) fillFrameFromFile(file);
+          }}
+          className={cn(
+            "flex h-9 w-full items-center gap-2 rounded-xl border border-dashed px-3 text-left transition-colors disabled:opacity-40",
+            frameDragging
+              ? "border-foreground/30 bg-muted"
+              : "border-border/70 hover:border-foreground/20 hover:bg-muted/60",
+          )}
+        >
+          <ImagePlus className="size-4 shrink-0 text-muted-foreground" />
+          <span className="flex-1 truncate text-foreground/80">Add image</span>
+          <span className="text-xs text-muted-foreground">PNG, JPG</span>
+        </button>
+      </CollapsibleGroup>
+
       {sections.map((section) => (
         <CollapsibleGroup key={section.id} id={section.id} title={section.title}>
           <div className="grid grid-cols-4 gap-1">
@@ -212,9 +171,7 @@ export function SidebarElements() {
                 className="flex flex-col items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               >
                 <Icon className="h-4 w-4" strokeWidth={1.5} />
-                <span className="max-w-full truncate text-xs leading-none">
-                  {label}
-                </span>
+                <span className="max-w-full truncate text-xs leading-none">{label}</span>
               </button>
             ))}
           </div>

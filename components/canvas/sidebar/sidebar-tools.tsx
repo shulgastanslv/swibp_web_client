@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { FabricObject } from "fabric";
 import { useCanvasManager, useSlidesController } from "@/context/canvas-manager";
 import { useSlides } from "@/hooks/use-slides";
 import { useCanvasObjects } from "@/hooks/use-canvas-objects";
+import { CollapsibleGroup } from "@/components/ui/collapsible-group";
 import { cn } from "@/lib/utils";
 import type { Side, SlideNumberStyle } from "@/lib/canvas/objects";
 import { formatSlideNumber } from "@/lib/canvas/objects";
@@ -17,8 +19,25 @@ import {
 } from "@/lib/canvas/insights";
 import { useInsightUi } from "@/lib/canvas/insight-ui";
 import { CornerLeftUpIcon, CornerRightDownIcon, MapIcon } from "lucide-react";
+import { applyCarouselFont } from "@/lib/canvas/apply-carousel-font";
+import { loadGoogleFont, normalizeFontFamily, SUGGESTED_FONTS } from "@/lib/fonts/google-fonts";
 
 const NUMBER_STYLES: readonly SlideNumberStyle[] = ["1", "01", "1 / 8"];
+
+function firstFont(objects: FabricObject[]): string | null {
+  for (const obj of objects) {
+    const type = (obj.type || "").toLowerCase();
+    if (type === "text" || type === "i-text" || type === "textbox") {
+      const family = (obj as FabricObject & { fontFamily?: string }).fontFamily;
+      if (typeof family === "string" && family.trim()) return normalizeFontFamily(family);
+    }
+    const children = (obj as FabricObject & { getObjects?: () => FabricObject[] }).getObjects?.();
+    if (!children) continue;
+    const nested = firstFont(children);
+    if (nested) return nested;
+  }
+  return null;
+}
 
 const PLATFORMS: readonly InsightPlatform[] = ["Telegram", "Threads", "Instagram", "X"];
 
@@ -26,7 +45,6 @@ const actionButton =
   "h-8 rounded-full bg-muted px-2.5 text-xs text-foreground/80 transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40 flex items-center justify-center gap-1";
 const fieldInput =
   "h-8 w-full rounded-full bg-muted/40 px-3 text-xs outline-none placeholder:text-muted-foreground focus:bg-muted/60";
-const sectionTitle = "px-1 text-xs font-medium text-muted-foreground";
 
 export function SidebarTools() {
   const manager = useCanvasManager();
@@ -43,6 +61,17 @@ export function SidebarTools() {
   const [info, setInfo] = useState("text");
   const [textTick, setTextTick] = useState(0);
   const objects = useCanvasObjects();
+  const activeFont = firstFont(objects);
+
+  useEffect(() => {
+    for (const family of SUGGESTED_FONTS) void loadGoogleFont(family);
+  }, []);
+
+  const useFont = (family: string) => {
+    void loadGoogleFont(family).then(() => {
+      applyCarouselFont(family, manager);
+    });
+  };
 
   const slideIndex = Math.max(currentIndex, 0);
   const slideTotal = Math.max(slides.length, 1);
@@ -102,9 +131,35 @@ export function SidebarTools() {
   };
 
   return (
-    <div className="flex flex-col gap-3 px-2 py-2 text-foreground">
-      <section className="space-y-2">
-        <h3 className={cn(sectionTitle, "text-xs")}>Slides from text</h3>
+    <div className="flex flex-col text-xs text-foreground">
+      <CollapsibleGroup id="tools-fonts" title="Fonts">
+        <div className="grid grid-cols-2 gap-1">
+          {SUGGESTED_FONTS.map((family) => {
+            const selected = activeFont === family;
+            return (
+              <button
+                key={family}
+                type="button"
+                title={`Use ${family} on every text`}
+                disabled={!manager}
+                onClick={() => useFont(family)}
+                style={{ fontFamily: `"${family}", sans-serif` }}
+                className={cn(
+                  "h-8 truncate rounded-full px-2.5 text-left text-xs transition-colors disabled:pointer-events-none disabled:opacity-40",
+                  selected
+                    ? "bg-foreground text-background"
+                    : "bg-muted/40 text-foreground hover:bg-muted",
+                )}
+              >
+                {family}
+              </button>
+            );
+          })}
+        </div>
+      </CollapsibleGroup>
+
+      <CollapsibleGroup id="tools-slides" title="Slides from text">
+        <div className="space-y-2">
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -137,10 +192,10 @@ export function SidebarTools() {
         >
           Generate{lineCount > 0 ? ` · ${lineCount}` : ""}
         </button>
-      </section>
+        </div>
+      </CollapsibleGroup>
 
-      <section className="space-y-1.5">
-        <h3 className="px-1 text-xs font-medium text-muted-foreground">Slide numbers</h3>
+      <CollapsibleGroup id="tools-numbers" title="Slide numbers">
         <div className="grid grid-cols-4 gap-1">
           {NUMBER_STYLES.map((style) => (
             <button
@@ -155,10 +210,10 @@ export function SidebarTools() {
             </button>
           ))}
         </div>
-      </section>
+      </CollapsibleGroup>
 
-      <section className="space-y-2">
-        <h3 className="px-1 text-xs font-medium text-muted-foreground">Author handle</h3>
+      <CollapsibleGroup id="tools-handle" title="Author handle">
+        <div className="space-y-2">
         <input
           value={handle}
           onChange={(e) => setHandle(e.target.value)}
@@ -202,11 +257,12 @@ export function SidebarTools() {
             Bottom right
           </button>
         </div>
-      </section>
+        </div>
+      </CollapsibleGroup>
 
-      <section className="space-y-1">
+      <CollapsibleGroup id="tools-look" title="Look">
+        <div className="space-y-1">
         <div className="flex items-center gap-1.5">
-          <h3 className="px-1 text-xs font-medium text-muted-foreground">Look</h3>
           <button
             type="button"
             onClick={() => setShowAttention(!showAttention)}
@@ -216,7 +272,7 @@ export function SidebarTools() {
               showAttention && "bg-foreground text-background hover:bg-foreground",
             )}
           >
-            <MapIcon className="w-3.5 h-3.5" />
+           <MapIcon className="w-3.5 h-3.5" />
           </button>
           <span className="ml-auto px-1 text-xs tabular-nums text-muted-foreground">
             <span className="text-foreground">{reach.score}</span> {reach.label}
@@ -226,10 +282,11 @@ export function SidebarTools() {
           {attention.map((zone) => zone.label).join(" · ")}
         </p>
         <p className="px-1 text-xs text-muted-foreground">{reach.notes.join(" · ")}</p>
-      </section>
+        </div>
+      </CollapsibleGroup>
 
-      <section className="space-y-1.5">
-        <h3 className="px-1 text-xs font-medium text-muted-foreground">Swipe cues</h3>
+      <CollapsibleGroup id="tools-cues" title="Swipe cues">
+        <div className="space-y-1.5">
         <button
           type="button"
           disabled={!manager}
@@ -265,7 +322,8 @@ export function SidebarTools() {
             </button>
           ))}
         </div>
-      </section>
+        </div>
+      </CollapsibleGroup>
     </div>
   );
 }

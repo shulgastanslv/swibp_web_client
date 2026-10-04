@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
   checkCredentials,
@@ -26,6 +26,11 @@ type View = "login" | "register" | "forgot-password" | "reset-password" | "check
 type CheckKind = "verify" | "reset";
 
 const verifyRequests = new Map<string, ReturnType<typeof verifyEmail>>();
+
+function queryParam(name: string): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get(name);
+}
 
 function authErrorMessage(code: string): string {
   if (code === "AccessDenied") return "Google did not confirm this email.";
@@ -66,7 +71,6 @@ export function AuthModal({
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const searchParams = useSearchParams();
   const router = useRouter();
   const shownAuthError = useRef(false);
 
@@ -109,7 +113,7 @@ export function AuthModal({
 
   useEffect(() => {
     if (shownAuthError.current) return;
-    const code = searchParams.get("error");
+    const code = queryParam("error");
     if (!code) return;
     shownAuthError.current = true;
     setView("login");
@@ -118,7 +122,7 @@ export function AuthModal({
     const url = new URL(window.location.href);
     url.searchParams.delete("error");
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-  }, [searchParams]);
+  }, []);
 
   const handleSwitchView = (newView: View) => {
     setView(newView);
@@ -140,7 +144,7 @@ export function AuthModal({
     setIsLoading(true);
 
     try {
-      const callbackUrl = searchParams.get("callbackUrl") || "/";
+      const callbackUrl = queryParam("callbackUrl") || "/";
 
       // 1. Register a new account
       if (view === "register") {
@@ -232,7 +236,7 @@ export function AuthModal({
 
   const handleGoogleSignIn = () => {
     signIn("google", {
-      callbackUrl: searchParams.get("callbackUrl") || "/",
+      callbackUrl: queryParam("callbackUrl") || "/",
     });
   };
 

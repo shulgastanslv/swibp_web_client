@@ -87,8 +87,7 @@ export function BackgroundPattern() {
   };
 
   return (
-    <section className="space-y-1.5">
-      <h3 className="px-1 text-xs font-medium text-muted-foreground">Pattern</h3>
+    <div className="space-y-1.5">
       <div className="grid grid-cols-4 gap-1.5">
         {BACKGROUND_PATTERNS.map((pattern) => (
           <button
@@ -164,6 +163,6 @@ export function BackgroundPattern() {
           />
         </div>
       ) : null}
-    </section>
+    </div>
   );
 }

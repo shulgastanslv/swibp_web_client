@@ -309,6 +309,7 @@ export class CanvasManager {
       if (this.crop.active) return;
       const target = e.target as FabricObject & { swibpRole?: string } | undefined;
       if (target?.swibpRole === "split") this.objects.pickSplitImage();
+      else if (target?.swibpRole === "frame") this.objects.pickFrameImage(target);
       else if (target) this.objects.pickShapeImage(target);
     });
 
