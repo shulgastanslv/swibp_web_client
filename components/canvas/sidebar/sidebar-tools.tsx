@@ -1,34 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCanvasManager, useSlidesController } from "@/context/canvas-manager";
 import { useSlides } from "@/hooks/use-slides";
-import { CollapsibleGroup } from "@/components/ui/collapsible-group";
+import { useCanvasObjects } from "@/hooks/use-canvas-objects";
 import { cn } from "@/lib/utils";
 import type { Side, SlideNumberStyle } from "@/lib/canvas/objects";
 import { formatSlideNumber } from "@/lib/canvas/objects";
 import { slidesFromLines, splitSlideLines, TEXT_STYLES, type TextStyleId } from "@/lib/canvas/document";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import {
+  attentionZones,
+  scoreEngagement,
+  signalsFromSlide,
+  type InsightPlatform,
+} from "@/lib/canvas/insights";
+import { useInsightUi } from "@/lib/canvas/insight-ui";
+import { CornerLeftUpIcon, CornerRightDownIcon, MapIcon } from "lucide-react";
 
 const NUMBER_STYLES: readonly SlideNumberStyle[] = ["1", "01", "1 / 8"];
 
-const PLATFORMS = ["Telegram", "Threads", "Instagram", "X"] as const;
+const PLATFORMS: readonly InsightPlatform[] = ["Telegram", "Threads", "Instagram", "X"];
 
 const actionButton =
-  "h-7 rounded-full bg-muted px-2.5 text-[11px] text-foreground/80 transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40";
+  "h-8 rounded-full bg-muted px-2.5 text-xs text-foreground/80 transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40 flex items-center justify-center gap-1";
 const fieldInput =
-  "h-7 w-full rounded-full bg-muted/40 px-3 text-[11px] outline-none placeholder:text-muted-foreground focus:bg-muted/60";
-const sectionTitle = "px-1 text-[11px] font-medium text-muted-foreground";
+  "h-8 w-full rounded-full bg-muted/40 px-3 text-xs outline-none placeholder:text-muted-foreground focus:bg-muted/60";
+const sectionTitle = "px-1 text-xs font-medium text-muted-foreground";
 
 export function SidebarTools() {
   const manager = useCanvasManager();
   const slidesController = useSlidesController();
-  const { currentIndex, slides } = useSlides();
+  const { currentIndex, currentSlideId, slides } = useSlides();
+  const ratio = useCanvasStore((s) => s.currentRatio);
   const [prompt, setPrompt] = useState("");
   const [slideStyle, setSlideStyle] = useState<TextStyleId>("heading");
   const [handle, setHandle] = useState("@username");
-  const [platform, setPlatform] = useState<(typeof PLATFORMS)[number] | null>("Telegram");
+  const platform = useInsightUi((s) => s.platform);
+  const setPlatform = useInsightUi((s) => s.setPlatform);
+  const showAttention = useInsightUi((s) => s.showAttention);
+  const setShowAttention = useInsightUi((s) => s.setShowAttention);
   const [info, setInfo] = useState("text");
+  const [textTick, setTextTick] = useState(0);
+  const objects = useCanvasObjects();
 
   const slideIndex = Math.max(currentIndex, 0);
   const slideTotal = Math.max(slides.length, 1);
@@ -37,6 +51,36 @@ export function SidebarTools() {
     manager?.objects.addCornerHandle(handle.trim() || "@username", side, platform ?? undefined);
 
   const lineCount = splitSlideLines(prompt).length;
+  const insightPlatform = platform ?? "Instagram";
+
+  useEffect(() => {
+    if (!manager) return;
+    const bump = () => setTextTick((tick) => tick + 1);
+    manager.canvas.on("text:changed", bump);
+    return () => {
+      manager.canvas.off("text:changed", bump);
+    };
+  }, [manager]);
+
+  const reach = useMemo(() => {
+    const signals = slides.map((slide) => {
+      if (slide.id === currentSlideId && manager) {
+        return signalsFromSlide({
+          objects: manager.canvas.getObjects(),
+          background: manager.canvas.backgroundColor,
+          backgroundImage: manager.canvas.backgroundImage,
+        });
+      }
+      return signalsFromSlide({
+        objects: slide.canvasJSON.objects ?? [],
+        background: slide.canvasJSON.background ?? slide.canvasJSON.backgroundColor,
+        backgroundImage: slide.canvasJSON.backgroundImage,
+      });
+    });
+    return scoreEngagement(insightPlatform, signals);
+  }, [slides, currentSlideId, manager, insightPlatform, textTick, objects]);
+
+  const attention = attentionZones(insightPlatform, ratio);
 
   const generateSlides = () => {
     if (!lineCount || !slidesController) return;
@@ -59,8 +103,8 @@ export function SidebarTools() {
 
   return (
     <div className="flex flex-col gap-3 px-2 py-2 text-foreground">
-      <section className="space-y-1.5">
-        <h3 className={sectionTitle}>Slides from text</h3>
+      <section className="space-y-2">
+        <h3 className={cn(sectionTitle, "text-xs")}>Slides from text</h3>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -96,7 +140,7 @@ export function SidebarTools() {
       </section>
 
       <section className="space-y-1.5">
-        <h3 className={sectionTitle}>Slide numbers</h3>
+        <h3 className="px-1 text-xs font-medium text-muted-foreground">Slide numbers</h3>
         <div className="grid grid-cols-4 gap-1">
           {NUMBER_STYLES.map((style) => (
             <button
@@ -113,8 +157,8 @@ export function SidebarTools() {
         </div>
       </section>
 
-      <section className="space-y-1.5">
-        <h3 className={sectionTitle}>Author handle</h3>
+      <section className="space-y-2">
+        <h3 className="px-1 text-xs font-medium text-muted-foreground">Author handle</h3>
         <input
           value={handle}
           onChange={(e) => setHandle(e.target.value)}
@@ -138,13 +182,14 @@ export function SidebarTools() {
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-1">
+        <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             disabled={!manager}
             onClick={() => addHandle("left")}
             className={actionButton}
           >
+            <CornerLeftUpIcon className="w-3.5 h-3.5" />
             Top left
           </button>
           <button
@@ -153,13 +198,38 @@ export function SidebarTools() {
             onClick={() => addHandle("right")}
             className={actionButton}
           >
-            Top right
+            <CornerRightDownIcon className="w-3.5 h-3.5" />
+            Bottom right
           </button>
         </div>
       </section>
 
+      <section className="space-y-1">
+        <div className="flex items-center gap-1.5">
+          <h3 className="px-1 text-xs font-medium text-muted-foreground">Look</h3>
+          <button
+            type="button"
+            onClick={() => setShowAttention(!showAttention)}
+            className={cn(
+              actionButton,
+              "px-2",
+              showAttention && "bg-foreground text-background hover:bg-foreground",
+            )}
+          >
+            <MapIcon className="w-3.5 h-3.5" />
+          </button>
+          <span className="ml-auto px-1 text-xs tabular-nums text-muted-foreground">
+            <span className="text-foreground">{reach.score}</span> {reach.label}
+          </span>
+        </div>
+        <p className="px-1 text-xs text-muted-foreground">
+          {attention.map((zone) => zone.label).join(" · ")}
+        </p>
+        <p className="px-1 text-xs text-muted-foreground">{reach.notes.join(" · ")}</p>
+      </section>
+
       <section className="space-y-1.5">
-        <h3 className={sectionTitle}>Swipe cues</h3>
+        <h3 className="px-1 text-xs font-medium text-muted-foreground">Swipe cues</h3>
         <button
           type="button"
           disabled={!manager}

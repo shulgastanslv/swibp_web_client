@@ -13,7 +13,7 @@ interface CarouselStackProps {
 }
 
 const MAX_STACK = 3;
-const CARD_W = 64;
+const CARD_W = 72;
 const CARD_H = 96;
 const OFFSET = 10;
 

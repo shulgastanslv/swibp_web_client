@@ -8,7 +8,6 @@ import { ImportExportManager } from "./import_export";
 import { ObjectFactory } from "./objects";
 import { EffectsManager } from "./effects";
 import { LayoutManager } from "./layouts";
-import { ArrowManager, ConnectorArrow } from "./arrow";
 import { Emitter } from "./events";
 import { captureCanvasThumbnail } from "./thumbnail";
 import { withRemoteImageCors } from "./image-cors";
@@ -41,7 +40,6 @@ export class CanvasManager {
   readonly io: ImportExportManager;
   readonly effects: EffectsManager;
   readonly layouts: LayoutManager;
-  readonly arrows: ArrowManager;
   readonly crop: ImageCropSession;
 
   private readonly history = new HistoryStack<CanvasState>();
@@ -58,7 +56,6 @@ export class CanvasManager {
     this.io = new ImportExportManager(this.canvas);
     this.effects = new EffectsManager(this.canvas);
     this.layouts = new LayoutManager(this.canvas);
-    this.arrows = new ArrowManager(this.canvas);
     this.crop = new ImageCropSession(this.canvas, (changed) => {
       if (this.disposed || this.silentDepth > 0) return;
       if (changed) this.commit();
@@ -197,12 +194,6 @@ export class CanvasManager {
     this.canvas.backgroundColor = new Pattern({ source: tile, repeat: "repeat" });
     this.canvas.requestRenderAll();
     if (options?.commit !== false) this.commit();
-  }
-
-  connectSelectedObjects(): ConnectorArrow | null {
-    const [from, to] = this.canvas.getActiveObjects();
-    if (!from || !to) return null;
-    return this.arrows.connect(from, to);
   }
 
   /** Fits the logical canvas (nativeW × nativeH) into the screen at `scale`. */

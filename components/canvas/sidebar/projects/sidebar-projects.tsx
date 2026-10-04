@@ -142,19 +142,19 @@ export function SidebarProjects() {
         </div>
       </div>
 
-      <div className="relative flex items-center p-1">
-        <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
+      <div className="relative flex items-center px-2 gap-2">
+        <Search className="absolute left-6 size-4 text-muted-foreground pointer-events-none" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search projects..."
-          className="w-full h-8 pl-8 pr-7 text-xs bg-muted/50 rounded-full placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+          className="w-full h-8 pl-10 pr-10 text-xs bg-muted/50 rounded-full placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
         />
         {search && (
           <button
             type="button"
             onClick={() => setSearch("")}
-            className="absolute right-2 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>

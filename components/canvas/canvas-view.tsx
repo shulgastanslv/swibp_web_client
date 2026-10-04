@@ -3,6 +3,8 @@
 import React, { useRef, useEffect } from "react";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { useAttachCanvas, useCanvasManager } from "@/context/canvas-manager";
+import { AttentionMap } from "@/components/canvas/attention-map";
+import { useInsightUi } from "@/lib/canvas/insight-ui";
 
 const PADDING = 48;
 
@@ -13,7 +15,10 @@ export function CanvasView() {
   const manager = useCanvasManager();
 
   const canvasDimensions = useCanvasStore((s) => s.canvasDimensions);
+  const ratio = useCanvasStore((s) => s.currentRatio);
   const zoom = useCanvasStore((s) => s.zoom);
+  const showAttention = useInsightUi((s) => s.showAttention);
+  const platform = useInsightUi((s) => s.platform);
 
   useEffect(() => {
     const el = canvasElementRef.current;
@@ -55,7 +60,7 @@ export function CanvasView() {
       className="flex-1 flex items-center justify-center overflow-auto bg-muted/20"
     >
       <div
-        className="shadow-2xl ring-1 ring-border/20 bg-white"
+        className="relative shadow-2xl ring-1 ring-border/20 bg-white"
         onDragOver={(event) => {
           if ([...event.dataTransfer.types].includes("Files")) event.preventDefault();
         }}
@@ -67,6 +72,7 @@ export function CanvasView() {
         }}
       >
         <canvas ref={canvasElementRef} />
+        {showAttention ? <AttentionMap platform={platform ?? "Instagram"} ratio={ratio} /> : null}
       </div>
     </div>
   );

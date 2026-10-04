@@ -380,7 +380,7 @@ export function Header({ onPreview }: HeaderProps) {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 bg-background/50 backdrop-blur-sm">
                 <DropdownMenuLabel className="truncate text-xs">
                   {userEmail}
                 </DropdownMenuLabel>
@@ -417,40 +417,7 @@ export function Header({ onPreview }: HeaderProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  title="Menu"
-                >
-                  <User className="w-3.5 h-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  className="cursor-pointer text-xs font-medium"
-                  onClick={() => setIsAuthModalOpen(true)}
-                >
-                  <User className="w-3.5 h-3.5 mr-2" />
-                  <span>Sign in</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <ThemeSwitcherMenu />
-                <DropdownMenuItem
-                  className="cursor-pointer text-xs"
-                  onClick={() => setIsSocialOpen(true)}
-                >
-                  <Send className="w-3.5 h-3.5 mr-2 text-sky-500" />
-                  <span>Telegram & Threads</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-
+          ) : null}
         </div>
       </header>
 

@@ -2,6 +2,7 @@ import {
   Canvas,
   Rect,
   Circle,
+  Ellipse,
   Triangle,
   Line,
   Textbox,
@@ -20,15 +21,26 @@ import "./fabric-props";
 export type { SlideNumberStyle };
 export { formatSlideNumber };
 
-const CODE_BLOCK_BG_4K =
-  "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=3840&h=2160&q=80";
-
 export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 export type Side = "left" | "right";
 
 const IMAGE_SHAPES = new Set(["rect", "circle", "triangle", "ellipse", "polygon", "path"]);
 
-/** Shapes that can be filled with a picture cropped to their outline. */
+function polygonPoints(sides: number, radius: number) {
+  return Array.from({ length: sides }, (_, index) => {
+    const angle = -Math.PI / 2 + (index * 2 * Math.PI) / sides;
+    return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+  });
+}
+
+function starPoints(radius = 80) {
+  return Array.from({ length: 10 }, (_, index) => {
+    const angle = -Math.PI / 2 + (index * Math.PI) / 5;
+    const r = index % 2 === 0 ? radius : radius * 0.42;
+    return { x: Math.cos(angle) * r, y: Math.sin(angle) * r };
+  });
+}
+
 export function canFillShape(type: string | undefined) {
   return !!type && IMAGE_SHAPES.has(type);
 }
@@ -560,6 +572,40 @@ export class ObjectFactory {
     return triangle;
   }
 
+  addDiamond(x?: number, y?: number) {
+    return this.addFilledPolygon(polygonPoints(4, 80), x, y);
+  }
+
+  addStar(x?: number, y?: number) {
+    return this.addFilledPolygon(starPoints(), x, y);
+  }
+
+  addHexagon(x?: number, y?: number) {
+    return this.addFilledPolygon(polygonPoints(6, 80), x, y);
+  }
+
+  addEllipse(x?: number, y?: number) {
+    const ellipse = new Ellipse({
+      rx: 90,
+      ry: 55,
+      fill: this.slotColor("accent", "#3b82f6"),
+      ...this.getPosition(x, y),
+    });
+    this.mark(ellipse, { swibpSlot: "accent" });
+    this.addToCanvas(ellipse);
+    return ellipse;
+  }
+
+  private addFilledPolygon(points: { x: number; y: number }[], x?: number, y?: number) {
+    const shape = new Polygon(points, {
+      fill: this.slotColor("accent", "#3b82f6"),
+      ...this.getPosition(x, y),
+    });
+    this.mark(shape, { swibpSlot: "accent" });
+    this.addToCanvas(shape);
+    return shape;
+  }
+
   addArrow(x?: number, y?: number) {
     const pos = this.getPosition(x, y);
     const length = 200;
@@ -711,191 +757,6 @@ export class ObjectFactory {
       this.canvas.renderAll();
     }
     return tb;
-  }
-
-  addCodeBlock(
-    code = "// Paste your code",
-    x?: number,
-    y?: number,
-  ): Group {
-    const pos = this.getPosition(x, y);
-    const textW = 760;
-    const padX = 36;
-    const padTop = 52;
-    const padBottom = 28;
-    const radius = 16;
-    const totalW = textW + padX * 2;
-    const minH = 200;
-
-    const codeText = new Textbox(code, {
-      width: textW,
-      fontSize: 26,
-      fontFamily: "Consolas, 'Courier New', monospace",
-      fill: "#f8fafc",
-      lineHeight: 1.45,
-      splitByGrapheme: true,
-      editable: true,
-      originX: "left",
-      originY: "top",
-    });
-
-    const contentHeight = () =>
-      Math.max(minH, codeText.calcTextHeight() + padTop + padBottom);
-
-    let totalH = contentHeight();
-
-    const pinTopLeft = (obj: FabricObject, height: number) => {
-      obj.set({
-        left: -totalW / 2,
-        top: -height / 2,
-        originX: "left",
-        originY: "top",
-      });
-    };
-
-    let photo: FabricObject = new Rect({
-      width: totalW,
-      height: totalH,
-      fill: "#0d1117",
-      rx: radius,
-      ry: radius,
-      evented: false,
-      selectable: false,
-    });
-    pinTopLeft(photo, totalH);
-
-    let naturalW = totalW;
-    let naturalH = totalH;
-
-    const coverPhoto = (img: Image, height: number) => {
-      const scale = Math.max(totalW / naturalW, height / naturalH);
-      const cropW = totalW / scale;
-      const cropH = height / scale;
-      img.set({
-        cropX: Math.max(0, (naturalW - cropW) / 2),
-        cropY: Math.max(0, (naturalH - cropH) / 2),
-        width: cropW,
-        height: cropH,
-        scaleX: scale,
-        scaleY: scale,
-      });
-      pinTopLeft(img, height);
-    };
-
-    const scrim = new Rect({
-      width: totalW,
-      height: totalH,
-      rx: radius,
-      ry: radius,
-      fill: "rgba(6, 10, 18, 0.58)",
-      evented: false,
-      selectable: false,
-    });
-    pinTopLeft(scrim, totalH);
-
-    const dots = ["#ff5f57", "#febc2e", "#28c840"].map((fill, i) => {
-      const dot = new Circle({
-        radius: 6,
-        fill,
-        originX: "left",
-        originY: "top",
-        evented: false,
-        selectable: false,
-      });
-      dot.set({
-        left: -totalW / 2 + 22 + i * 20,
-        top: -totalH / 2 + 18,
-      });
-      return dot;
-    });
-
-    codeText.set({
-      left: -textW / 2,
-      top: -totalH / 2 + padTop,
-    });
-
-    const clip = new Rect({
-      width: totalW,
-      height: totalH,
-      rx: radius,
-      ry: radius,
-      originX: "center",
-      originY: "center",
-    });
-
-    const group = new Group([photo, scrim, ...dots, codeText], {
-      ...pos,
-      subTargetCheck: true,
-      interactive: true,
-      clipPath: clip,
-    });
-
-    const syncFrame = () => {
-      const nextH = contentHeight();
-      if (Math.abs(nextH - totalH) < 1) return;
-      totalH = nextH;
-
-      if (photo.type === "image") coverPhoto(photo as Image, totalH);
-      else {
-        photo.set({ height: totalH });
-        pinTopLeft(photo, totalH);
-      }
-
-      scrim.set({ height: totalH });
-      pinTopLeft(scrim, totalH);
-      dots.forEach((dot, i) => {
-        dot.set({
-          left: -totalW / 2 + 22 + i * 20,
-          top: -totalH / 2 + 18,
-        });
-      });
-      codeText.set({ top: -totalH / 2 + padTop });
-      clip.set({ height: totalH });
-      relayout();
-    };
-
-    const relayout = () => {
-      const originY = group.originY ?? "center";
-      const topBefore = group.top ?? 0;
-      const heightBefore = group.getScaledHeight();
-      const topEdge =
-        originY === "center" ? topBefore - heightBefore / 2 : topBefore;
-
-      group.set({ dirty: true });
-      group.triggerLayout();
-
-      const heightAfter = group.getScaledHeight();
-      if (originY === "center") {
-        group.set({ top: topEdge + heightAfter / 2 });
-      }
-      group.setCoords();
-      this.canvas.requestRenderAll();
-    };
-
-    codeText.on("changed", syncFrame);
-    this.addToCanvas(group);
-    codeText.enterEditing();
-    codeText.selectAll();
-    this.canvas.requestRenderAll();
-
-    void Image.fromURL(CODE_BLOCK_BG_4K, { crossOrigin: "anonymous" })
-      .then((img) => {
-        if (!group.canvas) return;
-        naturalW = img.width || totalW;
-        naturalH = img.height || totalH;
-        coverPhoto(img, totalH);
-        img.set({ evented: false, selectable: false });
-        const index = group.getObjects().indexOf(photo);
-        group.remove(photo);
-        group.insertAt(Math.max(index, 0), img);
-        photo = img;
-        relayout();
-      })
-      .catch((err) => {
-        console.error("Code block background failed:", err);
-      });
-
-    return group;
   }
 
   addHandle(username = "@username", x?: number, y?: number): Group {
