@@ -115,30 +115,35 @@ export function useProject() {
       store.setLoadingProject(true);
       setProjectInUrl(projectId);
 
-      const res = await getProjectById(projectId);
-      if (seq !== loadSeq.current) {
-        return { success: false as const, error: "Cancelled" };
-      }
+      try {
+        const res = await getProjectById(projectId);
+        if (seq !== loadSeq.current) {
+          return { success: false as const, error: "Cancelled" };
+        }
 
-      if (!res.success) {
-        store.setLoadingProject(false);
-        return { success: false as const, error: "Couldn't load" };
-      }
+        if (!res.success) {
+          return { success: false as const, error: "Couldn't load" };
+        }
 
-      slidesController?.saveCurrent();
-      store.loadProjectState(res.project);
-      if (seq !== loadSeq.current) {
-        return { success: false as const, error: "Cancelled" };
-      }
+        slidesController?.saveCurrent();
+        store.loadProjectState(res.project);
+        if (seq !== loadSeq.current) {
+          return { success: false as const, error: "Cancelled" };
+        }
 
-      await slidesController?.loadCurrent();
-      if (seq !== loadSeq.current) {
-        return { success: false as const, error: "Cancelled" };
-      }
+        await slidesController?.loadCurrent();
+        if (seq !== loadSeq.current) {
+          return { success: false as const, error: "Cancelled" };
+        }
 
-      useCanvasStore.getState().markSaved();
-      scheduleThumbnailHydration(projectId, res.isOwner);
-      return { success: true as const };
+        useCanvasStore.getState().markSaved();
+        scheduleThumbnailHydration(projectId, res.isOwner);
+        return { success: true as const };
+      } finally {
+        if (seq === loadSeq.current) {
+          useCanvasStore.getState().setLoadingProject(false);
+        }
+      }
     },
     [slidesController],
   );

@@ -254,8 +254,8 @@ export function SidebarProjects() {
 
                 <div className="flex items-center justify-between w-full gap-2">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium truncate">{p.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-xs font-medium truncate line-clamp-1 max-w-full text-wrap">{p.title}</p>
+                    <p className="text-xs text-muted-foreground truncate line-clamp-1">
                       {p.slideCount} slides · {p.aspectRatio}
                       {isActive ? " · Open" : ""}
                     </p>

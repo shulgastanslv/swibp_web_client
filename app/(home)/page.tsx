@@ -95,11 +95,11 @@ export default function CarouselStudio() {
     setFocusInspector(manager.getActiveObject() != null);
     const openForClick = (event: { target?: unknown }) => {
       if (useCanvasStore.getState().handActive) return;
-      setFocusInspector(Boolean(event.target));
+      if (!event.target) setFocusInspector(false);
     };
     manager.canvas.on("mouse:down", openForClick);
     const unsubscribe = manager.on("selection", (object) => {
-      setFocusInspector(object != null);
+      if (object) setFocusInspector(true);
     });
 
     return () => {
@@ -160,18 +160,19 @@ export default function CarouselStudio() {
             <CanvasView />
             {!focusMode && <ReferencePanel />}
             {!focusMode && <AutoFlowPrompt />}
+            {focusMode && focusInspector && (
+              <div className="absolute inset-y-0 right-0 z-20 shadow-xl">
+                <RightSidebar
+                  isRightCollapsed={false}
+                  setIsRightCollapsed={() => setFocusInspector(false)}
+                />
+              </div>
+            )}
           </div>
           {!focusMode && <SlideNavigator />}
         </main>
 
-        {focusMode ? (
-          focusInspector && (
-            <RightSidebar
-              isRightCollapsed={false}
-              setIsRightCollapsed={() => setFocusInspector(false)}
-            />
-          )
-        ) : (
+        {!focusMode && (
           <RightSidebar
             isRightCollapsed={isRightCollapsed}
             setIsRightCollapsed={setIsRightCollapsed}

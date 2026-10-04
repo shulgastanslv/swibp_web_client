@@ -6,6 +6,7 @@ import { useAttachCanvas, useCanvasManager } from "@/context/canvas-manager";
 import { AttentionMap } from "@/components/canvas/attention-map";
 import { useInsightUi } from "@/lib/canvas/insight-ui";
 import { clampZoom } from "@/components/canvas/zoom-controls";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const PADDING = 48;
@@ -19,6 +20,7 @@ export function CanvasView() {
   const canvasDimensions = useCanvasStore((s) => s.canvasDimensions);
   const ratio = useCanvasStore((s) => s.currentRatio);
   const zoom = useCanvasStore((s) => s.zoom);
+  const isLoadingProject = useCanvasStore((s) => s.isLoadingProject);
   const handActive = useCanvasStore((s) => s.handActive);
   const showAttention = useInsightUi((s) => s.showAttention);
   const platform = useInsightUi((s) => s.platform);
@@ -182,7 +184,7 @@ export function CanvasView() {
     <div
       ref={containerRef}
       className={cn(
-        "min-h-0 flex-1 overflow-auto bg-muted/20",
+        "relative min-h-0 flex-1 overflow-auto bg-muted/20",
         panning && (grabbing ? "cursor-grabbing" : "cursor-grab"),
       )}
     >
@@ -204,6 +206,29 @@ export function CanvasView() {
         {showAttention ? <AttentionMap platform={platform ?? "Instagram"} ratio={ratio} /> : null}
       </div>
       </div>
+      {isLoadingProject && (
+        <div
+          className="absolute inset-0 z-20 flex items-center justify-center bg-muted/40"
+          aria-busy="true"
+          aria-label="Loading project"
+        >
+          <div
+            className="flex flex-col gap-4 bg-background p-8 shadow-2xl ring-1 ring-border/20"
+            style={{
+              aspectRatio: `${canvasDimensions.width} / ${canvasDimensions.height}`,
+              width: stage.width > 0 ? stage.width : undefined,
+              height: stage.height > 0 ? stage.height : undefined,
+              maxWidth: "calc(100% - 96px)",
+              maxHeight: "calc(100% - 96px)",
+            }}
+          >
+            <Skeleton className="h-8 w-2/3 rounded-md" />
+            <Skeleton className="min-h-24 w-full flex-1 rounded-md" />
+            <Skeleton className="h-4 w-full rounded-md" />
+            <Skeleton className="h-4 w-4/5 rounded-md" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

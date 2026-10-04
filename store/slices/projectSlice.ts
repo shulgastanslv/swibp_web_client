@@ -74,7 +74,6 @@ export const createProjectSlice: StateCreator<ProjectStore, [], [], ProjectSlice
       projectTitle: title,
       isDirty: false,
       lastSavedAt: new Date().toISOString(),
-      isLoadingProject: false,
     });
   },
 

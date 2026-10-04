@@ -58,7 +58,7 @@ export function SidebarTools() {
   const setPlatform = useInsightUi((s) => s.setPlatform);
   const showAttention = useInsightUi((s) => s.showAttention);
   const setShowAttention = useInsightUi((s) => s.setShowAttention);
-  const [info, setInfo] = useState("text");
+  const [info, setInfo] = useState("swipe");
   const [textTick, setTextTick] = useState(0);
   const objects = useCanvasObjects();
   const activeFont = firstFont(objects);
@@ -261,67 +261,101 @@ export function SidebarTools() {
       </CollapsibleGroup>
 
       <CollapsibleGroup id="tools-look" title="Look">
-        <div className="space-y-1">
-        <div className="flex items-center gap-1.5">
+        <div className="space-y-2">
+          <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+            Where people look on {insightPlatform}, plus a reach estimate from slides, text length, and contrast.
+          </p>
           <button
             type="button"
             onClick={() => setShowAttention(!showAttention)}
             className={cn(
               actionButton,
-              "px-2",
+              "w-full justify-between px-3",
               showAttention && "bg-foreground text-background hover:bg-foreground",
             )}
           >
-           <MapIcon className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5">
+              <MapIcon className="size-3.5" />
+              Heat map
+            </span>
+            <span>{showAttention ? "On" : "Off"}</span>
           </button>
-          <span className="ml-auto px-1 text-xs tabular-nums text-muted-foreground">
-            <span className="text-foreground">{reach.score}</span> {reach.label}
-          </span>
-        </div>
-        <p className="px-1 text-xs text-muted-foreground">
-          {attention.map((zone) => zone.label).join(" · ")}
-        </p>
-        <p className="px-1 text-xs text-muted-foreground">{reach.notes.join(" · ")}</p>
+          {showAttention && (
+            <ul className="space-y-1.5 px-1">
+              {attention.map((zone) => (
+                <li key={zone.id} className="text-xs leading-snug">
+                  <span className="text-foreground">{zone.label}</span>
+                  <span className="text-muted-foreground"> · {zone.hint}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="space-y-1 px-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-foreground">Reach</span>
+              <span className="tabular-nums text-muted-foreground">
+                <span className="text-foreground">{reach.score}</span> {reach.label}
+              </span>
+            </div>
+            {(
+              [
+                ["Slides", reach.notes[0]],
+                ["Text", reach.notes[1]],
+                ["Contrast", reach.notes[2]],
+              ] as const
+            ).map(([name, note]) => (
+              <div key={name} className="flex items-baseline justify-between gap-2 text-muted-foreground">
+                <span>{name}</span>
+                <span className="truncate text-foreground/80">{note}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </CollapsibleGroup>
 
       <CollapsibleGroup id="tools-cues" title="Swipe cues">
-        <div className="space-y-1.5">
-        <button
-          type="button"
-          disabled={!manager}
-          onClick={() => manager?.objects.addSwipeArrow()}
-          className={cn(actionButton, "flex w-full items-center justify-between px-3 text-xs")}
-        >
-          <span>Arrow</span>
-          <span className="font-mono">-&gt;</span>
-        </button>
-        <input
-          value={info}
-          onChange={(e) => setInfo(e.target.value)}
-          placeholder="text"
-          className={fieldInput}
-        />
-        <div className="grid grid-cols-2 gap-1 text-xs">
-          {(
-            [
-              `[${info.trim() || "text"}]`,
-              info.trim() || "text",
-              `(${info.trim() || "text"})`,
-              `- ${info.trim() || "text"}`,
-            ] as const
-          ).map((cue) => (
-            <button
-              key={cue}
-              type="button"
-              disabled={!manager}
-              onClick={() => manager?.objects.addSwipeCue(cue)}
-              className={cn(actionButton, "truncate px-2 text-xs")}
-            >
-              {cue}
-            </button>
-          ))}
-        </div>
+        <div className="space-y-2">
+          <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+            A hint that another slide is next. The arrow sits bottom right, the caption bottom left.
+          </p>
+          <button
+            type="button"
+            disabled={!manager}
+            onClick={() => manager?.objects.addSwipeArrow()}
+            className={cn(actionButton, "w-full justify-between px-3")}
+          >
+            <span>Arrow</span>
+            <span className="font-mono text-muted-foreground">→</span>
+          </button>
+          <input
+            value={info}
+            onChange={(e) => setInfo(e.target.value)}
+            placeholder="Caption, e.g. swipe"
+            aria-label="Swipe caption"
+            className={fieldInput}
+          />
+          <div className="grid grid-cols-2 gap-1">
+            {(
+              [
+                ["Brackets", `[${info.trim() || "swipe"}]`],
+                ["Plain", info.trim() || "swipe"],
+                ["Parentheses", `(${info.trim() || "swipe"})`],
+                ["Dash", `– ${info.trim() || "swipe"}`],
+              ] as const
+            ).map(([name, cue]) => (
+              <button
+                key={name}
+                type="button"
+                disabled={!manager}
+                title={`Add “${cue}” at the bottom left`}
+                onClick={() => manager?.objects.addSwipeCue(cue)}
+                className={cn(actionButton, "flex-col gap-0.5 px-2 py-1.5 h-auto")}
+              >
+                <span className="max-w-full truncate text-foreground">{cue}</span>
+                <span className="text-[10px] text-muted-foreground">{name}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </CollapsibleGroup>
     </div>
