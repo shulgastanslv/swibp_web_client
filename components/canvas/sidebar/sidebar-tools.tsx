@@ -5,11 +5,11 @@ import { useCanvasManager, useSlidesController } from "@/context/canvas-manager"
 import { useSlides } from "@/hooks/use-slides";
 import { CollapsibleGroup } from "@/components/ui/collapsible-group";
 import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
 import type { Side, SlideNumberStyle } from "@/lib/canvas/objects";
 import { formatSlideNumber } from "@/lib/canvas/objects";
 import { slidesFromLines, splitSlideLines, TEXT_STYLES, type TextStyleId } from "@/lib/canvas/document";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import { ScreenSplit } from "@/components/canvas/sidebar/screen-split";
 
 const NUMBER_STYLES: readonly SlideNumberStyle[] = ["1", "01", "1 / 8"];
 
@@ -175,9 +175,10 @@ const HOOK_GROUPS = [
 
 
 const actionButton =
-  "rounded-full border-0 bg-muted shadow-none transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40";
+  "h-7 rounded-full bg-muted px-2.5 text-[11px] text-foreground/80 transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40";
 const fieldInput =
-  "h-8 w-full rounded-xl border-0 bg-muted/50 px-3 text-xs outline-none placeholder:text-muted-foreground focus:bg-muted/60";
+  "h-7 w-full rounded-full bg-muted/40 px-3 text-[11px] outline-none placeholder:text-muted-foreground focus:bg-muted/60";
+const sectionTitle = "px-1 text-[11px] font-medium text-muted-foreground";
 
 export function SidebarTools() {
   const manager = useCanvasManager();
@@ -217,15 +218,17 @@ export function SidebarTools() {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-2 text-xs text-foreground">
-      <section className="space-y-2">
-        <h3 className="px-1.5 pt-1 text-xs font-semibold text-foreground/90">Slides from text</h3>
+    <div className="flex flex-col gap-3 px-2 py-2 text-foreground">
+      <ScreenSplit />
+
+      <section className="space-y-1.5">
+        <h3 className={sectionTitle}>Slides from text</h3>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Paste a list or a post. Each line becomes a slide."
-          rows={4}
-          className="w-full resize-none rounded-xl border-0 bg-muted/30 px-3 py-2 text-xs leading-relaxed outline-none placeholder:text-muted-foreground focus:bg-muted/40"
+          placeholder="One line, one slide"
+          rows={3}
+          className="w-full resize-none rounded-xl bg-muted/30 px-3 py-2 text-xs leading-relaxed outline-none placeholder:text-muted-foreground focus:bg-muted/40"
         />
         <div className="grid grid-cols-3 gap-1">
           {TEXT_STYLES.map((style) => (
@@ -234,10 +237,10 @@ export function SidebarTools() {
               type="button"
               onClick={() => setSlideStyle(style.id)}
               className={cn(
-                "h-7 rounded-xl border-0 px-1 text-[11px] transition-colors",
+                "h-7 rounded-full px-1 text-xs transition-colors",
                 slideStyle === style.id
                   ? "bg-foreground text-background"
-                  : "bg-muted/30 text-foreground/80 hover:bg-muted/60",
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               )}
             >
               {style.label}
@@ -248,15 +251,15 @@ export function SidebarTools() {
           type="button"
           disabled={!lineCount || !slidesController}
           onClick={generateSlides}
-          className={cn(actionButton, "h-8 w-full px-3 text-xs font-medium text-foreground/80")}
+          className={cn(actionButton, "w-full")}
         >
           Generate{lineCount > 0 ? ` · ${lineCount}` : ""}
         </button>
       </section>
-      <Separator className="my-2" />
-      <section className="space-y-2 p-2">
-        <h3 className="px-1.5 pt-1 text-xs font-semibold text-foreground/90">Slide numbers</h3>
-        <div className="grid grid-cols-3 gap-1">
+
+      <section className="space-y-1.5">
+        <h3 className={sectionTitle}>Slide numbers</h3>
+        <div className="grid grid-cols-4 gap-1">
           {NUMBER_STYLES.map((style) => (
             <button
               key={style}
@@ -264,36 +267,36 @@ export function SidebarTools() {
               disabled={!manager}
               title={`Add "${formatSlideNumber(style, slideIndex, slideTotal)}" to the top-left corner`}
               onClick={() => manager?.objects.addSlideNumber(style, slideIndex, slideTotal)}
-              className={cn(actionButton, "h-8 px-2 text-xs text-foreground/80")}
+              className={actionButton}
             >
               {formatSlideNumber(style, slideIndex, slideTotal)}
             </button>
           ))}
         </div>
       </section>
-      <Separator className="my-2" />
-      <section className="space-y-2 p-2">
-        <h3 className="px-1.5 pt-1 text-xs font-semibold text-foreground/90">Author handle</h3>
+
+      <section className="space-y-1.5">
+        <h3 className={sectionTitle}>Author handle</h3>
         <input
           value={handle}
           onChange={(e) => setHandle(e.target.value)}
           placeholder="@username"
           className={fieldInput}
         />
-        <div className="grid grid-cols-4 gap-1">
+        <div className="flex gap-1">
           {PLATFORMS.map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => setPlatform(platform === p ? null : p)}
               className={cn(
-                "h-7 rounded-xl border-0 px-1 text-[11px] transition-colors",
+                "h-7 min-w-0 flex-1 truncate rounded-full px-1 text-xs transition-colors",
                 platform === p
                   ? "bg-foreground text-background"
-                  : "bg-muted/30 text-foreground/80 hover:bg-muted/60",
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               )}
             >
-              {p}
+              {p === "Instagram" ? "Insta" : p === "Telegram" ? "TG" : p}
             </button>
           ))}
         </div>
@@ -302,31 +305,31 @@ export function SidebarTools() {
             type="button"
             disabled={!manager}
             onClick={() => addHandle("left")}
-            className={cn(actionButton, "h-8 px-3 text-xs text-foreground/80")}
+            className={actionButton}
           >
-            ↖ Top left
+            Top left
           </button>
           <button
             type="button"
             disabled={!manager}
             onClick={() => addHandle("right")}
-            className={cn(actionButton, "h-8 px-3 text-xs text-foreground/80")}
+            className={actionButton}
           >
-            Top right ↗
+            Top right
           </button>
         </div>
       </section>
-      <Separator className="my-2" />
-      <section className="space-y-2 p-2">
-        <h3 className="px-1.5 pt-1 text-xs font-semibold text-foreground/90">Swipe cues</h3>
+
+      <section className="space-y-1.5">
+        <h3 className={sectionTitle}>Swipe cues</h3>
         <button
           type="button"
           disabled={!manager}
           onClick={() => manager?.objects.addSwipeArrow()}
-          className={cn(actionButton, "flex h-8 w-full items-center justify-between px-3 text-xs text-foreground/80")}
+          className={cn(actionButton, "flex w-full items-center justify-between px-3")}
         >
-          <span>Swipe arrow</span>
-          <span className="font-mono text-foreground">-&gt;</span>
+          <span>Arrow</span>
+          <span className="font-mono">-&gt;</span>
         </button>
         <input
           value={info}
@@ -338,40 +341,36 @@ export function SidebarTools() {
           type="button"
           disabled={!manager}
           onClick={() => manager?.objects.addSwipeInfo(info.trim() || "info")}
-          className={cn(actionButton, "flex h-8 w-full items-center justify-between px-3 text-xs text-foreground/80")}
+          className={cn(actionButton, "flex w-full items-center justify-between px-3")}
         >
-          <span className="font-mono text-foreground">// {info.trim() || "info"}</span>
-          <span className="font-mono text-foreground">-&gt;</span>
+          <span className="truncate font-mono">// {info.trim() || "info"}</span>
+          <span className="font-mono">-&gt;</span>
         </button>
       </section>
-      <Separator className="my-2" />
-      <div className="flex flex-col gap-2">
-        {HOOK_GROUPS.map((group, index) => (
-          <div key={group.id} className="overflow-hidden">
-            <CollapsibleGroup
-              id={group.id}
-              title={group.title}
-              defaultOpen={index === 0}
-              className="border-0"
-            >
-              <div className="flex flex-col gap-1">
-                {group.hooks.map((hook) => (
-                  <button
-                    key={hook}
-                    type="button"
-                    disabled={!manager}
-                    onClick={() => manager?.objects.addHeading(hook)}
-                    className={cn(
-                      actionButton,
-                      "px-3 py-2 text-left text-xs leading-snug text-foreground/80 disabled:pointer-events-none disabled:opacity-40",
-                    )}
-                  >
-                    {hook}
-                  </button>
-                ))}
-              </div>
-            </CollapsibleGroup>
-          </div>
+
+      <div className="-mx-2">
+        {HOOK_GROUPS.map((group) => (
+          <CollapsibleGroup
+            key={group.id}
+            id={group.id}
+            title={group.title}
+            defaultOpen={false}
+            className="border-border/40"
+          >
+            <div className="-mx-1 flex flex-col gap-0.5">
+              {group.hooks.map((hook) => (
+                <button
+                  key={hook}
+                  type="button"
+                  disabled={!manager}
+                  onClick={() => manager?.objects.addHeading(hook)}
+                  className="rounded-lg px-2 py-1.5 text-left text-xs leading-snug text-foreground/80 transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40"
+                >
+                  {hook}
+                </button>
+              ))}
+            </div>
+          </CollapsibleGroup>
         ))}
       </div>
     </div>

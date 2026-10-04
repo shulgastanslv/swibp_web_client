@@ -284,6 +284,131 @@ export class ObjectFactory {
     this.canvas.renderAll();
   }
 
+  private isSplit(obj: FabricObject) {
+    return (obj as FabricObject & { swibpRole?: string }).swibpRole === "split";
+  }
+
+  private findSplit() {
+    return this.canvas.getObjects().find((obj) => this.isSplit(obj)) ?? null;
+  }
+
+  private lockInPlace(obj: FabricObject) {
+    obj.set({
+      lockMovementX: true,
+      lockMovementY: true,
+      lockScalingX: true,
+      lockScalingY: true,
+      lockRotation: true,
+      hasControls: false,
+      hasBorders: true,
+      hoverCursor: "pointer",
+    });
+  }
+
+  /** Fills one grid-aligned region. Replaces the previous split image. */
+  placeSplitImage(frame: { left: number; top: number; width: number; height: number }) {
+    for (const obj of [...this.canvas.getObjects()]) {
+      if (this.isSplit(obj)) this.canvas.remove(obj);
+    }
+    const rect = new Rect({
+      left: frame.left,
+      top: frame.top,
+      width: frame.width,
+      height: frame.height,
+      fill: this.slotColor("card", "#e2e8f0"),
+      originX: "left",
+      originY: "top",
+      rx: 0,
+      ry: 0,
+    });
+    this.mark(rect, { swibpRole: "split", swibpSlot: "card" });
+    this.lockInPlace(rect);
+    this.canvas.add(rect);
+    this.canvas.setActiveObject(rect);
+    this.canvas.renderAll();
+    return rect;
+  }
+
+  /** Opens a file picker and drops the picture into the locked split region. */
+  pickSplitImage() {
+    if (!this.findSplit()) return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (file) this.fillSplitFromFile(file);
+    };
+    input.click();
+  }
+
+  fillSplitFromFile(file: File) {
+    if (!file.type.startsWith("image/") || !this.findSplit()) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") void this.fillSplitImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /** Covers the split region with a picture and keeps that region fixed. */
+  async fillSplitImage(source: string) {
+    const current = this.findSplit();
+    if (!current) return;
+    return this.fillFrameWithImage(current, source);
+  }
+
+  /** Puts a picture inside a rectangle, cropped to that rectangle. */
+  async fillFrameWithImage(target: FabricObject, source: string) {
+    if (!target.canvas) return;
+
+    const tagged = target as FabricObject & { swibpRole?: string; swibpSlot?: string };
+    const keepLocked = this.isSplit(target) || Boolean(target.lockMovementX && target.lockMovementY);
+    const center = target.getCenterPoint();
+    const frameW = target.getScaledWidth();
+    const frameH = target.getScaledHeight();
+    const frame = {
+      left: center.x - frameW / 2,
+      top: center.y - frameH / 2,
+      width: frameW,
+      height: frameH,
+    };
+    const index = this.canvas.getObjects().indexOf(target);
+
+    const img = await Image.fromURL(source);
+    const sourceW = img.width || 1;
+    const sourceH = img.height || 1;
+    const scale = Math.max(frame.width / sourceW, frame.height / sourceH);
+    const cropW = frame.width / scale;
+    const cropH = frame.height / scale;
+
+    img.set({
+      left: frame.left,
+      top: frame.top,
+      originX: "left",
+      originY: "top",
+      cropX: Math.max(0, (sourceW - cropW) / 2),
+      cropY: Math.max(0, (sourceH - cropH) / 2),
+      width: cropW,
+      height: cropH,
+      scaleX: scale,
+      scaleY: scale,
+    });
+    if (tagged.swibpRole || tagged.swibpSlot) {
+      this.mark(img, {
+        ...(tagged.swibpRole ? { swibpRole: tagged.swibpRole } : {}),
+        ...(tagged.swibpSlot ? { swibpSlot: tagged.swibpSlot } : {}),
+      });
+    }
+    if (keepLocked) this.lockInPlace(img);
+
+    this.canvas.remove(target);
+    this.canvas.insertAt(Math.max(0, index), img);
+    this.canvas.setActiveObject(img);
+    this.canvas.renderAll();
+    return img;
+  }
+
   addRectangle(x?: number, y?: number) {
     const pos = this.getPosition(x, y);
     const rect = new Rect({

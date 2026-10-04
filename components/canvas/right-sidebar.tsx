@@ -537,8 +537,15 @@ export function RightSidebar({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const intoFrame =
+      selectedObject?.type === "rect" ||
+      (selectedObject as { swibpRole?: string } | null)?.swibpRole === "split";
+
     void fileToDataUrl(file)
       .then((dataUrl) => {
+        if (intoFrame && selectedObject && manager) {
+          return manager.objects.fillFrameWithImage(selectedObject, dataUrl);
+        }
         changeImageSource(dataUrl);
         setImageUrlInput("");
       })
@@ -794,6 +801,27 @@ export function RightSidebar({
             </div>
           ) : (
             <div className="flex flex-col pb-3">
+              {isRect && (
+                <div className="border-b border-border/60 px-3 py-3">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={`h-9 w-full justify-center gap-2 text-sm ${btnRound}`}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="size-4" />
+                    Import image
+                  </Button>
+                </div>
+              )}
               <div className="flex items-center gap-1 border-b border-border/60 px-2.5 py-2">
                 <Button
                   type="button"

@@ -138,7 +138,7 @@ export function LeftSidebar({
                 <Button
                   variant={activeNav === id ? "secondary" : "ghost"}
                   size="icon"
-                  className="w-8 h-8 rounded-lg text-[9px] font-medium tracking-tight"
+                  className="w-8 h-8 rounded-lg text-xs font-medium tracking-tight"
                   aria-label={label}
                   onClick={() => {
                     setActiveNav(id);

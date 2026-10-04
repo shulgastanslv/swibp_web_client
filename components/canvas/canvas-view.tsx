@@ -54,7 +54,18 @@ export function CanvasView() {
       ref={containerRef}
       className="flex-1 flex items-center justify-center overflow-auto bg-muted/20"
     >
-      <div className="shadow-2xl ring-1 ring-border/20 bg-white">
+      <div
+        className="shadow-2xl ring-1 ring-border/20 bg-white"
+        onDragOver={(event) => {
+          if ([...event.dataTransfer.types].includes("Files")) event.preventDefault();
+        }}
+        onDrop={(event) => {
+          const file = event.dataTransfer.files?.[0];
+          if (!file || !manager) return;
+          event.preventDefault();
+          manager.objects.fillSplitFromFile(file);
+        }}
+      >
         <canvas ref={canvasElementRef} />
       </div>
     </div>

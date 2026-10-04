@@ -285,6 +285,11 @@ export class CanvasManager {
       this.events.emit("selection", this.getActiveObject());
     };
 
+    this.canvas.on("mouse:dblclick", (e) => {
+      const target = e.target as FabricObject & { swibpRole?: string } | undefined;
+      if (target?.swibpRole === "split") this.objects.pickSplitImage();
+    });
+
     this.canvas.on("object:added", onMutation);
     this.canvas.on("object:removed", onMutation);
     this.canvas.on("object:modified", onMutation);

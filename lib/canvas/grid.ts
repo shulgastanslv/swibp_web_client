@@ -7,6 +7,7 @@ import {
   Point,
 } from "fabric";
 import { LayoutManager } from "./layouts";
+import { splitFrame, type CanvasSplit } from "./splits";
 
 type Bounds = {
   left: number;
@@ -86,6 +87,12 @@ export class GridManager {
 
   public setLayoutManager(manager: LayoutManager) {
     this.layoutManager = manager;
+  }
+
+  /** Image area for a screen split, using the same size and margin as the layout grid. */
+  public splitBounds(split: CanvasSplit) {
+    const { width, height } = this.getLogicalSize();
+    return splitFrame(split, { width, height }, this.gridMargin);
   }
 
   public applySettings(settings: Partial<GridSettings>) {
@@ -333,6 +340,7 @@ export class GridManager {
     this.canvas.on("object:moving", (e) => {
       const obj = e.target;
       if (!obj || obj.excludeFromExport) return;
+      if ((obj as FabricObject & { swibpRole?: string }).swibpRole === "split") return;
 
       const fromEvent = !!(
         e.e &&
