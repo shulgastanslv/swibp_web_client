@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, X, Loader2, Sparkles } from "lucide-react";
+import { Search, X, Loader2, LayoutGrid } from "lucide-react";
 
 import {
   getTemplates,
@@ -11,6 +11,7 @@ import {
 import { useApplyTemplate } from "@/hooks/use-apply-template";
 import { cn } from "@/lib/utils";
 import { CarouselStack } from "@/components/canvas/sidebar/carousel-stack";
+import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
 
 export function SidebarTemplates() {
   const { applyTemplateById } = useApplyTemplate();
@@ -57,8 +58,8 @@ export function SidebarTemplates() {
  
   useEffect(() => {
     const onChanged = () => void fetchTemplates();
-    window.addEventListener("swibp:templates-changed", onChanged);
-    return () => window.removeEventListener("swibp:templates-changed", onChanged);
+    window.addEventListener("core:templates-changed", onChanged);
+    return () => window.removeEventListener("core:templates-changed", onChanged);
   }, [fetchTemplates]);
 
  
@@ -87,45 +88,41 @@ export function SidebarTemplates() {
         </div>
       </div>
 
-      <div className="relative flex items-center">
-        <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search templates..."
-          className="w-full h-8 pl-8 pr-7 text-xs bg-muted/50 rounded-full placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch("")}
-            className="absolute right-2 text-muted-foreground hover:text-foreground"
-          >
-            <X className="size-4" />
-          </button>
-        )}
-      </div>
-
-      {tabs.length > 1 && (
-        <div className="flex gap-1 overflow-x-scroll pb-0.5 px-0.5 w-64">
-          {tabs.map((tab) => (
+      <div className="flex min-w-0 items-center gap-1.5">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search templates..."
+            className="h-8 w-full min-w-0 rounded-full bg-muted/50 pl-8 pr-7 text-xs placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+          {search && (
             <button
-              key={tab}
               type="button"
-              onClick={() => setCategory(tab)}
-              className={cn(
-                "h-6 shrink-0 px-2.5 rounded-full text-xs border transition-colors",
-                category === tab
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-muted/30 text-muted-foreground border-border/40 hover:text-foreground",
-              )}
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              {tab === "all" ? "All" : tab}
+              <X className="size-4" />
             </button>
-          ))}
+          )}
         </div>
-      )}
+        <FilterMenu
+          icon={LayoutGrid}
+          value={category}
+          onChange={setCategory}
+          groups={[
+            {
+              label: "Category",
+              options: tabs.map((tab) => ({
+                id: tab,
+                label: tab === "all" ? "All" : tab,
+              })),
+            },
+          ]}
+        />
+      </div>
 
       {error && (
         <p className="text-xs text-destructive px-1">{error}</p>

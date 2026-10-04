@@ -12,34 +12,24 @@ import {
   Object as FabricObject,
   Image,
 } from "fabric";
+import { useCanvasStore } from "@/store/useCanvasStore";
+import { formatSlideNumber, type ChromeRole, type SlideNumberStyle } from "@/lib/canvas/chrome";
+import type { PaletteSlot, TextStyleDef, TextStyleId } from "@/lib/canvas/document";
+import "./fabric-props";
+
+export type { SlideNumberStyle };
+export { formatSlideNumber };
 
 const CODE_BLOCK_BG_4K =
   "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=3840&h=2160&q=80";
 
 export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 export type Side = "left" | "right";
-export type SlideNumberStyle = "1" | "01" | "1 / 8";
 
 const CORNER_MARGIN = 64;
 const CORNER_FONT = "Inter, sans-serif";
 const CORNER_MUTED = "#64748b";
 const CORNER_INK = "#0f172a";
-
-export function formatSlideNumber(
-  style: SlideNumberStyle,
-  index: number,
-  total: number,
-): string {
-  const n = index + 1;
-  switch (style) {
-    case "01":
-      return String(n).padStart(2, "0");
-    case "1 / 8":
-      return `${n} / ${total}`;
-    default:
-      return String(n);
-  }
-}
 
 export class ObjectFactory {
   private canvas: Canvas;
@@ -78,6 +68,35 @@ export class ObjectFactory {
     return { x: width / 2, y: height / 2 };
   }
 
+  private mark(obj: FabricObject, props: Record<string, string>) {
+    obj.set(props);
+    return obj;
+  }
+
+  private removeRole(role: ChromeRole) {
+    for (const obj of this.canvas.getObjects()) {
+      if ((obj as FabricObject & { swibpRole?: string }).swibpRole === role) {
+        this.canvas.remove(obj);
+      }
+    }
+  }
+
+  private slotColor(slot: PaletteSlot, fallback: string) {
+    return useCanvasStore.getState().palette?.[slot] ?? fallback;
+  }
+
+  private textStyle(id: TextStyleId): TextStyleDef {
+    const styles = useCanvasStore.getState().textStyles;
+    return (
+      styles?.[id] ?? {
+        fontFamily: "Inter",
+        fontSize: id === "heading" ? 80 : id === "subtitle" ? 40 : 28,
+        fontWeight: id === "heading" ? "bold" : "400",
+        lineHeight: 0.8,
+      }
+    );
+  }
+
   /** Position + origin so an object hugs the given corner with CORNER_MARGIN inset. */
   private getCornerPosition(corner: Corner) {
     const { width, height } = this.getLogicalSize();
@@ -100,13 +119,25 @@ export class ObjectFactory {
     total: number,
     corner: Corner = "top-left",
   ): IText {
-    const text = new IText(formatSlideNumber(style, index, total), {
+    const textValue = formatSlideNumber(style, index, total);
+    const existing = this.canvas
+      .getObjects()
+      .find((obj) => (obj as FabricObject & { swibpRole?: string }).swibpRole === "number");
+    if (existing) {
+      existing.set({ text: textValue, swibpNumberStyle: style });
+      this.canvas.requestRenderAll();
+      this.canvas.fire("object:modified", { target: existing });
+      return existing as IText;
+    }
+
+    const text = new IText(textValue, {
       ...this.getCornerPosition(corner),
       fontSize: 25,
       fontFamily: CORNER_FONT,
       fontWeight: "400",
-      fill: CORNER_MUTED,
+      fill: this.slotColor("text", CORNER_MUTED),
     });
+    this.mark(text, { swibpRole: "number", swibpNumberStyle: style, swibpSlot: "text" });
     this.addToCanvas(text);
     return text;
   }
@@ -127,6 +158,8 @@ export class ObjectFactory {
     const parts: FabricObject[] = [];
     let cursorY = 0;
 
+    const ink = this.slotColor("text", CORNER_INK);
+
     if (platform) {
       const label = new IText(platform, {
         originX: align,
@@ -136,45 +169,50 @@ export class ObjectFactory {
         fontSize: 22,
         fontFamily: CORNER_FONT,
         fontWeight: "400",
-        fill: CORNER_MUTED,
+        fill: ink,
         textAlign: align,
       });
+      this.mark(label, { swibpSlot: "text" });
       parts.push(label);
       cursorY += label.height + 6;
     }
 
-    parts.push(
-      new IText(handle, {
-        originX: align,
-        originY: "top",
-        left: 0,
-        top: cursorY,
-        fontSize: 22,
-        fontFamily: CORNER_FONT,
-        fontWeight: "400",
-        fill: CORNER_INK,
-        textAlign: align,
-      }),
-    );
+    const handleText = new IText(handle, {
+      originX: align,
+      originY: "top",
+      left: 0,
+      top: cursorY,
+      fontSize: 22,
+      fontFamily: CORNER_FONT,
+      fontWeight: "400",
+      fill: ink,
+      textAlign: align,
+    });
+    this.mark(handleText, { swibpSlot: "text" });
+    parts.push(handleText);
 
+    this.removeRole("handle");
     const group = new Group(parts, {
       ...pos,
       subTargetCheck: true,
       interactive: true,
     });
+    this.mark(group, { swibpRole: "handle" });
     this.addToCanvas(group);
     return group;
   }
 
   /** Text swipe cue (e.g. "->") pinned bottom-right. */
   addSwipeArrow(text = "->", corner: Corner = "bottom-right"): IText {
+    this.removeRole("swipe");
     const arrow = new IText(text, {
       ...this.getCornerPosition(corner),
       fontSize: 56,
       fontFamily: "Consolas, 'Courier New', monospace",
       fontWeight: "700",
-      fill: CORNER_INK,
+      fill: this.slotColor("accent", CORNER_INK),
     });
+    this.mark(arrow, { swibpRole: "swipe", swibpSlot: "accent" });
     this.addToCanvas(arrow);
     return arrow;
   }
@@ -251,11 +289,12 @@ export class ObjectFactory {
     const rect = new Rect({
       width: 200,
       height: 150,
-      fill: "#3b82f6",
+      fill: this.slotColor("card", "#f1f5f9"),
       rx: 8,
       ry: 8,
       ...pos,
     });
+    this.mark(rect, { swibpSlot: "card" });
     this.addToCanvas(rect);
     return rect;
   }
@@ -276,9 +315,10 @@ export class ObjectFactory {
     const triangle = new Triangle({
       width: 150,
       height: 150,
-      fill: "#10b981",
+      fill: this.slotColor("accent", "#3b82f6"),
       ...pos,
     });
+    this.mark(triangle, { swibpSlot: "accent" });
     this.addToCanvas(triangle);
     return triangle;
   }
@@ -347,15 +387,17 @@ export class ObjectFactory {
 
   addHeading(text = "New Heading", x?: number, y?: number): Textbox {
     const pos = this.getPosition(x, y);
+    const style = this.textStyle("heading");
 
     const tb = new Textbox(text, {
       ...pos,
-      fontSize: 80,
-      fontWeight: "bold",
-      fontFamily: "Inter, sans-serif",
-      fill: "#0f172a",
-      lineHeight: 0.8,
+      fontSize: style.fontSize,
+      fontWeight: style.fontWeight,
+      fontFamily: style.fontFamily,
+      fill: this.slotColor("text", "#0f172a"),
+      lineHeight: style.lineHeight,
     });
+    this.mark(tb, { swibpStyle: "heading", swibpSlot: "text" });
 
     tb.initDimensions();
 
@@ -372,14 +414,17 @@ export class ObjectFactory {
 
   addSubtitle(text = "Your subtitle goes here", x?: number, y?: number): Textbox {
     const pos = this.getPosition(x, y);
+    const style = this.textStyle("subtitle");
     const tb = new Textbox(text, {
       ...pos,
-      fontSize: 40,
-      fontFamily: "Inter, sans-serif",
-      fill: "#64748b",
+      fontSize: style.fontSize,
+      fontFamily: style.fontFamily,
+      fontWeight: style.fontWeight,
+      fill: this.slotColor("text", "#0f172a"),
       width: 700,
-      lineHeight: 0.8,
+      lineHeight: style.lineHeight,
     });
+    this.mark(tb, { swibpStyle: "subtitle", swibpSlot: "text" });
     this.addToCanvas(tb);
     const actualWidth = tb.calcTextWidth();
     if (actualWidth < tb.width) {
@@ -391,14 +436,17 @@ export class ObjectFactory {
 
   addParagraph(text = "Your paragraph text goes here. Add supporting details and information.", x?: number, y?: number): Textbox {
     const pos = this.getPosition(x, y);
+    const style = this.textStyle("body");
     const tb = new Textbox(text, {
       ...pos,
-      fontSize: 28,
-      fontFamily: "Inter, sans-serif",
-      fill: "#334155",
+      fontSize: style.fontSize,
+      fontFamily: style.fontFamily,
+      fontWeight: style.fontWeight,
+      fill: this.slotColor("text", "#0f172a"),
       width: 700,
-      lineHeight: 0.8,
-        });
+      lineHeight: style.lineHeight,
+    });
+    this.mark(tb, { swibpStyle: "body", swibpSlot: "text" });
     this.addToCanvas(tb);
     const actualWidth = tb.calcTextWidth();
     if (actualWidth < tb.width) {

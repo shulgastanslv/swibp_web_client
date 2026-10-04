@@ -6,6 +6,7 @@ import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { useSlidesController } from "@/context/canvas-manager";
 import { Canvas as FabricCanvas } from "fabric";
+import { IPhoneMockup } from "react-device-mockup";
 
 interface PreviewModalProps {
   open: boolean;
@@ -251,28 +252,32 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
         </Button>
 
         {view === "phone" ? (
-          <div
-            className="relative flex shrink-0 flex-col overflow-hidden rounded-[2.2rem] border border-foreground/15 bg-zinc-950 p-2 shadow-2xl"
-            style={{ height: "min(72vh, 700px)", aspectRatio: "9 / 19.5" }}
-            onPointerDown={(e) => {
-              swipeStart.current = e.clientX;
-            }}
-            onPointerUp={(e) => {
-              if (swipeStart.current == null) return;
-              const dx = e.clientX - swipeStart.current;
-              swipeStart.current = null;
-              if (dx <= -36) goNext();
-              else if (dx >= 36) goPrev();
-            }}
-            onPointerCancel={() => {
-              swipeStart.current = null;
-            }}
+          <IPhoneMockup
+            screenWidth={300}
+            screenType="island"
+            frameColor="#18181b"
+            frameOnly
+            hideStatusBar
+            hideNavBar
+            className="shrink-0"
           >
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.7rem] bg-background">
-              <div className="flex h-7 shrink-0 items-center justify-center">
-                <div className="h-1 w-14 rounded-full bg-foreground/15" />
-              </div>
-              <div className="px-3 pt-2">
+            <div
+              className="flex h-full w-full flex-col bg-background"
+              onPointerDown={(e) => {
+                swipeStart.current = e.clientX;
+              }}
+              onPointerUp={(e) => {
+                if (swipeStart.current == null) return;
+                const dx = e.clientX - swipeStart.current;
+                swipeStart.current = null;
+                if (dx <= -36) goNext();
+                else if (dx >= 36) goPrev();
+              }}
+              onPointerCancel={() => {
+                swipeStart.current = null;
+              }}
+            >
+              <div className="flex min-h-0 flex-1 items-start justify-center px-3 pt-8">
                 <div
                   className="relative w-full overflow-hidden bg-muted/30"
                   style={{ aspectRatio }}
@@ -295,22 +300,22 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
                     </div>
                   )}
                 </div>
-                <div className="flex items-center justify-center gap-1 py-2.5">
-                  {snapshots.map((snap, i) => (
-                    <button
-                      key={snap.id}
-                      type="button"
-                      aria-label={`Slide ${i + 1}`}
-                      onClick={() => setActiveId(snap.id)}
-                      className={`h-1.5 rounded-full transition-all ${
-                        snap.id === activeId ? "w-4 bg-foreground" : "w-1.5 bg-foreground/25"
-                      }`}
-                    />
-                  ))}
-                </div>
+              </div>
+              <div className="flex shrink-0 items-center justify-center gap-1 px-3 pb-5 pt-2.5">
+                {snapshots.map((snap, i) => (
+                  <button
+                    key={snap.id}
+                    type="button"
+                    aria-label={`Slide ${i + 1}`}
+                    onClick={() => setActiveId(snap.id)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      snap.id === activeId ? "w-4 bg-foreground" : "w-1.5 bg-foreground/25"
+                    }`}
+                  />
+                ))}
               </div>
             </div>
-          </div>
+          </IPhoneMockup>
         ) : (
           <div
             className="relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-border/50 bg-muted/20 transition-all duration-200"

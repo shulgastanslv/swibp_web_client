@@ -15,6 +15,16 @@ import { useSlidesController } from "@/context/canvas-manager";
 import { renderMissingThumbnails } from "@/lib/canvas/thumbnail";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import type { RatioKey } from "@/lib/types";
+import type { DocumentMeta } from "@/lib/canvas/document";
+
+function currentDocument(): DocumentMeta {
+  const state = useCanvasStore.getState();
+  return {
+    palette: state.palette,
+    textStyles: state.textStyles,
+    chrome: state.chrome,
+  };
+}
 
 function setProjectInUrl(projectId: string) {
   if (typeof window === "undefined") return;
@@ -25,7 +35,7 @@ function setProjectInUrl(projectId: string) {
 
 function notifyProjectsChanged() {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("swibp:projects-changed"));
+  window.dispatchEvent(new CustomEvent("core:projects-changed"));
 }
 
 function scheduleThumbnailHydration(projectId: string | null, persistToDb: boolean) {
@@ -162,6 +172,7 @@ export function useProject() {
         canvasJSON: s.canvasJSON,
         thumbnail: s.thumbnail ?? null,
       })),
+      document: currentDocument(),
     };
 
     store.setSaving(true);

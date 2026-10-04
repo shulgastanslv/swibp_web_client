@@ -6,6 +6,7 @@ export function useSlides() {
   const slides = useCanvasStore((s) => s.slides);
   const currentSlideId = useCanvasStore((s) => s.currentSlideId);
   const move = useCanvasStore((s) => s.moveSlide);
+  const reorder = useCanvasStore((s) => s.reorderSlides);
 
   const currentIndex = slides.findIndex((s) => s.id === currentSlideId);
 
@@ -23,5 +24,6 @@ export function useSlides() {
     duplicate: (id?: number) => controller?.duplicate(id),
     remove: (id: number) => controller?.remove(id),
     move,
+    reorder,
   };
 }

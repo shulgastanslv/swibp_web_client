@@ -22,6 +22,7 @@ export interface ProjectSlice {
     width: number;
     height: number;
     slides: SlideItem[];
+    document?: unknown;
   }) => void;
   resetToBlankProject: () => void;
 }
@@ -30,6 +31,7 @@ type ProjectStore = ProjectSlice & {
   setSlides: (slides: SlideItem[]) => void;
   setCurrentSlideId: (id: number) => void;
   setCurrentRatio: (ratio: RatioKey) => void;
+  replaceDocument?: (input: unknown) => void;
 };
 
 const emptyCanvas = (): FabricCanvasJSON => ({
@@ -56,7 +58,7 @@ export const createProjectSlice: StateCreator<ProjectStore, [], [], ProjectSlice
   setLoadingProject: (isLoadingProject) => set({ isLoadingProject }),
   markSaved: () => set({ isDirty: false, lastSavedAt: new Date().toISOString() }),
 
-  loadProjectState: ({ id, title, aspectRatio, slides }) => {
+  loadProjectState: ({ id, title, aspectRatio, slides, document }) => {
     const hydrated =
       slides.length > 0
         ? slides
@@ -65,6 +67,7 @@ export const createProjectSlice: StateCreator<ProjectStore, [], [], ProjectSlice
     get().setSlides(hydrated);
     get().setCurrentSlideId(hydrated[0].id);
     get().setCurrentRatio(aspectRatio);
+    get().replaceDocument?.(document ?? null);
 
     set({
       currentProjectId: id,
@@ -79,6 +82,7 @@ export const createProjectSlice: StateCreator<ProjectStore, [], [], ProjectSlice
     get().setSlides([{ id: 1, canvasJSON: emptyCanvas(), thumbnail: null }]);
     get().setCurrentSlideId(1);
     get().setCurrentRatio("4:5");
+    get().replaceDocument?.(null);
 
     set({
       currentProjectId: null,

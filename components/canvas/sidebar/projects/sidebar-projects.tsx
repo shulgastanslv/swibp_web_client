@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Search, Bookmark, Loader2, X } from "lucide-react";
+import { Search, Bookmark, Loader2, X, Library, Ratio } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import {
@@ -16,12 +16,16 @@ import { cn } from "@/lib/utils";
 import { ProjectActionsDropdown } from "./project_actions_dropdown";
 import { Input } from "@/components/ui/input";
 import { CarouselStack } from "@/components/canvas/sidebar/carousel-stack";
+import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
 
 type Filter = "all" | "saved";
+
+const RATIOS = ["4:5", "1:1", "9:16", "16:9"] as const;
 
 export function SidebarProjects() {
   const { data: session } = useSession();
   const [filter, setFilter] = useState<Filter>("all");
+  const [ratio, setRatio] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,8 +54,8 @@ export function SidebarProjects() {
     const onChanged = () => {
       if (userId) void fetchProjects();
     };
-    window.addEventListener("swibp:projects-changed", onChanged);
-    return () => window.removeEventListener("swibp:projects-changed", onChanged);
+    window.addEventListener("core:projects-changed", onChanged);
+    return () => window.removeEventListener("core:projects-changed", onChanged);
   }, [userId, fetchProjects]);
 
   const handleToggleSave = async (e: React.MouseEvent, projectId: string) => {
@@ -99,10 +103,11 @@ export function SidebarProjects() {
     const query = search.trim().toLowerCase();
     return projects.filter((p) => {
       const matchesFilter = filter === "all" || p.isSaved;
+      const matchesRatio = ratio === "all" || p.aspectRatio === ratio;
       const matchesSearch = !query || p.title.toLowerCase().includes(query);
-      return matchesFilter && matchesSearch;
+      return matchesFilter && matchesRatio && matchesSearch;
     });
-  }, [projects, filter, search]);
+  }, [projects, filter, ratio, search]);
 
   if (!userId) {
     return (
@@ -125,7 +130,7 @@ export function SidebarProjects() {
         </div>
       </div>
 
-      <div className="relative flex items-center">
+      <div className="relative flex items-center gap-2">
         <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
         <Input
           value={search}
@@ -142,25 +147,38 @@ export function SidebarProjects() {
             <X className="h-3.5 w-3.5" />
           </button>
         )}
+      <div className="flex flex-row justify-between">
+        <FilterMenu
+          icon={Library}
+          value={filter}
+          onChange={(id) => setFilter(id as Filter)}
+          groups={[
+            {
+              label: "Library",
+              options: [
+                { id: "all", label: "All" },
+                { id: "saved", label: "Saved" },
+              ],
+            },
+          ]}
+        />
+        <FilterMenu
+          icon={Ratio}
+          value={ratio}
+          onChange={setRatio}
+          groups={[
+            {
+              label: "Ratio",
+              options: [
+                { id: "all", label: "All ratios" },
+                ...RATIOS.map((item) => ({ id: item, label: item })),
+              ],
+            },
+          ]}
+        />
+      </div>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
-        {(["all", "saved"] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setFilter(tab)}
-            className={cn(
-              "h-6 shrink-0 px-2.5 rounded-full text-xs transition-colors",
-              filter === tab
-                ? "bg-foreground text-background"
-                : "bg-muted/30 text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {tab === "all" ? "All" : "Saved"}
-          </button>
-        ))}
-      </div>
 
       {loading && projects.length === 0 ? (
         <div className="flex items-center justify-center py-10">

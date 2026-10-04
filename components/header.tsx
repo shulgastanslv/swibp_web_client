@@ -93,8 +93,8 @@ export function Header({ onPreview }: HeaderProps) {
       if (detail?.reset) setAuthResetToken(detail.reset);
       if (detail?.verify || detail?.reset) setIsAuthModalOpen(true);
     };
-    window.addEventListener("swibp:auth-link", onAuthLink);
-    return () => window.removeEventListener("swibp:auth-link", onAuthLink);
+    window.addEventListener("core:auth-link", onAuthLink);
+    return () => window.removeEventListener("swicorebp:auth-link", onAuthLink);
   }, []);
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export function Header({ onPreview }: HeaderProps) {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    if (window.localStorage.getItem("swibp:social-prompt")) return;
+    if (window.localStorage.getItem("core:social-prompt")) return;
     const timer = window.setTimeout(() => {
       if (authOpenRef.current) return;
       setIsSocialOpen(true);
@@ -113,7 +113,7 @@ export function Header({ onPreview }: HeaderProps) {
 
   const closeSocial = (open: boolean) => {
     setIsSocialOpen(open);
-    if (!open) window.localStorage.setItem("swibp:social-prompt", "1");
+    if (!open) window.localStorage.setItem("core:social-prompt", "1");
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {

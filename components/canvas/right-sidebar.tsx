@@ -19,6 +19,14 @@ import {
   SendToBack,
   AlignHorizontalDistributeCenter,
   AlignVerticalDistributeCenter,
+  AlignHorizontalJustifyStart,
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignHorizontalSpaceBetween,
+  AlignVerticalSpaceBetween,
   PanelRightClose,
   PanelRightOpen,
   MousePointerClick,
@@ -44,6 +52,18 @@ import {
   loadGoogleFont,
   normalizeFontFamily,
 } from "@/lib/fonts/google-fonts";
+import { alignSelected, type ObjectAlign } from "@/lib/canvas/align";
+import {
+  applyTextStyleToSlide,
+  PALETTE_SLOTS,
+  paletteSlot,
+  TEXT_STYLES,
+  textStyleId,
+  type TextStyleDef,
+  type TextStyleId,
+} from "@/lib/canvas/document";
+import { applyStyleOnCanvas, paintSlotOnCanvas } from "@/lib/canvas/paint-live";
+import { useCanvasStore } from "@/store/useCanvasStore";
 
 type TextAlign = "left" | "center" | "right" | "justify";
 
@@ -315,8 +335,11 @@ export function RightSidebar({
   const [bgProgress, setBgProgress] = useState<string | null>(null);
   const [bgError, setBgError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const palette = useCanvasStore((s) => s.palette);
+  const [styleOffer, setStyleOffer] = useState<TextStyleId | null>(null);
 
   useEffect(() => {
+    setStyleOffer(null);
     if (!selectedObject) {
       setFormValues(null);
       setImageUrlInput("");
@@ -630,6 +653,60 @@ export function RightSidebar({
     }
   };
 
+  const boundStyle = textStyleId(
+    (selectedObject as { swibpStyle?: unknown } | null)?.swibpStyle,
+  );
+  const boundSlot = paletteSlot(
+    (selectedObject as { swibpSlot?: unknown } | null)?.swibpSlot,
+  );
+  const selectedCount = manager?.canvas.getActiveObjects().length ?? 0;
+  const isMulti = selectedCount >= 2;
+
+  const noteStyleEdit = () => {
+    if (boundStyle) setStyleOffer(boundStyle);
+  };
+
+  const applyStyleToCarousel = () => {
+    if (!manager || !boundStyle) return;
+    const active = manager.getActiveObject() as FabricObject & {
+      fontFamily?: string;
+      fontSize?: number;
+      fontWeight?: string | number;
+      lineHeight?: number;
+    };
+    if (!active) return;
+    const next: TextStyleDef = {
+      fontFamily: typeof active.fontFamily === "string" ? active.fontFamily : "Inter",
+      fontSize: typeof active.fontSize === "number" ? active.fontSize : 32,
+      fontWeight: String(active.fontWeight ?? "400"),
+      lineHeight: typeof active.lineHeight === "number" ? active.lineHeight : 1.16,
+    };
+    const store = useCanvasStore.getState();
+    store.setTextStyle(boundStyle, next);
+    store.setSlides(
+      store.slides.map((slide) => ({
+        ...slide,
+        canvasJSON: applyTextStyleToSlide(slide.canvasJSON, boundStyle, next),
+      })),
+    );
+    applyStyleOnCanvas(manager.canvas, boundStyle, next);
+    store.setDirty(true);
+    manager.commit();
+    setStyleOffer(null);
+  };
+
+  const assignFillSlot = (slot: (typeof PALETTE_SLOTS)[number]["id"]) => {
+    const color = palette[slot];
+    setFormValues((prev) => (prev ? { ...prev, fill: color } : null));
+    updateSelected({ fill: color, swibpSlot: slot } as unknown as Partial<FabricObject>);
+  };
+
+  const alignSelection = (mode: ObjectAlign) => {
+    if (!manager) return;
+    alignSelected(manager.canvas, mode);
+    manager.commit();
+  };
+
   const isText =
     formValues?.type === "text" ||
     formValues?.type === "i-text" ||
@@ -667,14 +744,48 @@ export function RightSidebar({
       >
         <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-3.5">
           <span className="truncate text-xs font-semibold text-foreground">
-            {formValues
-              ? (typeLabel[formValues.type] ?? formValues.type)
-              : "Properties"}
+            {isMulti
+              ? "Selection"
+              : formValues
+                ? (typeLabel[formValues.type] ?? formValues.type)
+                : "Properties"}
           </span>
         </div>
 
         <ScrollArea className="flex-1">
-          {!formValues ? (
+          {isMulti ? (
+            <div className="flex flex-col gap-3 px-3 py-3">
+              <p className="text-xs text-muted-foreground">
+                {selectedCount} objects selected
+              </p>
+              <div className="grid grid-cols-4 gap-1">
+                {(
+                  [
+                    ["left", "Align left", AlignHorizontalJustifyStart],
+                    ["center", "Align center", AlignHorizontalJustifyCenter],
+                    ["right", "Align right", AlignHorizontalJustifyEnd],
+                    ["distribute-x", "Equal horizontal gaps", AlignHorizontalSpaceBetween],
+                    ["top", "Align top", AlignVerticalJustifyStart],
+                    ["middle", "Align middle", AlignVerticalJustifyCenter],
+                    ["bottom", "Align bottom", AlignVerticalJustifyEnd],
+                    ["distribute-y", "Equal vertical gaps", AlignVerticalSpaceBetween],
+                  ] as const
+                ).map(([mode, label, Icon]) => (
+                  <Button
+                    key={mode}
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    title={label}
+                    className={`size-8 ${btnRound}`}
+                    onClick={() => alignSelection(mode)}
+                  >
+                    <Icon className="size-4" />
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : !formValues ? (
             <div className="flex flex-col items-center justify-center gap-3 px-5 py-16 text-center text-muted-foreground">
               <MousePointerClick className="size-7 stroke-[1.5] text-muted-foreground/60" />
               <p className="text-sm leading-snug">
@@ -910,6 +1021,7 @@ export function RightSidebar({
                       updateSelected({
                         fontFamily: family,
                       } as unknown as Partial<FabricObject>);
+                      noteStyleEdit();
                       // After the webfont finishes painting, force one more
                       // layout pass so metrics match the newly loaded face.
                       void document.fonts.ready.then(() => {
@@ -939,7 +1051,10 @@ export function RightSidebar({
                   <NumberField
                     label="Font size"
                     value={formValues.fontSize ?? 32}
-                    onChange={(v) => updateProp("fontSize", v)}
+                    onChange={(v) => {
+                      updateProp("fontSize", v);
+                      noteStyleEdit();
+                    }}
                     min={10}
                     max={140}
                     unit="px"
@@ -954,6 +1069,35 @@ export function RightSidebar({
                     step={0.05}
                     decimals={2}
                   />
+
+                  {styleOffer && (
+                    <div className="flex flex-col gap-2 rounded-2xl bg-muted/40 p-2.5">
+                      <p className="text-xs leading-snug text-foreground">
+                        Update every{" "}
+                        {TEXT_STYLES.find((style) => style.id === styleOffer)?.label.toLowerCase()}{" "}
+                        in this carousel?
+                      </p>
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          onClick={applyStyleToCarousel}
+                        >
+                          Update
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          onClick={() => setStyleOffer(null)}
+                        >
+                          Only this
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex flex-col gap-1.5">
                     <span className="text-xs text-muted-foreground">
@@ -986,11 +1130,40 @@ export function RightSidebar({
 
               <CollapsibleGroup id="rs-fill" title="Fill">
                 {!isImage ? (
-                  <ColorField
-                    label={isText ? "Text color" : "Fill color"}
-                    value={formValues.fill}
-                    onChange={(hex) => updateProp("fill", hex)}
-                  />
+                  <>
+                    <div className="grid grid-cols-4 gap-1">
+                      {PALETTE_SLOTS.map((slot) => (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          title={slot.label}
+                          onClick={() => assignFillSlot(slot.id)}
+                          className={`flex flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[10px] ${
+                            boundSlot === slot.id
+                              ? "bg-muted text-foreground"
+                              : "text-muted-foreground hover:bg-muted/40"
+                          }`}
+                        >
+                          <span
+                            className="size-4 rounded-full border border-border/40"
+                            style={{ backgroundColor: palette[slot.id] }}
+                          />
+                          {slot.label}
+                        </button>
+                      ))}
+                    </div>
+                    <ColorField
+                      label={isText ? "Text color" : "Fill color"}
+                      value={formValues.fill}
+                      onChange={(hex) => {
+                        setFormValues((prev) => (prev ? { ...prev, fill: hex } : null));
+                        updateSelected({
+                          fill: hex,
+                          swibpSlot: "",
+                        } as unknown as Partial<FabricObject>);
+                      }}
+                    />
+                  </>
                 ) : (
                   <p className="text-xs text-muted-foreground">
                     The image has no fill — replace the file in the section above.

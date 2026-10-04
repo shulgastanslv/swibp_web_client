@@ -199,7 +199,8 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
         <Button
           type="button"
-          className="h-8 w-full rounded-full gap-2"
+          size="lg"
+          className="w-full rounded-full"
           disabled={exporting || slides.length === 0}
           onClick={() => void handleExport()}
         >

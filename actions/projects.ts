@@ -12,6 +12,7 @@ import {
   type RatioKey,
   type SlideItem,
 } from "@/lib/types";
+import { normalizeDocument, type DocumentMeta } from "@/lib/canvas/document";
 
 export interface ProjectListItem {
   id: string;
@@ -32,6 +33,7 @@ export interface ProjectDetail {
   isPublic: boolean;
   updatedAt: string;
   slides: SlideItem[];
+  document: DocumentMeta;
 }
 
 export interface SaveProjectInput {
@@ -43,6 +45,7 @@ export interface SaveProjectInput {
     canvasJSON: FabricCanvasJSON;
     thumbnail?: string | null;
   }>;
+  document?: DocumentMeta;
 }
 
 type ActionResult<T extends object = object> =
@@ -61,12 +64,13 @@ function isRatioKey(value: string): value is RatioKey {
 function toFabricJSON(value: unknown): FabricCanvasJSON {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const record = value as Record<string, unknown>;
+    const { snapshot: _document, ...rest } = record;
     return {
       version: typeof record.version === "string" ? record.version : "6.0.0",
       objects: Array.isArray(record.objects)
         ? (record.objects as Record<string, unknown>[])
         : [],
-      ...record,
+      ...rest,
     };
   }
   return { version: "6.0.0", objects: [], background: "#ffffff" };
@@ -88,12 +92,21 @@ function emptyCanvasJSON(): FabricCanvasJSON {
 }
 
 /** Project.canvasJSON is required; keep it in sync with the first slide. */
+function readStoredDocument(canvasJSON: unknown): DocumentMeta {
+  if (!canvasJSON || typeof canvasJSON !== "object") return normalizeDocument(null);
+  return normalizeDocument((canvasJSON as { snapshot?: unknown }).snapshot);
+}
+
 function projectSnapshot(
   slides: Array<{ canvasJSON: FabricCanvasJSON; thumbnail?: string | null }>,
+  document?: DocumentMeta,
 ) {
   const first = slides[0];
   return {
-    canvasJSON: (first?.canvasJSON ?? emptyCanvasJSON()) as unknown as Prisma.InputJsonValue,
+    canvasJSON: {
+      ...(first?.canvasJSON ?? emptyCanvasJSON()),
+      snapshot: document ?? null,
+    } as unknown as Prisma.InputJsonValue,
     thumbnail: first?.thumbnail ?? null,
   };
 }
@@ -155,7 +168,7 @@ export async function createProject(input?: {
         aspectRatio,
         width: dims.width,
         height: dims.height,
-        ...projectSnapshot([{ canvasJSON: emptyCanvasJSON() }]),
+        ...projectSnapshot([{ canvasJSON: emptyCanvasJSON() }], normalizeDocument(null)),
         slides: {
           create: {
             order: 0,
@@ -182,6 +195,7 @@ export async function createProject(input?: {
         isPublic: project.isPublic,
         updatedAt: project.updatedAt.toISOString(),
         slides: mapSlidesForClient(project.slides),
+        document: readStoredDocument(project.canvasJSON),
       },
     };
   } catch (err) {
@@ -229,6 +243,7 @@ export async function getProjectById(
             : [{ canvasJSON: project.canvasJSON, thumbnail: project.thumbnail }],
           project.thumbnail,
         ),
+        document: readStoredDocument(project.canvasJSON),
       },
     };
   } catch (err) {
@@ -307,7 +322,7 @@ export async function saveProject(
           aspectRatio: input.aspectRatio,
           width: dims.width,
           height: dims.height,
-          ...projectSnapshot(input.slides),
+          ...projectSnapshot(input.slides, input.document),
         },
         select: { updatedAt: true },
       });
@@ -343,7 +358,7 @@ export async function saveAsNewProject(
         aspectRatio: input.aspectRatio,
         width: dims.width,
         height: dims.height,
-        ...projectSnapshot(input.slides),
+        ...projectSnapshot(input.slides, input.document),
         slides: {
           create: input.slides.map((slide, order) => ({
             order,

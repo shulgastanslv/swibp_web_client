@@ -16,7 +16,9 @@ import { useProject } from "@/hooks/use-project";
 import { useApplyTemplate } from "@/hooks/use-apply-template";
 import { getTemplates, type TemplateListItem } from "@/actions/templates";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import { CANVAS_RATIOS, type RatioKey } from "@/lib/types";
+import { CANVAS_RATIOS } from "@/lib/types";
+import { PLATFORMS, type PlatformId } from "@/lib/platforms";
+import { PlatformIcon } from "@/components/icons/platform-icons";
 import { cn } from "@/lib/utils";
 
 interface NewProjectModalProps {
@@ -24,32 +26,20 @@ interface NewProjectModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const FORMATS: {
-  id: string;
-  label: string;
-  ratio: RatioKey;
-}[] = [
-  { id: "Insta", label: "Insta", ratio: "4:5" },
-  { id: "TikTok", label: "TikTok", ratio: "9:16" },
-  { id: "Threads", label: "Threads", ratio: "4:5" },
-  { id: "LinkedIn", label: "LinkedIn", ratio: "1:1" },
-  { id: "Other", label: "Other", ratio: "4:5" },
-];
-
 export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
   const { status } = useSession();
   const { newProject, persist } = useProject();
   const { applyTemplateById } = useApplyTemplate();
 
   const [name, setName] = useState("");
-  const [formatId, setFormatId] = useState(FORMATS[0]!.id);
+  const [formatId, setFormatId] = useState<PlatformId>(PLATFORMS[0].id);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [templates, setTemplates] = useState<TemplateListItem[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const format = FORMATS.find((f) => f.id === formatId) ?? FORMATS[0]!;
+  const format = PLATFORMS.find((item) => item.id === formatId) ?? PLATFORMS[0];
   const dims = CANVAS_RATIOS[format.ratio];
 
   const visibleTemplates = useMemo(() => {
@@ -62,7 +52,7 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
   useEffect(() => {
     if (!open) return;
     setName("");
-    setFormatId(FORMATS[0]!.id);
+    setFormatId("Other");
     setTemplateId(null);
     setError(null);
     setLoading(false);
@@ -149,20 +139,21 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">Format</p>
             <div className="flex flex-wrap gap-1.5">
-              {FORMATS.map((f) => (
+              {PLATFORMS.map((item) => (
                 <button
-                  key={f.id}
+                  key={item.id}
                   type="button"
                   disabled={loading}
-                  onClick={() => setFormatId(f.id)}
+                  onClick={() => setFormatId(item.id)}
                   className={cn(
-                    "h-8 rounded-full px-3 text-xs transition-colors",
-                    formatId === f.id
+                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs transition-colors",
+                    formatId === item.id
                       ? "bg-foreground text-background"
                       : "bg-muted/50 text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {f.label}
+                  <PlatformIcon id={item.id} className="size-3.5" />
+                  {item.label}
                 </button>
               ))}
             </div>
@@ -202,9 +193,9 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
                     disabled={loading}
                     onClick={() => setTemplateId(tpl.id)}
                     className={cn(
-                      "flex h-9 items-center justify-between gap-2 rounded-xl px-3 text-left text-xs transition-colors",
+                      "flex h-9 items-center justify-between gap-2 rounded-full px-3 text-left text-xs transition-colors",
                       templateId === tpl.id
-                        ? "bg-background text-foreground shadow-xs"
+                        ? "bg-muted/50 text-foreground border border-border shadow-xs"
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -223,7 +214,8 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
 
         <Button
           type="button"
-          className="h-8 rounded-full gap-2"
+          size="lg"
+          className="rounded-full"
           disabled={!name.trim() || loading}
           onClick={() => void handleCreate()}
         >

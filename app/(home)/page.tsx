@@ -63,7 +63,7 @@ function AuthLinkHandler() {
   useEffect(() => {
     if (!verify && !reset) return;
     window.dispatchEvent(
-      new CustomEvent("swibp:auth-link", {
+      new CustomEvent("core:auth-link", {
         detail: { verify, reset },
       }),
     );

@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Search, Loader2, X } from "lucide-react";
+import { Search, Loader2, X, LayoutGrid } from "lucide-react";
 import { useCanvasManager } from "@/context/canvas-manager";
 import { cn } from "@/lib/utils";
+import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
 import {
   searchPixabayIcons,
   type PixabayIcon,
@@ -118,47 +119,43 @@ export function SidebarIcons() {
 
   return (
     <div className="flex min-w-0 flex-col gap-3 overflow-hidden p-1.5">
-      <div className="relative min-w-0">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/70" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search assets..."
-          className="h-9 w-full min-w-0 rounded-xl bg-muted/30 pl-9 pr-9 text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:bg-muted/45"
-        />
-        {search ? (
-          <button
-            type="button"
-            onClick={() => setSearch("")}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground hover:text-foreground"
-          >
-            <X className="size-3.5" />
-          </button>
-        ) : isSearching ? (
-          <Loader2 className="absolute right-3 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
-        ) : null}
+      <div className="flex min-w-0 items-center gap-1.5">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/70" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search assets..."
+            className="h-8 w-full min-w-0 rounded-lg bg-muted/30 pl-8 pr-8 text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:bg-muted/45"
+          />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          ) : isSearching ? (
+            <Loader2 className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
+          ) : null}
+        </div>
+        {!search.trim() && (
+          <FilterMenu
+            icon={LayoutGrid}
+            value={categoryId}
+            onChange={setCategoryId}
+            groups={[
+              {
+                label: "Category",
+                options: CATEGORIES.map((cat) => ({ id: cat.id, label: cat.label })),
+              },
+            ]}
+          />
+        )}
       </div>
 
-      {!search.trim() && (
-        <div className="flex min-w-0 flex-wrap gap-1">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setCategoryId(cat.id)}
-              className={cn(
-                "h-6 rounded-full px-2 text-xs transition-colors",
-                categoryId === cat.id
-                  ? "bg-muted/50 rounded-full text-foreground"
-                  : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-              )}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       {error && <p className="text-xs text-destructive">{error}</p>}
 

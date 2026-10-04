@@ -18,22 +18,14 @@ import { useCanvasStore } from "@/store/useCanvasStore";
 import { THUMB_TARGET_WIDTH } from "@/lib/canvas/thumbnail";
 import { renderSlidesToImages } from "@/lib/export/carousel";
 import { cn } from "@/lib/utils";
+import { PLATFORMS, type PlatformId } from "@/lib/platforms";
+import { PlatformIcon } from "@/components/icons/platform-icons";
 
 interface PublishTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAuthRequired?: () => void;
 }
-
-const CATEGORIES = [
-  "Threads",
-  "Insta",
-  "LinkedIn",
-  "TikTok",
-  "Other",
-] as const;
-
-type Category = (typeof CATEGORIES)[number];
 
 async function captureTemplateAssets(): Promise<{
   previewUrl: string | null;
@@ -84,7 +76,7 @@ export function PublishTemplateDialog({
   const slides = useCanvasStore((s) => s.slides);
 
   const [title, setTitle] = useState(projectTitle);
-  const [category, setCategory] = useState<Category>("Other");
+  const [category, setCategory] = useState<PlatformId>("Other");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -173,7 +165,7 @@ export function PublishTemplateDialog({
 
     setDone(true);
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("swibp:templates-changed"));
+      window.dispatchEvent(new CustomEvent("core:templates-changed"));
     }
     setTimeout(() => onOpenChange(false), 700);
   };
@@ -231,20 +223,21 @@ export function PublishTemplateDialog({
               />
 
               <div className="flex flex-wrap gap-1.5">
-                {CATEGORIES.map((c) => (
+                {PLATFORMS.map((item) => (
                   <button
-                    key={c}
+                    key={item.id}
                     type="button"
                     disabled={loading}
-                    onClick={() => setCategory(c)}
+                    onClick={() => setCategory(item.id)}
                     className={cn(
-                      "h-8 rounded-full px-3 text-xs transition-colors",
-                      category === c
+                      "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs transition-colors",
+                      category === item.id
                         ? "bg-foreground text-background"
                         : "bg-muted/50 text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    {c}
+                    <PlatformIcon id={item.id} className="size-3.5" />
+                    {item.label}
                   </button>
                 ))}
               </div>
@@ -254,7 +247,8 @@ export function PublishTemplateDialog({
 
             <Button
               type="button"
-              className="h-8 w-full rounded-full gap-2"
+              className="w-full rounded-full gap-2"
+              size="lg"
               disabled={!title.trim() || loading}
               onClick={() => void handlePublish()}
             >

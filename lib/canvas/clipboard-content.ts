@@ -1,5 +1,5 @@
-export const CANVAS_CLIPBOARD_MIME = "application/x-swibp-canvas";
-export const CANVAS_CLIPBOARD_MARKER = "swibp:canvas-objects";
+export const CANVAS_CLIPBOARD_MIME = "application/x-core-canvas";
+export const CANVAS_CLIPBOARD_MARKER = "core:canvas-objects";
 
 export type ClipboardPayload =
   | { kind: "objects" }

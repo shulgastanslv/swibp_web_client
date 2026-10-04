@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useCanvasManager } from "@/context/canvas-manager";
+import { useCanvasManager, useSlidesController } from "@/context/canvas-manager";
 import { useSlides } from "@/hooks/use-slides";
 import { CollapsibleGroup } from "@/components/ui/collapsible-group";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import type { Side, SlideNumberStyle } from "@/lib/canvas/objects";
 import { formatSlideNumber } from "@/lib/canvas/objects";
+import { slidesFromLines, splitSlideLines, TEXT_STYLES, type TextStyleId } from "@/lib/canvas/document";
+import { useCanvasStore } from "@/store/useCanvasStore";
 
 const NUMBER_STYLES: readonly SlideNumberStyle[] = ["1", "01", "1 / 8"];
 
@@ -179,8 +181,10 @@ const fieldInput =
 
 export function SidebarTools() {
   const manager = useCanvasManager();
+  const slidesController = useSlidesController();
   const { currentIndex, slides } = useSlides();
   const [prompt, setPrompt] = useState("");
+  const [slideStyle, setSlideStyle] = useState<TextStyleId>("heading");
   const [handle, setHandle] = useState("@username");
   const [platform, setPlatform] = useState<(typeof PLATFORMS)[number] | null>("Telegram");
   const [info, setInfo] = useState("");
@@ -191,22 +195,62 @@ export function SidebarTools() {
   const addHandle = (side: Side) =>
     manager?.objects.addCornerHandle(handle.trim() || "@username", side, platform ?? undefined);
 
+  const lineCount = splitSlideLines(prompt).length;
+
+  const generateSlides = () => {
+    if (!lineCount || !slidesController) return;
+    const state = useCanvasStore.getState();
+    const next = slidesFromLines({
+      text: prompt,
+      styleId: slideStyle,
+      style: state.textStyles[slideStyle],
+      palette: state.palette,
+      chrome: state.chrome,
+      width: state.canvasDimensions.width,
+      height: state.canvasDimensions.height,
+    });
+    if (next.length === 0) return;
+    state.setSlides(next);
+    state.setCurrentSlideId(next[0]!.id);
+    state.setDirty(true);
+    void slidesController.loadCurrent();
+  };
+
   return (
     <div className="flex flex-col gap-3 p-2 text-xs text-foreground">
       <section className="space-y-2">
-        <h3 className="px-1.5 pt-1 text-xs font-semibold text-foreground/90">AI generation</h3>
+        <h3 className="px-1.5 pt-1 text-xs font-semibold text-foreground/90">Slides from text</h3>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe the carousel"
+          placeholder="Paste a list or a post. Each line becomes a slide."
           rows={4}
           className="w-full resize-none rounded-xl border-0 bg-muted/30 px-3 py-2 text-xs leading-relaxed outline-none placeholder:text-muted-foreground focus:bg-muted/40"
         />
+        <div className="grid grid-cols-3 gap-1">
+          {TEXT_STYLES.map((style) => (
+            <button
+              key={style.id}
+              type="button"
+              onClick={() => setSlideStyle(style.id)}
+              className={cn(
+                "h-7 rounded-xl border-0 px-1 text-[11px] transition-colors",
+                slideStyle === style.id
+                  ? "bg-foreground text-background"
+                  : "bg-muted/30 text-foreground/80 hover:bg-muted/60",
+              )}
+            >
+              {style.label}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
+          disabled={!lineCount || !slidesController}
+          onClick={generateSlides}
           className={cn(actionButton, "h-8 w-full px-3 text-xs font-medium text-foreground/80")}
         >
-          Generate
+          Generate{lineCount > 0 ? ` · ${lineCount}` : ""}
         </button>
       </section>
       <Separator className="my-2" />

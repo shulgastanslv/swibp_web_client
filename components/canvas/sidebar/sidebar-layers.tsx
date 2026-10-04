@@ -88,7 +88,7 @@ export function SidebarLayers({
               onDragStart={(e) => handleDragStart(e, displayIdx)}
               onDragOver={(e) => handleDragOver(e, displayIdx)}
               onDragEnd={handleDragEnd}
-              className={`p-2 rounded-xl border flex items-center justify-between group cursor-pointer transition-all ${
+              className={`p-2 rounded-full flex items-center justify-between group cursor-pointer transition-all ${
                 dragIndex === displayIdx
                   ? "opacity-40 bg-muted/30 border-border/30"
                   : "bg-background hover:bg-muted/50 border-border/50"

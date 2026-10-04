@@ -150,6 +150,15 @@ test("the last slide cannot be removed", async () => {
   assert.equal(store.getState().slides.length, 1);
 });
 
+test("reorderSlides moves a slide onto another index", () => {
+  const { store } = setup(["a", "b", "c"]);
+  store.getState().reorderSlides(1, 3);
+  assert.deepEqual(
+    store.getState().slides.map((slide) => slide.id),
+    [2, 3, 1],
+  );
+});
+
 test("updating slide JSON keeps its thumbnail", () => {
   const { store } = setup(["a"]);
   store.getState().updateSlideThumbnail(1, "thumb");

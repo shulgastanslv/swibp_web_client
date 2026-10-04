@@ -215,41 +215,35 @@ export function SidebarFilters() {
 
   return (
     <div className="flex min-w-0 flex-col gap-3 overflow-hidden p-1.5 text-xs">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground/80">
-          Presets
-        </span>
+      <div className="flex flex-wrap items-center gap-1">
+        {PRESETS.map((preset) => (
+          <button
+            key={preset.id}
+            type="button"
+            onClick={() => handlePreset(preset.id, preset.values)}
+            className={cn(
+              "h-7 rounded-full px-2.5 text-xs transition-colors",
+              activePreset === preset.id
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {preset.label}
+          </button>
+        ))}
         {hasActive && (
           <button
             type="button"
             onClick={handleReset}
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            title="Reset"
+            className="ml-auto inline-flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           >
-            <RotateCcw className="h-3 w-3" />
-            Reset
+            <RotateCcw className="size-3.5" />
           </button>
         )}
       </div>
 
-      <div className="flex min-w-0 flex-wrap gap-1">
-        {PRESETS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => handlePreset(p.id, p.values)}
-            className={cn(
-              "h-6 rounded-full px-2 py-0.5 text-xs transition-colors",
-              activePreset === p.id
-                ? "bg-muted/50 text-foreground hover:bg-muted/40"
-                : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-
-      <nav className="flex min-w-0 gap-0.5 rounded-full bg-muted/30 p-1">
+      <nav className="grid grid-cols-2 rounded-full bg-muted/30 p-0.5">
         {(
           [
             ["slide", "Slide"],
@@ -261,9 +255,9 @@ export function SidebarFilters() {
             type="button"
             onClick={() => setTab(id)}
             className={cn(
-              "h-6 min-w-0 flex-1 truncate rounded-full text-xs font-medium tracking-tight transition-colors",
+              "h-7 rounded-full text-xs transition-colors",
               tab === id
-                ? "bg-background text-foreground shadow-xs"
+                ? "bg-background text-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >

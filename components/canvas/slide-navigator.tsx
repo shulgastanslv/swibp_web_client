@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Copy, Plus, Trash2 } from "lucide-react";
 import { useSlides } from "@/hooks/use-slides";
-import { useCanvasManager } from "@/context/canvas-manager";
+import { useCanvasManager, useSlidesController } from "@/context/canvas-manager";
 import { captureCanvasThumbnail } from "@/lib/canvas/thumbnail";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import type { CanvasManager } from "@/lib/canvas/manager";
@@ -31,13 +31,19 @@ export function SlideNavigator() {
     duplicate,
     remove,
     move,
+    reorder,
   } = useSlides();
+
+  const slidesController = useSlidesController();
 
   const canvasDimensions = useCanvasStore((s) => s.canvasDimensions);
   const updateSlideThumbnail = useCanvasStore((s) => s.updateSlideThumbnail);
 
   const activeRef = useRef<HTMLButtonElement>(null);
+  const dragId = useRef<number | null>(null);
+  const skipClick = useRef(false);
   const [liveThumb, setLiveThumb] = useState<string | null>(null);
+  const [overId, setOverId] = useState<number | null>(null);
 
   const aspect = canvasDimensions.width / canvasDimensions.height;
   const thumbW = Math.round(THUMB_HEIGHT * aspect);
@@ -77,7 +83,7 @@ export function SlideNavigator() {
       if (timer) clearTimeout(timer);
       unsubs.forEach((off) => off());
     };
-  }, [manager, canvasDimensions.width, updateSlideThumbnail]);
+  }, [manager, canvasDimensions.width, updateSlideThumbnail, currentIndex, slides.length]);
 
   return (
     <footer className="h-[76px] shrink-0 flex items-center gap-3 px-4 bg-background border-t border-border z-10 select-none">
@@ -114,13 +120,43 @@ export function SlideNavigator() {
               key={slide.id}
               ref={isActive ? activeRef : undefined}
               type="button"
-              onClick={() => switchTo(slide.id)}
-              title={`Slide ${idx + 1}`}
-              className={`relative shrink-0 overflow-hidden rounded-lg border bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              draggable
+              onDragStart={(event) => {
+                dragId.current = slide.id;
+                skipClick.current = true;
+                slidesController?.saveCurrent();
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", String(slide.id));
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+                setOverId(slide.id);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                const from = dragId.current;
+                dragId.current = null;
+                setOverId(null);
+                if (from != null && from !== slide.id) reorder(from, slide.id);
+              }}
+              onDragEnd={() => {
+                dragId.current = null;
+                setOverId(null);
+                window.setTimeout(() => {
+                  skipClick.current = false;
+                }, 0);
+              }}
+              onClick={() => {
+                if (skipClick.current) return;
+                switchTo(slide.id);
+              }}
+              title={`Slide ${idx + 1}. Drag to reorder.`}
+              className={`relative shrink-0 cursor-grab overflow-hidden rounded-lg border bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing ${
                 isActive
                   ? "border-foreground/70"
                   : "border-transparent opacity-70 hover:opacity-100"
-              }`}
+              } ${overId === slide.id && dragId.current !== slide.id ? "ring-2 ring-foreground/50" : ""}`}
               style={{ width: thumbW, height: THUMB_HEIGHT }}
             >
               {thumbSrc ? (

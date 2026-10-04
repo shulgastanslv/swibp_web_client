@@ -1,4 +1,5 @@
 import { Canvas } from "fabric";
+import "./fabric-props";
 
 export class CanvasCore {
   public canvas: Canvas;

@@ -14,6 +14,7 @@ import { useCanvasStore } from "@/store/useCanvasStore";
 import { CANVAS_RATIOS, type RatioKey } from "@/lib/types";
 import { useCanvasManager } from "@/context/canvas-manager";
 import { GridControls } from "@/components/canvas/grid-controls";
+import { ClearCanvasButton } from "@/components/canvas/clear-canvas-button";
 
 const QUICK_RATIOS: { ratio: RatioKey; iconClass: string }[] = [
   { ratio: "4:5", iconClass: "w-2.5 h-3" },
@@ -156,6 +157,7 @@ export function CanvasToolbar() {
             </>
           )}
         </Button>
+        <ClearCanvasButton />
         <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-full">
           <Button
             variant="ghost"

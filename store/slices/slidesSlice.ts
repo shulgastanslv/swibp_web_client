@@ -1,4 +1,5 @@
 import { FabricCanvasJSON, SlideItem } from "@/lib/types";
+import { applyChrome, type ChromeTemplate } from "@/lib/canvas/chrome";
 import { StateCreator } from "zustand";
 
 export interface SlidesSlice {
@@ -12,6 +13,8 @@ export interface SlidesSlice {
   duplicateSlide: (id?: number) => number | null;
   removeSlide: (id: number) => void;
   moveSlide: (direction: "left" | "right") => void;
+  /** Moves `activeId` to the index currently occupied by `overId`. */
+  reorderSlides: (activeId: number, overId: number) => void;
   updateSlideJSONById: (id: number, json: FabricCanvasJSON) => void;
   updateSlideThumbnail: (id: number, thumbnail: string) => void;
 }
@@ -22,7 +25,18 @@ const createEmptyCanvasJSON = (): FabricCanvasJSON => ({
   background: "#ffffff",
 });
 
-type SlidesStore = SlidesSlice & { setDirty?: (dirty: boolean) => void };
+type SlidesStore = SlidesSlice & {
+  setDirty?: (dirty: boolean) => void;
+  chrome?: ChromeTemplate[];
+};
+
+function stampChrome(chrome: ChromeTemplate[] | undefined, slides: SlideItem[]): SlideItem[] {
+  if (!chrome?.length) return slides;
+  return slides.map((slide, index) => ({
+    ...slide,
+    canvasJSON: applyChrome(slide.canvasJSON, chrome, index, slides.length),
+  }));
+}
 
 export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> = (set, get) => {
   const markDirty = () => get().setDirty?.(true);
@@ -45,7 +59,8 @@ export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> =
 
       const afterIndex = slides.findIndex((s) => s.id === afterId);
       const insertAt = afterIndex === -1 ? slides.length : afterIndex + 1;
-      set({ slides: [...slides.slice(0, insertAt), newSlide, ...slides.slice(insertAt)] });
+      const next = [...slides.slice(0, insertAt), newSlide, ...slides.slice(insertAt)];
+      set({ slides: stampChrome(get().chrome, next) });
       markDirty();
       return newId;
     },
@@ -65,9 +80,8 @@ export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> =
       };
 
       const insertAt = sourceIndex + 1;
-      set({
-        slides: [...slides.slice(0, insertAt), newSlide, ...slides.slice(insertAt)],
-      });
+      const next = [...slides.slice(0, insertAt), newSlide, ...slides.slice(insertAt)];
+      set({ slides: stampChrome(get().chrome, next) });
       markDirty();
       return newId;
     },
@@ -78,7 +92,7 @@ export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> =
 
       const nextSlides = slides.filter((s) => s.id !== id);
       const nextCurrentId = currentSlideId === id ? nextSlides[0].id : currentSlideId;
-      set({ slides: nextSlides, currentSlideId: nextCurrentId });
+      set({ slides: stampChrome(get().chrome, nextSlides), currentSlideId: nextCurrentId });
       markDirty();
     },
 
@@ -94,7 +108,20 @@ export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> =
       const [moved] = newSlides.splice(index, 1);
       newSlides.splice(targetIndex, 0, moved);
 
-      set({ slides: newSlides });
+      set({ slides: stampChrome(get().chrome, newSlides) });
+      markDirty();
+    },
+
+    reorderSlides: (activeId, overId) => {
+      const { slides } = get();
+      const from = slides.findIndex((s) => s.id === activeId);
+      const to = slides.findIndex((s) => s.id === overId);
+      if (from < 0 || to < 0 || from === to) return;
+
+      const next = [...slides];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved!);
+      set({ slides: stampChrome(get().chrome, next) });
       markDirty();
     },
 
