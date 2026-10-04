@@ -117,6 +117,11 @@ export function bindKeyboardShortcuts(
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && manager.crop.active) {
+      e.preventDefault();
+      manager.crop.cancel();
+      return;
+    }
     if (isTypingTarget(document.activeElement)) return;
     if (isEditingCanvasText(manager)) return;
 

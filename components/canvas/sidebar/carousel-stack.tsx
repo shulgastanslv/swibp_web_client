@@ -6,10 +6,10 @@ import { Loader2 } from "lucide-react";
 interface CarouselStackProps {
   slideCount?: number;
   previewUrl?: string | null;
-  badge?: string;
   busy?: boolean;
   className?: string;
   children?: React.ReactNode;
+  createdAt?: string;
 }
 
 const MAX_STACK = 3;
@@ -20,10 +20,10 @@ const OFFSET = 10;
 export function CarouselStack({
   slideCount = 1,
   previewUrl,
-  badge,
   busy,
   className,
   children,
+  createdAt,
 }: CarouselStackProps) {
   const count = Math.max(1, Math.min(slideCount || 1, MAX_STACK));
 
@@ -73,11 +73,9 @@ export function CarouselStack({
         })}
       </div>
 
-      {badge ? (
         <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-border/40">
-          {badge}
+        {createdAt}
         </span>
-      ) : null}
 
       {children}
 

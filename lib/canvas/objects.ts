@@ -26,6 +26,13 @@ const CODE_BLOCK_BG_4K =
 export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 export type Side = "left" | "right";
 
+const IMAGE_SHAPES = new Set(["rect", "circle", "triangle", "ellipse", "polygon", "path"]);
+
+/** Shapes that can be filled with a picture cropped to their outline. */
+export function canFillShape(type: string | undefined) {
+  return !!type && IMAGE_SHAPES.has(type);
+}
+
 const CORNER_MARGIN = 64;
 const CORNER_FONT = "Inter, sans-serif";
 const CORNER_MUTED = "#64748b";
@@ -143,8 +150,8 @@ export class ObjectFactory {
   }
 
   /**
-   * Author handle at the top edge, aligned left or right.
-   * Optional platform label (Telegram, Threads…) sits in a muted line above the handle.
+   * Author chip at the top edge.
+   * Avatar on the left, channel name above, and the handle in parentheses beside it.
    */
   addCornerHandle(
     handle = "@username",
@@ -153,43 +160,65 @@ export class ObjectFactory {
   ): Group {
     const corner: Corner = side === "right" ? "top-right" : "top-left";
     const pos = this.getCornerPosition(corner);
-    const align = side === "right" ? "right" : "left";
-
-    const parts: FabricObject[] = [];
-    let cursorY = 0;
-
     const ink = this.slotColor("text", CORNER_INK);
+    const size = 64;
+    const gap = 14;
+    const textLeft = size + gap;
+    const initial = (handle.replace(/^@/, "").trim()[0] || "?").toUpperCase();
 
-    if (platform) {
-      const label = new IText(platform, {
-        originX: align,
-        originY: "top",
-        left: 0,
-        top: cursorY,
-        fontSize: 22,
-        fontFamily: CORNER_FONT,
-        fontWeight: "400",
-        fill: ink,
-        textAlign: align,
-      });
-      this.mark(label, { swibpSlot: "text" });
-      parts.push(label);
-      cursorY += label.height + 6;
-    }
-
-    const handleText = new IText(handle, {
-      originX: align,
+    const avatar = new Circle({
+      radius: size / 2,
+      fill: this.slotColor("card", "#e2e8f0"),
+      originX: "left",
       originY: "top",
       left: 0,
-      top: cursorY,
+      top: 0,
+      evented: false,
+      selectable: false,
+    });
+    const letter = new Text(initial, {
+      fontSize: 26,
+      fontFamily: CORNER_FONT,
+      fontWeight: "600",
+      fill: ink,
+      originX: "center",
+      originY: "center",
+      left: size / 2,
+      top: size / 2,
+      evented: false,
+      selectable: false,
+    });
+
+    const parts: FabricObject[] = [avatar, letter];
+    const channelName = platform?.trim();
+
+    if (channelName) {
+      const channel = new IText(channelName, {
+        originX: "left",
+        originY: "top",
+        left: textLeft,
+        top: 6,
+        fontSize: 26,
+        fontFamily: CORNER_FONT,
+        fontWeight: "600",
+        fill: ink,
+      });
+      this.mark(channel, { swibpSlot: "text" });
+      parts.push(channel);
+    }
+
+    const caption = new IText(`(${handle})`, {
+      originX: "left",
+      originY: "top",
+      left: textLeft,
+      top: channelName ? 36 : (size - 24) / 2,
       fontSize: 22,
       fontFamily: CORNER_FONT,
       fontWeight: "400",
-      fill: ink,
-      textAlign: align,
+      fill: CORNER_MUTED,
     });
-    this.mark(handleText, { swibpSlot: "text" });
-    parts.push(handleText);
+    this.mark(caption, { swibpSlot: "text" });
+    parts.push(caption);
 
     this.removeRole("handle");
     const group = new Group(parts, {
@@ -203,7 +232,7 @@ export class ObjectFactory {
   }
 
   /** Text swipe cue (e.g. "->") pinned bottom-right. */
-  addSwipeArrow(text = "->", corner: Corner = "bottom-right"): IText {
+  addSwipeArrow(text = "→", corner: Corner = "bottom-right"): IText {
     this.removeRole("swipe");
     const arrow = new IText(text, {
       ...this.getCornerPosition(corner),
@@ -215,6 +244,25 @@ export class ObjectFactory {
     this.mark(arrow, { swibpRole: "swipe", swibpSlot: "accent" });
     this.addToCanvas(arrow);
     return arrow;
+  }
+
+  /** Bottom-left swipe caption. Replaces the previous caption. */
+  addSwipeCue(text: string): IText {
+    for (const obj of [...this.canvas.getObjects()]) {
+      if ((obj as FabricObject & { swibpRole?: string }).swibpRole === "cue") {
+        this.canvas.remove(obj);
+      }
+    }
+    const label = new IText(text, {
+      ...this.getCornerPosition("bottom-left"),
+      fontSize: 28,
+      fontFamily: CORNER_FONT,
+      fontWeight: "500",
+      fill: this.slotColor("text", CORNER_INK),
+    });
+    this.mark(label, { swibpRole: "cue", swibpSlot: "text" });
+    this.addToCanvas(label);
+    return label;
   }
 
   /** Bottom-left "// info" caption plus a bottom-right swipe arrow. */
@@ -358,35 +406,56 @@ export class ObjectFactory {
     return this.fillFrameWithImage(current, source);
   }
 
-  /** Puts a picture inside a rectangle, cropped to that rectangle. */
+  /** Opens a file picker and fills the selected shape with that picture. */
+  pickShapeImage(target?: FabricObject | null) {
+    const shape = target ?? this.canvas.getActiveObject();
+    if (!shape || !canFillShape(shape.type)) return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file?.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          void this.fillFrameWithImage(shape, reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
+
+  /**
+   * Covers a shape with a picture and clips it to that shape.
+   * A picture that is already clipped keeps its outline.
+   */
   async fillFrameWithImage(target: FabricObject, source: string) {
     if (!target.canvas) return;
 
     const tagged = target as FabricObject & { swibpRole?: string; swibpSlot?: string };
     const keepLocked = this.isSplit(target) || Boolean(target.lockMovementX && target.lockMovementY);
     const center = target.getCenterPoint();
-    const frameW = target.getScaledWidth();
-    const frameH = target.getScaledHeight();
-    const frame = {
-      left: center.x - frameW / 2,
-      top: center.y - frameH / 2,
-      width: frameW,
-      height: frameH,
-    };
+    const frameW = Math.max(1, Math.abs((target.width || 1) * (target.scaleX || 1)));
+    const frameH = Math.max(1, Math.abs((target.height || 1) * (target.scaleY || 1)));
     const index = this.canvas.getObjects().indexOf(target);
 
     const img = await Image.fromURL(source);
     const sourceW = img.width || 1;
     const sourceH = img.height || 1;
-    const scale = Math.max(frame.width / sourceW, frame.height / sourceH);
-    const cropW = frame.width / scale;
-    const cropH = frame.height / scale;
+    const scale = Math.max(frameW / sourceW, frameH / sourceH);
+    const cropW = frameW / scale;
+    const cropH = frameH / scale;
 
     img.set({
-      left: frame.left,
-      top: frame.top,
-      originX: "left",
-      originY: "top",
+      left: center.x,
+      top: center.y,
+      originX: "center",
+      originY: "center",
+      angle: target.angle || 0,
+      flipX: Boolean(target.flipX),
+      flipY: Boolean(target.flipY),
       cropX: Math.max(0, (sourceW - cropW) / 2),
       cropY: Math.max(0, (sourceH - cropH) / 2),
       width: cropW,
@@ -394,6 +463,10 @@ export class ObjectFactory {
       scaleX: scale,
       scaleY: scale,
     });
+
+    const clip = await this.shapeClip(target, scale);
+    if (clip) img.clipPath = clip;
+
     if (tagged.swibpRole || tagged.swibpSlot) {
       this.mark(img, {
         ...(tagged.swibpRole ? { swibpRole: tagged.swibpRole } : {}),
@@ -407,6 +480,45 @@ export class ObjectFactory {
     this.canvas.setActiveObject(img);
     this.canvas.renderAll();
     return img;
+  }
+
+  /** Clip path in the picture's own coordinates, centered on it. */
+  private async shapeClip(target: FabricObject, imageScale: number) {
+    const existing = target.clipPath;
+    const clip = existing
+      ? await existing.clone()
+      : canFillShape(target.type)
+        ? await target.clone()
+        : null;
+    if (!clip) return null;
+
+    const baseScaleX = existing
+      ? (existing.scaleX || 1) * (target.scaleX || 1)
+      : target.scaleX || 1;
+    const baseScaleY = existing
+      ? (existing.scaleY || 1) * (target.scaleY || 1)
+      : target.scaleY || 1;
+
+    clip.set({
+      absolutePositioned: false,
+      originX: "center",
+      originY: "center",
+      left: 0,
+      top: 0,
+      angle: 0,
+      skewX: 0,
+      skewY: 0,
+      flipX: false,
+      flipY: false,
+      scaleX: baseScaleX / (imageScale || 1),
+      scaleY: baseScaleY / (imageScale || 1),
+      strokeWidth: 0,
+      evented: false,
+      selectable: false,
+      objectCaching: false,
+    });
+    clip.clipPath = undefined;
+    return clip;
   }
 
   addRectangle(x?: number, y?: number) {

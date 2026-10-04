@@ -31,6 +31,7 @@ import {
   PanelRightOpen,
   MousePointerClick,
   Upload,
+  Crop,
   WandSparkles,
   Loader2,
   Lock,
@@ -46,6 +47,7 @@ import {
 } from "fabric";
 import { useCanvasManager } from "@/context/canvas-manager";
 import { fileToDataUrl } from "@/lib/image/file-to-data-url";
+import { canFillShape } from "@/lib/canvas/objects";
 import { removeImageBackground } from "@/lib/image/remove-background";
 import { FontSelect } from "@/components/canvas/font-select";
 import {
@@ -538,8 +540,8 @@ export function RightSidebar({
     if (!file) return;
 
     const intoFrame =
-      selectedObject?.type === "rect" ||
-      (selectedObject as { swibpRole?: string } | null)?.swibpRole === "split";
+      canFillShape(selectedObject?.type) ||
+      (selectedObject?.type === "image" && Boolean(selectedObject.clipPath));
 
     void fileToDataUrl(file)
       .then((dataUrl) => {
@@ -719,9 +721,23 @@ export function RightSidebar({
     formValues?.type === "i-text" ||
     formValues?.type === "textbox";
 
+  const [cropping, setCropping] = useState(false);
+  const [cropZoom, setCropZoom] = useState(1);
+  const [cropMax, setCropMax] = useState(4);
+
+  useEffect(() => {
+    if (!manager) return;
+    manager.crop.subscribe(() => {
+      setCropping(manager.crop.active);
+      setCropZoom(manager.crop.zoom);
+      setCropMax(manager.crop.maxZoom);
+    });
+  }, [manager]);
+
   const isRect = formValues?.type === "rect";
   const isImage = formValues?.type === "image";
   const canHaveRadius = isRect || isImage;
+  const canImportImage = canFillShape(formValues?.type);
 
   const typeLabel: Record<string, string> = {
     rect: "Rectangle",
@@ -801,7 +817,7 @@ export function RightSidebar({
             </div>
           ) : (
             <div className="flex flex-col pb-3">
-              {isRect && (
+              {canImportImage && (
                 <div className="border-b border-border/60 px-3 py-3">
                   <input
                     type="file"
@@ -906,6 +922,54 @@ export function RightSidebar({
 
               {isImage && (
                 <CollapsibleGroup id="rs-image" title="Image">
+                  {cropping ? (
+                    <>
+                      <p className="text-xs leading-snug text-muted-foreground">
+                        Drag the picture to move it inside the frame.
+                      </p>
+                      <NumberField
+                        label="Zoom"
+                        value={cropZoom}
+                        min={1}
+                        max={cropMax}
+                        step={0.01}
+                        decimals={2}
+                        unit="×"
+                        onChange={(value) => manager?.crop.setZoom(value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className={`h-9 flex-1 ${btnRound}`}
+                          onClick={() => manager?.crop.cancel()}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className={`h-9 flex-1 ${btnRound}`}
+                          onClick={() => manager?.crop.apply()}
+                        >
+                          Done
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={`h-9 w-full justify-center gap-2 text-sm ${btnRound}`}
+                      onClick={() => selectedObject && manager?.crop.start(selectedObject)}
+                      disabled={bgRemoving}
+                    >
+                      <Crop className="size-4" />
+                      Crop
+                    </Button>
+                  )}
                   <input
                     type="file"
                     ref={fileInputRef}

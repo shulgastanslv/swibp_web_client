@@ -188,7 +188,7 @@ export function SidebarTools() {
   const [slideStyle, setSlideStyle] = useState<TextStyleId>("heading");
   const [handle, setHandle] = useState("@username");
   const [platform, setPlatform] = useState<(typeof PLATFORMS)[number] | null>("Telegram");
-  const [info, setInfo] = useState("");
+  const [info, setInfo] = useState("text");
 
   const slideIndex = Math.max(currentIndex, 0);
   const slideTotal = Math.max(slides.length, 1);
@@ -326,7 +326,7 @@ export function SidebarTools() {
           type="button"
           disabled={!manager}
           onClick={() => manager?.objects.addSwipeArrow()}
-          className={cn(actionButton, "flex w-full items-center justify-between px-3")}
+          className={cn(actionButton, "flex w-full items-center justify-between px-3 text-xs")}
         >
           <span>Arrow</span>
           <span className="font-mono">-&gt;</span>
@@ -334,18 +334,29 @@ export function SidebarTools() {
         <input
           value={info}
           onChange={(e) => setInfo(e.target.value)}
-          placeholder="info"
+          placeholder="text"
           className={fieldInput}
         />
-        <button
-          type="button"
-          disabled={!manager}
-          onClick={() => manager?.objects.addSwipeInfo(info.trim() || "info")}
-          className={cn(actionButton, "flex w-full items-center justify-between px-3")}
-        >
-          <span className="truncate font-mono">// {info.trim() || "info"}</span>
-          <span className="font-mono">-&gt;</span>
-        </button>
+        <div className="grid grid-cols-2 gap-1 text-xs">
+          {(
+            [
+              `[${info.trim() || "text"}]`,
+              info.trim() || "text",
+              `(${info.trim() || "text"})`,
+              `- ${info.trim() || "text"}`,
+            ] as const
+          ).map((cue) => (
+            <button
+              key={cue}
+              type="button"
+              disabled={!manager}
+              onClick={() => manager?.objects.addSwipeCue(cue)}
+              className={cn(actionButton, "truncate px-2 text-xs")}
+            >
+              {cue}
+            </button>
+          ))}
+        </div>
       </section>
 
       <div className="-mx-2">

@@ -1,21 +1,16 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { UploadCloud, Loader2, Plus, Dices, ImageIcon } from "lucide-react";
+import { useRef, useState } from "react";
+import { UploadCloud, Loader2, Plus, ImageIcon } from "lucide-react";
 import {
   SOLID_PRESETS,
   GRADIENT_PRESETS,
+  SUGGESTED_SETS,
+  type SuggestedSet,
 } from "@/lib/presets/backgrounds";
-import {
-  generatePalette,
-  PALETTE_MODES,
-  randomSeedHex,
-  type PaletteMode,
-} from "@/lib/color/palette";
 import {
   PALETTE_SLOTS,
   paintSlide,
-  paletteFromHarmony,
   type PaletteSlot,
   type ProjectPalette,
 } from "@/lib/canvas/document";
@@ -29,6 +24,49 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Tab = "color" | "gradient" | "image";
+
+const SET_SWATCHES: { key: keyof Pick<SuggestedSet, "background" | "text" | "accent" | "card">; label: string }[] = [
+  { key: "background", label: "Background" },
+  { key: "text", label: "Text" },
+  { key: "accent", label: "Accent" },
+  { key: "card", label: "Card" },
+];
+
+function SuggestedSetRow({
+  set,
+  onFillSlide,
+  onApply,
+}: {
+  set: SuggestedSet;
+  onFillSlide: () => void;
+  onApply: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-full py-1 pr-1 pl-1 hover:bg-muted/40">
+      <button
+        type="button"
+        title={`Fill this slide with ${set.background}`}
+        onClick={onFillSlide}
+        className="h-7 w-7 shrink-0 rounded-full border border-border/40 transition-transform hover:scale-105 active:scale-95"
+        style={{ backgroundColor: set.background }}
+      />
+      <div className="flex min-w-0 flex-1 items-center gap-1">
+        {SET_SWATCHES.slice(1).map((swatch) => (
+          <span
+            key={swatch.key}
+            title={`${swatch.label} ${set[swatch.key]}`}
+            className="h-3.5 w-3.5 rounded-full border border-border/40"
+            style={{ backgroundColor: set[swatch.key] }}
+          />
+        ))}
+        <span className="truncate text-foreground">{set.label}</span>
+      </div>
+      <Button type="button" size="xs" variant="secondary" className="rounded-full" onClick={onApply}>
+        Apply
+      </Button>
+    </div>
+  );
+}
 
 const FILL_TABS: { id: Tab; label: string }[] = [
   { id: "color", label: "Color" },
@@ -45,10 +83,6 @@ export function SidebarBackground() {
   const [urlLoading, setUrlLoading] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
 
-  const [seed, setSeed] = useState("#3b82f6");
-  const [mode, setMode] = useState<PaletteMode>("analogous");
-
-  const harmony = useMemo(() => generatePalette(seed, mode), [seed, mode]);
   const projectPalette = useCanvasStore((s) => s.palette);
 
   const applyProjectPalette = (next: ProjectPalette) => {
@@ -302,82 +336,20 @@ export function SidebarBackground() {
         </div>
 
         <div className="flex flex-col gap-2 rounded-sm bg-muted/25 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-medium text-foreground">Suggest a set</span>
-            <div className="flex items-center gap-1">
-              <label
-                className="relative h-5 w-5 cursor-pointer overflow-hidden rounded-full ring-1 ring-border/50"
-                title="Starting color"
-              >
-                <input
-                  type="color"
-                  value={seed}
-                  aria-label="Starting color"
-                  onChange={(e) => setSeed(e.target.value)}
-                  className="absolute inset-0 cursor-pointer opacity-0"
-                />
-                <span className="block h-full w-full" style={{ backgroundColor: seed }} />
-              </label>
-              <Button
-                type="button"
-                size="icon-xs"
-                variant="ghost"
-                title="Random starting color"
-                onClick={() => setSeed(randomSeedHex())}
-                className="rounded-full"
-              >
-                <Dices />
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-1">
-            {PALETTE_MODES.map((item) => (
-              <Button
-                key={item.id}
-                type="button"
-                size="xs"
-                variant={mode === item.id ? "default" : "secondary"}
-                onClick={() => setMode(item.id)}
-                className="rounded-full"
-              >
-                {item.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-1">
-            {harmony.map((color, index) => (
-              <button
-                key={`${color}-${index}`}
-                type="button"
-                title={`Fill this slide with ${color}`}
-                onClick={() => applySolid(color)}
-                className="h-7 w-7 rounded-full border border-border/30 transition-transform hover:scale-105 active:scale-95"
-                style={{ backgroundColor: color }}
+          <span className="font-medium text-foreground">Suggest a set</span>
+          <div className="flex flex-col gap-1">
+            {SUGGESTED_SETS.map((set) => (
+              <SuggestedSetRow
+                key={set.id}
+                set={set}
+                onFillSlide={() => applySolid(set.background)}
+                onApply={() => applyProjectPalette(set)}
               />
             ))}
           </div>
           <p className="text-[11px] leading-snug text-muted-foreground">
-            A color fills this slide. Apply sets Background, Text, Accent, and Card on every slide.
+            The large swatch fills this slide. Apply sets Background, Text, Accent, and Card on every slide.
           </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full rounded-full"
-            onClick={() => applyGradient([harmony[0], harmony[harmony.length - 1]])}
-          >
-            Fill this slide with a gradient
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            className="w-full rounded-full"
-            onClick={() => applyProjectPalette(paletteFromHarmony(harmony, seed))}
-          >
-            Apply to every slide
-          </Button>
         </div>
       </section>
     </div>

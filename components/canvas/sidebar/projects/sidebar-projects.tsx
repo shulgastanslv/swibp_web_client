@@ -130,7 +130,7 @@ export function SidebarProjects() {
         </div>
       </div>
 
-      <div className="relative flex items-center gap-2">
+      <div className="relative flex items-center p-1">
         <Search className="absolute left-2.5 size-4 text-muted-foreground pointer-events-none" />
         <Input
           value={search}
@@ -215,7 +215,7 @@ export function SidebarProjects() {
                 <CarouselStack
                   slideCount={p.slideCount}
                   previewUrl={p.previewUrl}
-                  badge="Project"
+                  createdAt={"Вчера"}
                   busy={busy}
                 >
                   <div className="absolute top-1.5 right-1.5 flex items-start gap-0.5 z-10">

@@ -145,7 +145,7 @@ export function LeftSidebar({
                     if (isLeftCollapsed) setIsLeftCollapsed(false);
                   }}
                 >
-                  {Icon ? <Icon className="w-4 h-4" /> : "Tools"}
+                  {Icon ? <Icon className="w-4 h-4" /> : null}
                 </Button>
               </RailTooltip>
             ))}

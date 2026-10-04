@@ -10,6 +10,7 @@ import { LayoutManager } from "./layouts";
 import { ArrowManager, ConnectorArrow } from "./arrow";
 import { Emitter } from "./events";
 import { captureCanvasThumbnail } from "./thumbnail";
+import { ImageCropSession } from "./crop-session";
 
 const DEFAULT_BACKGROUND = "#ffffff";
 
@@ -39,6 +40,7 @@ export class CanvasManager {
   readonly effects: EffectsManager;
   readonly layouts: LayoutManager;
   readonly arrows: ArrowManager;
+  readonly crop: ImageCropSession;
 
   private readonly history = new HistoryStack<CanvasState>();
   private readonly events = new Emitter<CanvasManagerEvents>();
@@ -55,6 +57,11 @@ export class CanvasManager {
     this.effects = new EffectsManager(this.canvas);
     this.layouts = new LayoutManager(this.canvas);
     this.arrows = new ArrowManager(this.canvas);
+    this.crop = new ImageCropSession(this.canvas, (changed) => {
+      if (this.disposed || this.silentDepth > 0) return;
+      if (changed) this.commit();
+      this.events.emit("selection", this.getActiveObject());
+    });
     this.grid.setLayoutManager(this.layouts);
 
     this.history.reset(this.getState());
@@ -250,6 +257,7 @@ export class CanvasManager {
     this.loadAbort = abort;
 
     this.silentDepth++;
+    this.crop.cancel();
     try {
       this.canvas.discardActiveObject();
       if (state) {
@@ -282,12 +290,15 @@ export class CanvasManager {
     };
     const onSelection = () => {
       if (this.silentDepth > 0) return;
+      if (this.crop.active && this.getActiveObject() !== this.crop.image) this.crop.apply();
       this.events.emit("selection", this.getActiveObject());
     };
 
     this.canvas.on("mouse:dblclick", (e) => {
+      if (this.crop.active) return;
       const target = e.target as FabricObject & { swibpRole?: string } | undefined;
       if (target?.swibpRole === "split") this.objects.pickSplitImage();
+      else if (target) this.objects.pickShapeImage(target);
     });
 
     this.canvas.on("object:added", onMutation);
