@@ -9,6 +9,16 @@ import {
 } from "fabric";
 import type { BackgroundConfig, CanvasState, ExportOptions } from "./types";
 
+function markVector(target: FabricObject, recolorable: boolean): void {
+  const node = target as FabricObject & {
+    swibpIcon?: boolean;
+    getObjects?: () => FabricObject[];
+  };
+  node.set({ objectCaching: false });
+  if (recolorable) node.swibpIcon = true;
+  node.getObjects?.().forEach((child) => markVector(child, false));
+}
+
 export class ImportExportManager {
   private canvas: Canvas;
 
@@ -16,7 +26,7 @@ export class ImportExportManager {
     this.canvas = canvas;
   }
 
-  async addSVG(svgContent: string, options?: { maxSize?: number }) {
+  async addSVG(svgContent: string, options?: { maxSize?: number; recolorable?: boolean }) {
     const result = await loadSVGFromString(svgContent);
     const objects = (result.objects ?? []).filter(
       (o): o is FabricObject => o != null,
@@ -38,6 +48,7 @@ export class ImportExportManager {
       originX: "center",
       originY: "center",
     });
+    markVector(target, options?.recolorable ?? false);
 
     const maxSize = options?.maxSize ?? 120;
     const scale = Math.min(

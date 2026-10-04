@@ -18,7 +18,7 @@ import {
   type InsightPlatform,
 } from "@/lib/canvas/insights";
 import { useInsightUi } from "@/lib/canvas/insight-ui";
-import { CornerLeftUpIcon, CornerRightDownIcon, MapIcon } from "lucide-react";
+import { CornerLeftUpIcon, CornerRightUpIcon, MapIcon } from "lucide-react";
 import { applyCarouselFont } from "@/lib/canvas/apply-carousel-font";
 import { loadGoogleFont, normalizeFontFamily, SUGGESTED_FONTS } from "@/lib/fonts/google-fonts";
 
@@ -41,6 +41,25 @@ function firstFont(objects: FabricObject[]): string | null {
 
 const PLATFORMS: readonly InsightPlatform[] = ["Telegram", "Threads", "Instagram", "X"];
 
+type CueStyleId = "brackets" | "plain" | "parentheses" | "dash";
+
+const CUE_STYLES: readonly { id: CueStyleId; label: string }[] = [
+  { id: "brackets", label: "Brackets" },
+  { id: "plain", label: "Plain" },
+  { id: "parentheses", label: "Parentheses" },
+  { id: "dash", label: "Dash" },
+];
+
+function formatCue(style: CueStyleId, raw: string): string {
+  const word = raw.trim() || "swipe";
+  if (style === "brackets") return `[${word}]`;
+  if (style === "parentheses") return `(${word})`;
+  if (style === "dash") return `– ${word}`;
+  return word;
+}
+
+const fieldLabel = "px-0.5 text-[11px] text-muted-foreground";
+
 const actionButton =
   "h-8 rounded-full bg-muted px-2.5 text-xs text-foreground/80 transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40 flex items-center justify-center gap-1";
 const fieldInput =
@@ -59,6 +78,7 @@ export function SidebarTools() {
   const showAttention = useInsightUi((s) => s.showAttention);
   const setShowAttention = useInsightUi((s) => s.setShowAttention);
   const [info, setInfo] = useState("swipe");
+  const [cueStyle, setCueStyle] = useState<CueStyleId>("brackets");
   const [textTick, setTextTick] = useState(0);
   const objects = useCanvasObjects();
   const activeFont = firstFont(objects);
@@ -75,6 +95,9 @@ export function SidebarTools() {
 
   const slideIndex = Math.max(currentIndex, 0);
   const slideTotal = Math.max(slides.length, 1);
+  const handleText = handle.trim() || "@username";
+  const handleInitial = (handleText.replace(/^@/, "")[0] || "?").toUpperCase();
+  const cueText = formatCue(cueStyle, info);
 
   const addHandle = (side: Side) =>
     manager?.objects.addCornerHandle(handle.trim() || "@username", side, platform ?? undefined);
@@ -212,61 +235,102 @@ export function SidebarTools() {
         </div>
       </CollapsibleGroup>
 
-      <CollapsibleGroup id="tools-handle" title="Author handle">
+      <CollapsibleGroup id="tools-handle" title="Author">
         <div className="space-y-2">
-        <input
-          value={handle}
-          onChange={(e) => setHandle(e.target.value)}
-          placeholder="@username"
-          className={fieldInput}
-        />
-        <div className="flex gap-1">
-          {PLATFORMS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPlatform(platform === p ? null : p)}
-              className={cn(
-                "h-7 min-w-0 flex-1 truncate rounded-full px-1 text-xs transition-colors",
-                platform === p
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-              )}
-            >
-              {p === "Instagram" ? "Insta" : p === "Telegram" ? "TG" : p}
-            </button>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            disabled={!manager}
-            onClick={() => addHandle("left")}
-            className={actionButton}
-          >
-            <CornerLeftUpIcon className="w-3.5 h-3.5" />
-            Top left
-          </button>
-          <button
-            type="button"
-            disabled={!manager}
-            onClick={() => addHandle("right")}
-            className={actionButton}
-          >
-            <CornerRightDownIcon className="w-3.5 h-3.5" />
-            Bottom right
-          </button>
-        </div>
+          <div className="flex items-center gap-2.5 rounded-xl bg-muted/30 px-2.5 py-2">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-xs font-semibold">
+              {handleInitial}
+            </span>
+            <span className="min-w-0 leading-tight">
+              {platform ? (
+                <span className="block truncate text-xs font-medium">{platform}</span>
+              ) : null}
+              <span
+                className={cn(
+                  "block truncate",
+                  platform ? "text-[11px] text-muted-foreground" : "text-xs font-medium",
+                )}
+              >
+                ({handleText})
+              </span>
+            </span>
+          </div>
+          <input
+            value={handle}
+            onChange={(e) => setHandle(e.target.value)}
+            placeholder="@username"
+            aria-label="Handle"
+            className={fieldInput}
+          />
+          <div className="space-y-1">
+            <p className={fieldLabel}>Platform name</p>
+            <div className="grid grid-cols-2 gap-1">
+              {PLATFORMS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  aria-pressed={platform === p}
+                  title={`Print ${p} above the handle`}
+                  onClick={() => setPlatform(p)}
+                  className={cn(
+                    "h-7 truncate rounded-full px-2 text-xs transition-colors",
+                    platform === p
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className={fieldLabel}>Top edge</p>
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                type="button"
+                disabled={!manager}
+                onClick={() => addHandle("left")}
+                className={actionButton}
+              >
+                <CornerLeftUpIcon className="size-3.5" />
+                Top left
+              </button>
+              <button
+                type="button"
+                disabled={!manager}
+                onClick={() => addHandle("right")}
+                className={actionButton}
+              >
+                <CornerRightUpIcon className="size-3.5" />
+                Top right
+              </button>
+            </div>
+          </div>
         </div>
       </CollapsibleGroup>
 
-      <CollapsibleGroup id="tools-look" title="Look">
-        <div className="space-y-2">
-          <p className="px-1 text-xs leading-relaxed text-muted-foreground">
-            Where people look on {insightPlatform}, plus a reach estimate from slides, text length, and contrast.
-          </p>
+      <CollapsibleGroup id="tools-look" title="Attention">
+        <div className="space-y-2.5">
+          <div className="space-y-1.5">
+            <p className={fieldLabel}>Where eyes go · {insightPlatform}</p>
+            <ol className="space-y-1.5">
+              {attention.map((zone, index) => (
+                <li key={zone.id} className="flex gap-2">
+                  <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] tabular-nums text-muted-foreground">
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0 leading-snug">
+                    <span className="text-foreground">{zone.label}</span>
+                    <span className="mt-0.5 block text-[11px] text-muted-foreground">{zone.hint}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
           <button
             type="button"
+            aria-pressed={showAttention}
             onClick={() => setShowAttention(!showAttention)}
             className={cn(
               actionButton,
@@ -276,26 +340,22 @@ export function SidebarTools() {
           >
             <span className="flex items-center gap-1.5">
               <MapIcon className="size-3.5" />
-              Heat map
+              Show on the slide
             </span>
             <span>{showAttention ? "On" : "Off"}</span>
           </button>
-          {showAttention && (
-            <ul className="space-y-1.5 px-1">
-              {attention.map((zone) => (
-                <li key={zone.id} className="text-xs leading-snug">
-                  <span className="text-foreground">{zone.label}</span>
-                  <span className="text-muted-foreground"> · {zone.hint}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="space-y-1 px-1">
+          <div className="space-y-1.5 rounded-xl bg-muted/30 px-2.5 py-2">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-foreground">Reach</span>
               <span className="tabular-nums text-muted-foreground">
                 <span className="text-foreground">{reach.score}</span> {reach.label}
               </span>
+            </div>
+            <div className="h-1 overflow-hidden rounded-full bg-foreground/10">
+              <div
+                className="h-full rounded-full bg-foreground/70"
+                style={{ width: `${reach.score}%` }}
+              />
             </div>
             {(
               [
@@ -313,48 +373,65 @@ export function SidebarTools() {
         </div>
       </CollapsibleGroup>
 
-      <CollapsibleGroup id="tools-cues" title="Swipe cues">
+      <CollapsibleGroup id="tools-cues" title="Swipe">
         <div className="space-y-2">
-          <p className="px-1 text-xs leading-relaxed text-muted-foreground">
-            A hint that another slide is next. The arrow sits bottom right, the caption bottom left.
-          </p>
-          <button
-            type="button"
-            disabled={!manager}
-            onClick={() => manager?.objects.addSwipeArrow()}
-            className={cn(actionButton, "w-full justify-between px-3")}
-          >
-            <span>Arrow</span>
-            <span className="font-mono text-muted-foreground">→</span>
-          </button>
-          <input
-            value={info}
-            onChange={(e) => setInfo(e.target.value)}
-            placeholder="Caption, e.g. swipe"
-            aria-label="Swipe caption"
-            className={fieldInput}
-          />
-          <div className="grid grid-cols-2 gap-1">
-            {(
-              [
-                ["Brackets", `[${info.trim() || "swipe"}]`],
-                ["Plain", info.trim() || "swipe"],
-                ["Parentheses", `(${info.trim() || "swipe"})`],
-                ["Dash", `– ${info.trim() || "swipe"}`],
-              ] as const
-            ).map(([name, cue]) => (
-              <button
-                key={name}
-                type="button"
-                disabled={!manager}
-                title={`Add “${cue}” at the bottom left`}
-                onClick={() => manager?.objects.addSwipeCue(cue)}
-                className={cn(actionButton, "flex-col gap-0.5 px-2 py-1.5 h-auto")}
-              >
-                <span className="max-w-full truncate text-foreground">{cue}</span>
-                <span className="text-[10px] text-muted-foreground">{name}</span>
-              </button>
-            ))}
+          <div className="relative h-24 rounded-xl bg-muted/30">
+            <button
+              type="button"
+              disabled={!manager}
+              title={`Place “${cueText}” at the bottom left`}
+              onClick={() => manager?.objects.addSwipeCue(cueText)}
+              className="absolute bottom-2 left-2 flex max-w-[58%] flex-col items-start rounded-lg bg-background px-2 py-1 text-left shadow-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+            >
+              <span className="max-w-full truncate text-xs text-foreground">{cueText}</span>
+              <span className="text-[10px] text-muted-foreground">Bottom left</span>
+            </button>
+            <button
+              type="button"
+              disabled={!manager}
+              title="Place an arrow at the bottom right"
+              onClick={() => manager?.objects.addSwipeArrow()}
+              className="absolute bottom-2 right-2 flex flex-col items-end rounded-lg bg-background px-2 py-1 shadow-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+            >
+              <span className="font-mono text-sm leading-none text-foreground">→</span>
+              <span className="text-[10px] text-muted-foreground">Bottom right</span>
+            </button>
+          </div>
+          <div className="space-y-1">
+            <p className={fieldLabel}>Caption</p>
+            <input
+              value={info}
+              onChange={(e) => setInfo(e.target.value)}
+              placeholder="swipe"
+              aria-label="Swipe caption"
+              className={fieldInput}
+            />
+          </div>
+          <div className="space-y-1">
+            <p className={fieldLabel}>Style</p>
+            <div className="grid grid-cols-2 gap-1">
+              {CUE_STYLES.map((style) => {
+                const sample = formatCue(style.id, info);
+                const selected = cueStyle === style.id;
+                return (
+                  <button
+                    key={style.id}
+                    type="button"
+                    title={style.label}
+                    aria-pressed={selected}
+                    onClick={() => setCueStyle(style.id)}
+                    className={cn(
+                      "h-8 min-w-0 truncate rounded-full px-2.5 text-xs transition-colors",
+                      selected
+                        ? "bg-foreground text-background"
+                        : "bg-muted/40 text-foreground hover:bg-muted",
+                    )}
+                  >
+                    {sample}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </CollapsibleGroup>

@@ -1,39 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Loader2, X, LayoutGrid } from "lucide-react";
 import { useCanvasManager } from "@/context/canvas-manager";
 import { cn } from "@/lib/utils";
 import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
-import {
-  searchPixabayIcons,
-  type PixabayIcon,
-} from "@/actions/pixabay";
+import { listLibraryIcons, type LibraryIcon } from "@/actions/icons";
 
-const RECENT_KEY = "canvas_recent_pixabay_icons_v2";
+const RECENT_KEY = "canvas_recent_library_icons_v1";
 
-function proxiedPixabayUrl(remoteUrl: string): string {
-  return `/api/pixabay/image?url=${encodeURIComponent(remoteUrl)}`;
+function folderLabel(folder: string): string {
+  return folder
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
-
-const CATEGORIES = [
-  { id: "popular", label: "Top", query: "icon" },
-  { id: "arrows", label: "Arrows", query: "arrow icon" },
-  { id: "business", label: "Business", query: "business icon" },
-  { id: "people", label: "People", query: "people icon" },
-  { id: "social", label: "Social", query: "social media icon" },
-  { id: "tech", label: "Tech", query: "technology icon" },
-  { id: "nature", label: "Nature", query: "nature icon" },
-  { id: "food", label: "Food", query: "food icon" },
-] as const;
 
 export function SidebarIcons() {
   const manager = useCanvasManager();
-  const [categoryId, setCategoryId] = useState<string>(CATEGORIES[0].id);
+  const [icons, setIcons] = useState<LibraryIcon[]>([]);
+  const [categoryId, setCategoryId] = useState("all");
   const [search, setSearch] = useState("");
-  const [results, setResults] = useState<PixabayIcon[]>([]);
-  const [recent, setRecent] = useState<PixabayIcon[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [recent, setRecent] = useState<LibraryIcon[]>([]);
+  const [loading, setLoading] = useState(true);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,63 +29,59 @@ export function SidebarIcons() {
     try {
       const stored = localStorage.getItem(RECENT_KEY);
       if (!stored) return;
-      const parsed = JSON.parse(stored) as PixabayIcon[];
+      const parsed = JSON.parse(stored) as LibraryIcon[];
       if (Array.isArray(parsed) && parsed.length > 0) setRecent(parsed);
     } catch {
       /* ignore */
     }
   }, []);
 
-  const runSearch = useCallback(async (query: string) => {
-    const q = query.trim();
-    if (!q) {
-      setResults([]);
-      setIsSearching(false);
-      setError(null);
-      return;
-    }
-
-    setIsSearching(true);
-    setError(null);
-    try {
-      const res = await searchPixabayIcons(q, { perPage: 100 });
+  useEffect(() => {
+    let cancelled = false;
+    void listLibraryIcons().then((res) => {
+      if (cancelled) return;
       if (res.ok === false) {
         setError(res.error);
-        setResults([]);
-        return;
+        setIcons([]);
+      } else {
+        setIcons(res.items);
       }
-      setResults(res.items);
-    } catch (err) {
-      console.error(err);
-      setError("Couldn't load");
-      setResults([]);
-    } finally {
-      setIsSearching(false);
-    }
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    const trimmed = search.trim();
-    if (trimmed) {
-      const t = window.setTimeout(() => void runSearch(trimmed), 320);
-      return () => window.clearTimeout(t);
+  const categories = useMemo(() => {
+    const names = new Set<string>();
+    for (const icon of icons) {
+      if (icon.category) names.add(icon.category);
     }
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [icons]);
 
-    const cat =
-      CATEGORIES.find((c) => c.id === categoryId) ?? CATEGORIES[0];
-    void runSearch(cat.query);
-  }, [search, categoryId, runSearch]);
+  const visible = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return icons.filter((icon) => {
+      if (query) {
+        return (
+          icon.name.toLowerCase().includes(query) ||
+          icon.id.toLowerCase().includes(query)
+        );
+      }
+      if (categoryId !== "all" && icon.category !== categoryId) return false;
+      return true;
+    });
+  }, [icons, search, categoryId]);
 
-  const handleSelect = async (icon: PixabayIcon) => {
+  const handleSelect = async (icon: LibraryIcon) => {
     if (!manager || loadingId) return;
     setLoadingId(icon.id);
     setError(null);
 
     try {
-      const updated = [icon, ...recent.filter((i) => i.id !== icon.id)].slice(
-        0,
-        8,
-      );
+      const updated = [icon, ...recent.filter((item) => item.id !== icon.id)].slice(0, 8);
       setRecent(updated);
       try {
         localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
@@ -105,9 +89,13 @@ export function SidebarIcons() {
         /* ignore */
       }
 
-      await manager.objects.addImage(proxiedPixabayUrl(icon.imageUrl), {
-        maxSize: 160,
-      });
+      if (icon.url.toLowerCase().endsWith(".svg")) {
+        const res = await fetch(icon.url);
+        if (!res.ok) throw new Error(`icon ${res.status}`);
+        await manager.io.addSVG(await res.text(), { maxSize: 160 });
+      } else {
+        await manager.objects.addImage(icon.url, { maxSize: 160 });
+      }
       manager.commit();
     } catch (err) {
       console.error(err);
@@ -137,11 +125,9 @@ export function SidebarIcons() {
             >
               <X className="size-3.5" />
             </button>
-          ) : isSearching ? (
-            <Loader2 className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
           ) : null}
         </div>
-        {!search.trim() && (
+        {!search.trim() && categories.length > 0 && (
           <FilterMenu
             icon={LayoutGrid}
             value={categoryId}
@@ -149,21 +135,24 @@ export function SidebarIcons() {
             groups={[
               {
                 label: "Category",
-                options: CATEGORIES.map((cat) => ({ id: cat.id, label: cat.label })),
+                options: [
+                  { id: "all", label: "All" },
+                  ...categories.map((folder) => ({
+                    id: folder,
+                    label: folderLabel(folder),
+                  })),
+                ],
               },
             ]}
           />
         )}
       </div>
 
-
       {error && <p className="text-xs text-destructive">{error}</p>}
 
       {recent.length > 0 && !search.trim() && (
         <div className="flex min-w-0 flex-col gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground/80">
-            Recent
-          </span>
+          <span className="text-xs font-medium text-muted-foreground/80">Recent</span>
           <div className="grid grid-cols-4 gap-1.5">
             {recent.slice(0, 8).map((item) => (
               <IconTile
@@ -183,21 +172,23 @@ export function SidebarIcons() {
             {search.trim() ? "Results" : "Assets"}
           </span>
           <span className="tabular-nums text-xs text-muted-foreground/40">
-            {results.length}
+            {visible.length}
           </span>
         </div>
 
-        {isSearching && results.length === 0 ? (
+        {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
           </div>
-        ) : results.length === 0 ? (
+        ) : visible.length === 0 ? (
           <p className="py-12 text-center text-xs text-muted-foreground">
-            No assets found
+            {icons.length === 0
+              ? "Put images in public/icons"
+              : "No assets found"}
           </p>
         ) : (
           <div className="grid min-w-0 grid-cols-3 gap-2">
-            {results.map((item) => (
+            {visible.map((item) => (
               <IconTile
                 key={item.id}
                 item={item}
@@ -217,7 +208,7 @@ function IconTile({
   loading,
   onSelect,
 }: {
-  item: PixabayIcon;
+  item: LibraryIcon;
   loading: boolean;
   onSelect: () => void;
 }) {
@@ -237,7 +228,7 @@ function IconTile({
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={item.previewUrl}
+          src={item.url}
           alt={item.name}
           className="size-full object-contain opacity-90 transition-transform group-hover:scale-[1.03] group-hover:opacity-100"
           draggable={false}

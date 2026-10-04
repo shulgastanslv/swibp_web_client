@@ -10,6 +10,7 @@ import { EffectsManager } from "./effects";
 import { LayoutManager } from "./layouts";
 import { Emitter } from "./events";
 import { captureCanvasThumbnail } from "./thumbnail";
+import { recolorIcon } from "./recolor-icon";
 import { withRemoteImageCors } from "./image-cors";
 import { ImageCropSession } from "./crop-session";
 
@@ -126,7 +127,17 @@ export class CanvasManager {
     const active = this.getActiveObject();
     if (!active) return null;
 
-    active.set(updates);
+    const icon = active as FabricObject & { swibpIcon?: boolean };
+    const patch = updates as Partial<FabricObject> & { fill?: unknown; swibpSlot?: string };
+    if (icon.swibpIcon && typeof patch.fill === "string") {
+      const rest = { ...patch };
+      delete rest.fill;
+      delete rest.swibpSlot;
+      if (Object.keys(rest).length > 0) active.set(rest);
+      recolorIcon(active, patch.fill, "swibpSlot" in patch ? patch.swibpSlot : undefined);
+    } else {
+      active.set(updates);
+    }
 
     // Typography changes need an explicit layout pass — otherwise Fabric keeps
     // the previous font metrics until another property forces a reflow.
