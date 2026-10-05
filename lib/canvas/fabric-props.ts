@@ -8,6 +8,7 @@ const EXTRA = [
   "swibpSlot",
   "swibpFrameKind",
   "swibpIcon",
+  "swibpMask",
 ];
 
 for (const key of EXTRA) {

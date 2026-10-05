@@ -13,6 +13,7 @@ import { captureCanvasThumbnail } from "./thumbnail";
 import { recolorIcon } from "./recolor-icon";
 import { withRemoteImageCors } from "./image-cors";
 import { ImageCropSession } from "./crop-session";
+import { refreshMask } from "./object-appearance";
 
 const DEFAULT_BACKGROUND = "#ffffff";
 
@@ -48,6 +49,8 @@ export class CanvasManager {
   private silentDepth = 0;
   private disposed = false;
   private loadAbort: AbortController | null = null;
+  private viewportNativeWidth = 0;
+  private viewportNativeHeight = 0;
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.core = new CanvasCore(canvasElement);
@@ -91,6 +94,25 @@ export class CanvasManager {
     const loaded = this.getState();
     this.history.reset(loaded);
     this.events.emit("load", loaded);
+  }
+
+  /**
+   * Several canvas mutations as one undo step.
+   * A function that returns false is treated as a no-op and is not recorded.
+   */
+  transact(run: () => boolean | void): void {
+    if (this.disposed) return;
+    this.silentDepth++;
+    let changed = true;
+    try {
+      changed = run() !== false;
+    } finally {
+      this.silentDepth--;
+    }
+    if (!changed || this.disposed) return;
+    this.canvas.requestRenderAll();
+    this.commit();
+    this.events.emit("selection", this.getActiveObject());
   }
 
   /** Records the current document as a new history step and notifies subscribers. */
@@ -160,6 +182,7 @@ export class CanvasManager {
       }
     }
 
+    refreshMask(active);
     active.setCoords();
     this.canvas.requestRenderAll();
     this.commit();
@@ -209,8 +232,14 @@ export class CanvasManager {
 
   /** Fits the logical canvas (nativeW × nativeH) into the screen at `scale`. */
   setViewportScale(scale: number, nativeW: number, nativeH: number): void {
+    const sizeChanged =
+      this.viewportNativeWidth !== nativeW || this.viewportNativeHeight !== nativeH;
     this.core.setZoom(scale, nativeW, nativeH);
+    if (!sizeChanged) return;
+    this.viewportNativeWidth = nativeW;
+    this.viewportNativeHeight = nativeH;
     this.effects.onCanvasResize();
+    this.canvas.renderAll();
   }
 
   /** Snapshot used for slide strips and project cards. Keeps the previous thumb if export fails. */

@@ -202,3 +202,21 @@ test("dispose cancels pending loads without changing the current slide", async (
 
   assert.equal(store.getState().currentSlideId, 1);
 });
+
+test("insertSlide puts the new slide after the chosen one", () => {
+  const { store } = setup(["a", "b"]);
+  const id = store.getState().insertSlide(1, doc("inserted"), null);
+  const labels = store.getState().slides.map((slide) => labelOf(slide.canvasJSON));
+  assert.deepEqual(labels, ["a", "inserted", "b"]);
+  assert.equal(store.getState().slides[1]?.id, id);
+});
+
+test("marking a slide toggles and a removed slide is forgotten", () => {
+  const { store } = setup(["a", "b"]);
+  store.getState().toggleMarkedSlide(2);
+  store.getState().toggleMarkedSlide(2);
+  store.getState().toggleMarkedSlide(2);
+  assert.deepEqual(store.getState().markedSlideIds, [2]);
+  store.getState().removeSlide(2);
+  assert.deepEqual(store.getState().markedSlideIds, []);
+});

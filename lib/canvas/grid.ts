@@ -31,8 +31,9 @@ export interface GridSettings {
 
 /**
  * Figma-style layout grid (columns × rows + margin) + smart guides.
- * Hold Ctrl/⌘ while dragging to snap to canvas center, edges, and other objects.
- * When snap is on and the grid is visible, objects also snap to layout lines.
+ * While an object is dragged it snaps to the edges and centers of its
+ * neighbors, and to the slide. When snap is on and the grid is visible,
+ * objects also snap to layout lines.
  */
 export class GridManager {
   private canvas: Canvas;
@@ -47,40 +48,16 @@ export class GridManager {
   private guideLines: Line[] = [];
   private snapThreshold = 8;
   private layoutManager: LayoutManager | null = null;
-  private ctrlHeld = false;
   private disposed = false;
-
-  private readonly onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Control" || e.key === "Meta") this.ctrlHeld = true;
-  };
-
-  private readonly onKeyUp = (e: KeyboardEvent) => {
-    if (e.key === "Control" || e.key === "Meta") {
-      this.ctrlHeld = false;
-      this.clearGuides();
-      this.canvas.requestRenderAll();
-    }
-  };
-
-  private readonly onWindowBlur = () => {
-    this.ctrlHeld = false;
-    this.clearGuides();
-  };
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
     this.setupSmartGuides();
-    window.addEventListener("keydown", this.onKeyDown);
-    window.addEventListener("keyup", this.onKeyUp);
-    window.addEventListener("blur", this.onWindowBlur);
   }
 
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    window.removeEventListener("keydown", this.onKeyDown);
-    window.removeEventListener("keyup", this.onKeyUp);
-    window.removeEventListener("blur", this.onWindowBlur);
     this.clearGuides();
     this.hideGrid();
   }
@@ -342,11 +319,7 @@ export class GridManager {
       if (!obj || obj.excludeFromExport) return;
       if ((obj as FabricObject & { swibpRole?: string }).swibpRole === "split") return;
 
-      const fromEvent = !!(
-        e.e &&
-        ((e.e as MouseEvent).ctrlKey || (e.e as MouseEvent).metaKey)
-      );
-      const guidesActive = this.ctrlHeld || fromEvent;
+      const guidesActive = true;
       const gridSnapActive = this.snapToGrid && this.isGridVisible;
 
       if (!guidesActive && !gridSnapActive) {

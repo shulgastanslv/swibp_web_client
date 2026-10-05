@@ -7,6 +7,7 @@ import { useSlidesController } from "@/context/canvas-manager";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { renderMissingThumbnails } from "@/lib/canvas/thumbnail";
 import { templateSlidesToItems } from "@/lib/templates/parse";
+import { withRemoteImageCors } from "@/lib/canvas/image-cors";
 import type { FabricCanvasJSON, RatioKey, SlideItem } from "@/lib/types";
 
 export function useApplyTemplate() {
@@ -73,5 +74,14 @@ export function useApplyTemplate() {
     [applyPayload],
   );
 
-  return { applyTemplateById, applyPayload };
+  const insertTemplateSlide = useCallback(
+    async (canvasJSON: FabricCanvasJSON, thumbnail: string | null) => {
+      if (!slidesController) return { success: false as const };
+      await slidesController.insert(withRemoteImageCors(canvasJSON), thumbnail);
+      return { success: true as const };
+    },
+    [slidesController],
+  );
+
+  return { applyTemplateById, applyPayload, insertTemplateSlide };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,8 @@ import {
   Loader2,
   Lock,
   Unlock,
+  List,
+  ListOrdered,
 } from "lucide-react";
 import { useSelectedObject } from "@/hooks/use-selected-object";
 import {
@@ -67,6 +69,25 @@ import {
 import { applyStyleOnCanvas, paintSlotOnCanvas } from "@/lib/canvas/paint-live";
 import { applyCarouselFont } from "@/lib/canvas/apply-carousel-font";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import { canUngroup, groupSelection, ungroupSelection } from "@/lib/canvas/group";
+import {
+  copyStyleFromSelection,
+  hasCopiedStyle,
+  pasteObjectStyle,
+  subscribeCopiedStyle,
+} from "@/lib/canvas/style-clipboard";
+import {
+  applyMask,
+  BLEND_MODES,
+  gradientStops,
+  linearGradient,
+  maskKind,
+  refreshMask,
+  type MaskKind,
+} from "@/lib/canvas/object-appearance";
+import { applyList, applySelectionStyle, writeFormattedText, type ListKind } from "@/lib/canvas/text-format";
+import type { TextStyles } from "@/lib/canvas/text-flow";
+import { textLengthNote, textLengthStatus } from "@/lib/canvas/insights";
 
 type TextAlign = "left" | "center" | "right" | "justify";
 
@@ -95,8 +116,13 @@ interface InspectedProperties {
   isBold?: boolean;
   isItalic?: boolean;
   isUnderline?: boolean;
+  charSpacing?: number;
   backgroundColor?: string;
   isLocked?: boolean;
+  blendMode?: string;
+  mask?: MaskKind;
+  gradientFrom?: string | null;
+  gradientTo?: string | null;
   hasShadow: boolean;
   shadowColor: string;
   shadowBlur: number;
@@ -330,6 +356,7 @@ export function RightSidebar({
 }: RightSidebarProps) {
   const { selectedObject, updateSelected } = useSelectedObject();
   const manager = useCanvasManager();
+  const copiedStyle = useSyncExternalStore(subscribeCopiedStyle, hasCopiedStyle, () => false);
   const [formValues, setFormValues] = useState<InspectedProperties | null>(
     null,
   );
@@ -339,6 +366,7 @@ export function RightSidebar({
   const [bgError, setBgError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const palette = useCanvasStore((s) => s.palette);
+  const markedSlideIds = useCanvasStore((s) => s.markedSlideIds);
   const [styleOffer, setStyleOffer] = useState<TextStyleId | null>(null);
   const [fontOffer, setFontOffer] = useState<string | null>(null);
 
@@ -391,7 +419,16 @@ export function RightSidebar({
       shadowBlur: shadow?.blur ?? 12,
       shadowOffsetX: shadow?.offsetX ?? 0,
       shadowOffsetY: shadow?.offsetY ?? 8,
+      blendMode: selectedObject.globalCompositeOperation || "source-over",
+      mask: maskKind(selectedObject as FabricObject & { swibpMask?: unknown }),
     };
+
+    const stops = gradientStops(selectedObject.fill);
+    if (stops) {
+      baseProps.gradientFrom = stops[0];
+      baseProps.gradientTo = stops[1];
+      baseProps.fill = stops[0];
+    }
 
     if (type === "text" || type === "i-text" || type === "textbox") {
       const textObj = selectedObject as unknown as FabricText;
@@ -401,11 +438,12 @@ export function RightSidebar({
       );
       baseProps.fontSize = textObj.fontSize ?? 32;
       baseProps.lineHeight = textObj.lineHeight ?? 1.16;
+      baseProps.charSpacing = textObj.charSpacing ?? 0;
       baseProps.textAlign = (textObj.textAlign as TextAlign) ?? "left";
       baseProps.isBold =
         textObj.fontWeight === "bold" || Number(textObj.fontWeight) >= 700;
       baseProps.isItalic = textObj.fontStyle === "italic";
-      baseProps.isUnderline = !textObj.underline;
+      baseProps.isUnderline = Boolean(textObj.underline);
       baseProps.backgroundColor =
         typeof textObj.backgroundColor === "string"
           ? textObj.backgroundColor
@@ -446,6 +484,96 @@ export function RightSidebar({
     updateSelected({
       [fabricKey]: value,
     } as unknown as Partial<FabricObject>);
+  };
+
+  const groupSelected = () => {
+    if (!manager || (canvas?.getActiveObjects().length ?? 0) < 2) return;
+    manager.transact(() => groupSelection(manager.canvas));
+  };
+
+  const ungroupSelected = () => {
+    if (!manager || !canUngroup(selectedObject)) return;
+    manager.transact(() => ungroupSelection(manager.canvas));
+  };
+
+  const copyStyle = () => {
+    if (!canvas) return;
+    copyStyleFromSelection(canvas);
+  };
+
+  const pasteStyle = () => {
+    if (!manager || !copiedStyle) return;
+    manager.transact(() => pasteObjectStyle(manager.canvas));
+  };
+
+  const setMask = (kind: MaskKind) => {
+    if (!selectedObject || !manager) return;
+    applyMask(selectedObject, kind);
+    setFormValues((prev) => (prev ? { ...prev, mask: kind } : null));
+    manager.canvas.requestRenderAll();
+    manager.commit();
+  };
+
+  const setGradient = (from: string, to: string) => {
+    setFormValues((prev) =>
+      prev ? { ...prev, fill: from, gradientFrom: from, gradientTo: to } : null,
+    );
+    updateSelected({
+      fill: linearGradient(from, to),
+      swibpSlot: "",
+    } as unknown as Partial<FabricObject>);
+  };
+
+  const clearGradient = () => {
+    const solid = formValues?.gradientFrom || formValues?.fill || "#000000";
+    setFormValues((prev) =>
+      prev ? { ...prev, fill: solid, gradientFrom: null, gradientTo: null } : null,
+    );
+    updateSelected({ fill: solid } as unknown as Partial<FabricObject>);
+  };
+
+  const toggleTextStyle = (kind: "bold" | "italic" | "underline") => {
+    if (!formValues) return;
+    const next =
+      kind === "bold"
+        ? !formValues.isBold
+        : kind === "italic"
+          ? !formValues.isItalic
+          : !formValues.isUnderline;
+    const patch =
+      kind === "bold"
+        ? { fontWeight: next ? "bold" : "normal" }
+        : kind === "italic"
+          ? { fontStyle: next ? "italic" : "normal" }
+          : { underline: next };
+    const active = manager?.getActiveObject();
+    if (active && applySelectionStyle(active, patch)) {
+      refreshMask(active);
+      manager?.canvas.requestRenderAll();
+      manager?.commit();
+      return;
+    }
+    if (kind === "bold") {
+      setFormValues((prev) => (prev ? { ...prev, isBold: next } : null));
+      updateSelected({ fontWeight: next ? "bold" : "normal" } as unknown as Partial<FabricObject>);
+    } else if (kind === "italic") {
+      setFormValues((prev) => (prev ? { ...prev, isItalic: next } : null));
+      updateSelected({ fontStyle: next ? "italic" : "normal" } as unknown as Partial<FabricObject>);
+    } else {
+      updateProp("isUnderline", next, "underline");
+    }
+  };
+
+  const applyTextList = (kind: ListKind) => {
+    const active = manager?.getActiveObject();
+    if (!active || !manager || formValues?.text == null) return;
+    const styles = (active as FabricObject & { styles?: TextStyles }).styles;
+    const next = applyList(formValues.text, styles, kind);
+    writeFormattedText(active, next.text, next.styles);
+    refreshMask(active);
+    setFormValues((prev) => (prev ? { ...prev, text: next.text } : null));
+    manager.canvas.requestRenderAll();
+    manager.commit();
   };
 
   const updateCornerRadius = (radius: number) => {
@@ -677,7 +805,7 @@ export function RightSidebar({
     if (boundStyle) setStyleOffer(boundStyle);
   };
 
-  const applyStyleToCarousel = () => {
+  const applyStyleToSlides = (ids: number[] | null) => {
     if (!manager || !boundStyle) return;
     const active = manager.getActiveObject() as FabricObject & {
       fontFamily?: string;
@@ -686,6 +814,7 @@ export function RightSidebar({
       lineHeight?: number;
     };
     if (!active) return;
+    if (ids && ids.length === 0) return;
     const next: TextStyleDef = {
       fontFamily: typeof active.fontFamily === "string" ? active.fontFamily : "Inter",
       fontSize: typeof active.fontSize === "number" ? active.fontSize : 32,
@@ -693,22 +822,30 @@ export function RightSidebar({
       lineHeight: typeof active.lineHeight === "number" ? active.lineHeight : 1.16,
     };
     const store = useCanvasStore.getState();
-    store.setTextStyle(boundStyle, next);
+    if (!ids) store.setTextStyle(boundStyle, next);
+    const chosen = ids ? new Set(ids) : null;
     store.setSlides(
-      store.slides.map((slide) => ({
-        ...slide,
-        canvasJSON: applyTextStyleToSlide(slide.canvasJSON, boundStyle, next),
-      })),
+      store.slides.map((slide) =>
+        !chosen || chosen.has(slide.id)
+          ? { ...slide, canvasJSON: applyTextStyleToSlide(slide.canvasJSON, boundStyle, next) }
+          : slide,
+      ),
     );
-    applyStyleOnCanvas(manager.canvas, boundStyle, next);
+    if (!chosen || chosen.has(store.currentSlideId)) {
+      applyStyleOnCanvas(manager.canvas, boundStyle, next);
+      manager.commit();
+    }
     store.setDirty(true);
-    manager.commit();
     setStyleOffer(null);
   };
 
+  const applyStyleToCarousel = () => applyStyleToSlides(null);
+
   const assignFillSlot = (slot: (typeof PALETTE_SLOTS)[number]["id"]) => {
     const color = palette[slot];
-    setFormValues((prev) => (prev ? { ...prev, fill: color } : null));
+    setFormValues((prev) =>
+      prev ? { ...prev, fill: color, gradientFrom: null, gradientTo: null } : null,
+    );
     updateSelected({ fill: color, swibpSlot: slot } as unknown as Partial<FabricObject>);
   };
 
@@ -809,6 +946,36 @@ export function RightSidebar({
                   </Button>
                 ))}
               </div>
+              <div className="flex gap-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  onClick={groupSelected}
+                >
+                  Group
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  onClick={copyStyle}
+                >
+                  Copy style
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  disabled={!copiedStyle}
+                  onClick={pasteStyle}
+                >
+                  Paste style
+                </Button>
+              </div>
             </div>
           ) : !formValues ? (
             <div className="flex flex-col items-center justify-center gap-3 px-5 py-16 text-center text-muted-foreground">
@@ -840,7 +1007,7 @@ export function RightSidebar({
                   </Button>
                 </div>
               )}
-              <div className="flex items-center gap-1 border-b border-border/60 px-2.5 py-2">
+              <div className="flex items-center gap-1 px-2.5 py-2">
                 <Button
                   type="button"
                   variant="ghost"
@@ -896,6 +1063,38 @@ export function RightSidebar({
                   ) : (
                     <Unlock className="size-4" />
                   )}
+                </Button>
+              </div>
+              <div className="flex gap-1.5 border-b border-border/60 px-2.5 pb-2">
+                {canUngroup(selectedObject) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={`h-8 flex-1 text-xs ${btnRound}`}
+                    onClick={ungroupSelected}
+                  >
+                    Ungroup
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  onClick={copyStyle}
+                >
+                  Copy style
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  disabled={!copiedStyle}
+                  onClick={pasteStyle}
+                >
+                  Paste style
                 </Button>
               </div>
 
@@ -1054,6 +1253,15 @@ export function RightSidebar({
                       onChange={(e) => updateProp("text", e.target.value)}
                       className="resize-none rounded-2xl border border-border bg-transparent p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                     />
+                    <p
+                      className={`text-xs leading-snug ${
+                        textLengthStatus("Instagram", (formValues.text ?? "").trim().length).tooLong
+                          ? "text-destructive"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {textLengthNote("Instagram", (formValues.text ?? "").trim().length)}
+                    </p>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
@@ -1064,13 +1272,7 @@ export function RightSidebar({
                         variant={formValues.isBold ? "secondary" : "outline"}
                         size="icon"
                         className={`size-8 ${btnRound}`}
-                        onClick={() => {
-                          const next = !formValues.isBold;
-                          updateProp("isBold", next, "fontWeight");
-                          updateSelected({
-                            fontWeight: next ? "bold" : "normal",
-                          } as unknown as Partial<FabricObject>);
-                        }}
+                        onClick={() => toggleTextStyle("bold")}
                       >
                         <Bold className="size-4" />
                       </Button>
@@ -1079,13 +1281,7 @@ export function RightSidebar({
                         variant={formValues.isItalic ? "secondary" : "outline"}
                         size="icon"
                         className={`size-8 ${btnRound}`}
-                        onClick={() => {
-                          const next = !formValues.isItalic;
-                          updateProp("isItalic", next, "fontStyle");
-                          updateSelected({
-                            fontStyle: next ? "italic" : "normal",
-                          } as unknown as Partial<FabricObject>);
-                        }}
+                        onClick={() => toggleTextStyle("italic")}
                       >
                         <Italic className="size-4" />
                       </Button>
@@ -1096,12 +1292,35 @@ export function RightSidebar({
                         }
                         size="icon"
                         className={`size-8 ${btnRound}`}
-                        onClick={() => {
-                          const next = !formValues.isUnderline;
-                          updateProp("isUnderline", next, "underline");
-                        }}
+                        onClick={() => toggleTextStyle("underline")}
                       >
                         <Underline className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-xs text-muted-foreground">List</span>
+                    <div className="flex gap-1.5">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className={`h-8 flex-1 gap-1.5 text-xs ${btnRound}`}
+                        onClick={() => applyTextList("bullet")}
+                      >
+                        <List className="size-3.5" />
+                        Bulleted
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className={`h-8 flex-1 gap-1.5 text-xs ${btnRound}`}
+                        onClick={() => applyTextList("number")}
+                      >
+                        <ListOrdered className="size-3.5" />
+                        Numbered
                       </Button>
                     </div>
                   </div>
@@ -1145,7 +1364,7 @@ export function RightSidebar({
                   {fontOffer && (
                     <div className="flex flex-col gap-2 rounded-2xl bg-muted/40 p-2.5">
                       <p className="text-xs leading-snug text-foreground">
-                        Use {fontOffer} on every text?
+                        Use {fontOffer} on which slides?
                       </p>
                       <div className="flex gap-1">
                         <Button
@@ -1157,7 +1376,25 @@ export function RightSidebar({
                             setFontOffer(null);
                           }}
                         >
-                          All slides
+                          All
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          disabled={markedSlideIds.length === 0}
+                          title={
+                            markedSlideIds.length === 0
+                              ? "Mark slides with the corner check"
+                              : `Use ${fontOffer} on ${markedSlideIds.length} marked slides`
+                          }
+                          onClick={() => {
+                            applyCarouselFont(fontOffer, manager, markedSlideIds);
+                            setFontOffer(null);
+                          }}
+                        >
+                          Marked
                         </Button>
                         <Button
                           type="button"
@@ -1166,7 +1403,7 @@ export function RightSidebar({
                           className={`h-7 flex-1 text-xs ${btnRound}`}
                           onClick={() => setFontOffer(null)}
                         >
-                          Only this
+                          This
                         </Button>
                       </div>
                     </div>
@@ -1194,12 +1431,21 @@ export function RightSidebar({
                     decimals={2}
                   />
 
+                  <NumberField
+                    label="Letter spacing"
+                    value={formValues.charSpacing ?? 0}
+                    onChange={(v) => updateProp("charSpacing", v)}
+                    min={-200}
+                    max={800}
+                    step={10}
+                  />
+
                   {styleOffer && (
                     <div className="flex flex-col gap-2 rounded-2xl bg-muted/40 p-2.5">
                       <p className="text-xs leading-snug text-foreground">
                         Update every{" "}
                         {TEXT_STYLES.find((style) => style.id === styleOffer)?.label.toLowerCase()}{" "}
-                        in this carousel?
+                        on which slides?
                       </p>
                       <div className="flex gap-1">
                         <Button
@@ -1208,7 +1454,22 @@ export function RightSidebar({
                           className={`h-7 flex-1 text-xs ${btnRound}`}
                           onClick={applyStyleToCarousel}
                         >
-                          Update
+                          All
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          disabled={markedSlideIds.length === 0}
+                          title={
+                            markedSlideIds.length === 0
+                              ? "Mark slides with the corner check"
+                              : "Update marked slides"
+                          }
+                          onClick={() => applyStyleToSlides(markedSlideIds)}
+                        >
+                          Marked
                         </Button>
                         <Button
                           type="button"
@@ -1217,7 +1478,7 @@ export function RightSidebar({
                           className={`h-7 flex-1 text-xs ${btnRound}`}
                           onClick={() => setStyleOffer(null)}
                         >
-                          Only this
+                          This
                         </Button>
                       </div>
                     </div>
@@ -1276,17 +1537,61 @@ export function RightSidebar({
                         </button>
                       ))}
                     </div>
-                    <ColorField
-                      label={isText ? "Text color" : "Fill color"}
-                      value={formValues.fill}
-                      onChange={(hex) => {
-                        setFormValues((prev) => (prev ? { ...prev, fill: hex } : null));
-                        updateSelected({
-                          fill: hex,
-                          swibpSlot: "",
-                        } as unknown as Partial<FabricObject>);
-                      }}
-                    />
+                    <div className="flex rounded-full border border-border bg-transparent p-1">
+                      <button
+                        type="button"
+                        onClick={clearGradient}
+                        className={`flex h-7 flex-1 items-center justify-center rounded-full text-xs transition-colors ${
+                          formValues.gradientFrom
+                            ? "text-muted-foreground hover:text-foreground"
+                            : "bg-muted text-foreground"
+                        }`}
+                      >
+                        Solid
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setGradient(
+                            formValues.gradientFrom || formValues.fill || "#111111",
+                            formValues.gradientTo || "#ffffff",
+                          )
+                        }
+                        className={`flex h-7 flex-1 items-center justify-center rounded-full text-xs transition-colors ${
+                          formValues.gradientFrom
+                            ? "bg-muted text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Gradient
+                      </button>
+                    </div>
+                    {formValues.gradientFrom && formValues.gradientTo ? (
+                      <>
+                        <ColorField
+                          label="Start"
+                          value={formValues.gradientFrom}
+                          onChange={(hex) => setGradient(hex, formValues.gradientTo || "#ffffff")}
+                        />
+                        <ColorField
+                          label="End"
+                          value={formValues.gradientTo}
+                          onChange={(hex) => setGradient(formValues.gradientFrom || "#111111", hex)}
+                        />
+                      </>
+                    ) : (
+                      <ColorField
+                        label={isText ? "Text color" : "Fill color"}
+                        value={formValues.fill}
+                        onChange={(hex) => {
+                          setFormValues((prev) => (prev ? { ...prev, fill: hex } : null));
+                          updateSelected({
+                            fill: hex,
+                            swibpSlot: "",
+                          } as unknown as Partial<FabricObject>);
+                        }}
+                      />
+                    )}
                   </>
                 ) : (
                   <p className="text-xs text-muted-foreground">
@@ -1336,6 +1641,49 @@ export function RightSidebar({
               </CollapsibleGroup>
 
               <CollapsibleGroup id="rs-appearance" title="Appearance">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs text-muted-foreground">Blend</span>
+                  <select
+                    value={
+                      BLEND_MODES.some((mode) => mode.id === formValues.blendMode)
+                        ? formValues.blendMode
+                        : "source-over"
+                    }
+                    onChange={(e) => updateProp("blendMode", e.target.value, "globalCompositeOperation")}
+                    className="h-9 w-full rounded-full bg-muted/40 px-3 text-xs text-foreground outline-none"
+                  >
+                    {BLEND_MODES.map((mode) => (
+                      <option key={mode.id} value={mode.id}>
+                        {mode.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs text-muted-foreground">Mask</span>
+                  <div className="flex rounded-full border border-border bg-transparent p-1">
+                    {(
+                      [
+                        ["none", "None"],
+                        ["circle", "Circle"],
+                        ["rounded", "Rounded"],
+                      ] as const
+                    ).map(([kind, label]) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        onClick={() => setMask(kind)}
+                        className={`flex h-7 flex-1 items-center justify-center rounded-full text-xs transition-colors ${
+                          (formValues.mask ?? "none") === kind
+                            ? "bg-muted text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <NumberField
                   label="Opacity"
                   value={Math.round(formValues.opacity * 100)}

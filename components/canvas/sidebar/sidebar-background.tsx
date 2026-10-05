@@ -87,29 +87,38 @@ export function SidebarBackground() {
   const [urlError, setUrlError] = useState<string | null>(null);
 
   const projectPalette = useCanvasStore((s) => s.palette);
+  const markedSlideIds = useCanvasStore((s) => s.markedSlideIds);
+  const [paletteScope, setPaletteScope] = useState<"all" | "marked">("all");
 
   const applyProjectPalette = (next: ProjectPalette) => {
     const store = useCanvasStore.getState();
+    const ids = paletteScope === "marked" ? new Set(store.markedSlideIds) : null;
+    if (ids && ids.size === 0) return;
+
     const before = store.palette;
     const slots = Object.keys(next) as PaletteSlot[];
     if (slots.every((slot) => next[slot] === before[slot])) return;
 
-    let slides = store.slides;
-    for (const slot of slots) {
-      if (next[slot] === before[slot]) continue;
-      slides = slides.map((slide) => ({
-        ...slide,
-        canvasJSON: paintSlide(slide.canvasJSON, slot, next[slot]),
-      }));
-      if (manager) paintSlotOnCanvas(manager.canvas, slot, next[slot]);
-    }
+    const changed = slots.filter((slot) => next[slot] !== before[slot]);
+    const slides = store.slides.map((slide) => {
+      if (ids && !ids.has(slide.id)) return slide;
+      let canvasJSON = slide.canvasJSON;
+      for (const slot of changed) canvasJSON = paintSlide(canvasJSON, slot, next[slot]);
+      return { ...slide, canvasJSON };
+    });
+
     store.setPalette(next);
     store.setSlides(slides);
     store.setDirty(true);
-    if (next.background !== before.background) {
-      void manager?.setBackground({ type: "solid", color: next.background });
-    } else {
-      manager?.commit();
+
+    const paintsCurrent = !ids || ids.has(store.currentSlideId);
+    if (paintsCurrent && manager) {
+      for (const slot of changed) paintSlotOnCanvas(manager.canvas, slot, next[slot]);
+      if (changed.includes("background")) {
+        void manager.setBackground({ type: "solid", color: next.background });
+      } else {
+        manager.commit();
+      }
     }
   };
 
@@ -317,9 +326,31 @@ export function SidebarBackground() {
         <BackgroundPattern />
       </CollapsibleGroup>
 
-      <CollapsibleGroup id="background-palette" title="Every slide">
+      <CollapsibleGroup id="background-palette" title="Palette">
+        <div className="flex rounded-full bg-muted/50 p-0.5">
+          {(
+            [
+              ["all", "All slides"],
+              ["marked", markedSlideIds.length > 0 ? `Marked ${markedSlideIds.length}` : "Marked"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setPaletteScope(id)}
+              className={cn(
+                "h-7 flex-1 rounded-full text-xs transition-colors",
+                paletteScope === id ? "bg-background text-foreground shadow-xs" : "text-muted-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <p className="text-[11px] leading-snug text-muted-foreground">
-          Text, accent, and cards use these colors on the whole carousel.
+          {paletteScope === "marked"
+            ? "Colors land on marked slides. Mark them with the corner check."
+            : "Text, accent, and cards use these colors on the whole carousel."}
         </p>
         <div className="flex flex-col">
           {PALETTE_SLOTS.map((slot) => (
@@ -355,7 +386,7 @@ export function SidebarBackground() {
           ))}
         </div>
         <p className="text-[11px] leading-snug text-muted-foreground">
-          The large swatch fills this slide. Apply sets Background, Text, Accent, and Card on every slide.
+          The large swatch fills this slide. Apply follows the All / Marked choice above.
         </p>
       </CollapsibleGroup>
     </div>

@@ -17,6 +17,11 @@ export interface SlidesSlice {
   reorderSlides: (activeId: number, overId: number) => void;
   updateSlideJSONById: (id: number, json: FabricCanvasJSON) => void;
   updateSlideThumbnail: (id: number, thumbnail: string) => void;
+  /** Slides included in font, palette, and export when the scope is “marked”. */
+  markedSlideIds: number[];
+  toggleMarkedSlide: (id: number) => void;
+  /** Inserts a copy of `canvasJSON` after `afterId` and returns the new id. */
+  insertSlide: (afterId: number, canvasJSON: FabricCanvasJSON, thumbnail: string | null) => number;
 }
 
 const createEmptyCanvasJSON = (): FabricCanvasJSON => ({
@@ -44,8 +49,13 @@ export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> =
   return {
     slides: [{ id: 1, canvasJSON: createEmptyCanvasJSON(), thumbnail: null }],
     currentSlideId: 1,
+    markedSlideIds: [],
 
-    setSlides: (slides) => set({ slides }),
+    setSlides: (slides) =>
+      set((state) => ({
+        slides,
+        markedSlideIds: state.markedSlideIds.filter((id) => slides.some((slide) => slide.id === id)),
+      })),
     setCurrentSlideId: (id: number) => set({ currentSlideId: id }),
 
     addSlide: (afterId) => {
@@ -92,8 +102,38 @@ export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> =
 
       const nextSlides = slides.filter((s) => s.id !== id);
       const nextCurrentId = currentSlideId === id ? nextSlides[0].id : currentSlideId;
-      set({ slides: stampChrome(get().chrome, nextSlides), currentSlideId: nextCurrentId });
+      set({
+        slides: stampChrome(get().chrome, nextSlides),
+        currentSlideId: nextCurrentId,
+        markedSlideIds: get().markedSlideIds.filter((marked) => marked !== id),
+      });
       markDirty();
+    },
+
+    toggleMarkedSlide: (id) => {
+      const { slides, markedSlideIds } = get();
+      if (!slides.some((slide) => slide.id === id)) return;
+      set({
+        markedSlideIds: markedSlideIds.includes(id)
+          ? markedSlideIds.filter((marked) => marked !== id)
+          : [...markedSlideIds, id],
+      });
+    },
+
+    insertSlide: (afterId, canvasJSON, thumbnail) => {
+      const { slides } = get();
+      const newId = Math.max(0, ...slides.map((slide) => slide.id)) + 1;
+      const slide: SlideItem = {
+        id: newId,
+        canvasJSON: structuredClone(canvasJSON),
+        thumbnail,
+      };
+      const afterIndex = slides.findIndex((item) => item.id === afterId);
+      const insertAt = afterIndex === -1 ? slides.length : afterIndex + 1;
+      const next = [...slides.slice(0, insertAt), slide, ...slides.slice(insertAt)];
+      set({ slides: stampChrome(get().chrome, next) });
+      markDirty();
+      return newId;
     },
 
     moveSlide: (direction: "left" | "right") => {

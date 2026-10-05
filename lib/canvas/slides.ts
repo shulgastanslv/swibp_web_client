@@ -19,6 +19,7 @@ export interface SlidesState {
   addSlide: (afterId?: number) => number;
   duplicateSlide: (id?: number) => number | null;
   removeSlide: (id: number) => void;
+  insertSlide: (afterId: number, json: CanvasState, thumbnail: string | null) => number;
 }
 
 export interface SlidesStore {
@@ -85,6 +86,16 @@ export class SlidesController {
       const sourceId = id ?? state.currentSlideId;
       const newId = state.duplicateSlide(sourceId);
       if (newId == null) return;
+      await this.load(newId);
+    });
+  }
+
+  /** Saves the current slide, inserts `json` after it, and opens the new slide. */
+  insert(json: CanvasState, thumbnail: string | null): Promise<void> {
+    return this.enqueue(async () => {
+      this.saveCurrent();
+      const state = this.store.getState();
+      const newId = state.insertSlide(state.currentSlideId, json, thumbnail);
       await this.load(newId);
     });
   }

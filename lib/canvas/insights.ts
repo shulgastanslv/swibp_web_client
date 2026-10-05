@@ -339,6 +339,57 @@ function slideNote(platform: InsightPlatform, count: number) {
   return noun;
 }
 
+export function textLengthStatus(platform: InsightPlatform, characters: number): {
+  characters: number;
+  limit: number;
+  tooLong: boolean;
+} {
+  const limit = TEXT_BANDS[platform].ideal[1];
+  return { characters, limit, tooLong: characters > limit };
+}
+
+/** Inspector copy: the count, and which block to shorten when it is past the format. */
+export function textLengthNote(platform: InsightPlatform, characters: number): string {
+  const { limit, tooLong } = textLengthStatus(platform, characters);
+  if (tooLong) return `${characters} characters · shorten this block to ${limit}`;
+  return `${characters} / ${limit}`;
+}
+
+export type LongTextBlock = {
+  preview: string;
+  characters: number;
+  limit: number;
+};
+
+function previewText(text: string): string {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (flat.length <= 48) return flat;
+  return `${flat.slice(0, 47)}…`;
+}
+
+/** Body blocks that are past the platform's readable length. Skips numbers, handles, and swipe labels. */
+export function longTextBlocks(objects: unknown[], platform: InsightPlatform): LongTextBlock[] {
+  const limit = TEXT_BANDS[platform].ideal[1];
+  const blocks: LongTextBlock[] = [];
+  const walk = (list: unknown[]) => {
+    for (const value of list) {
+      const obj = asReadable(value);
+      if (!obj) continue;
+      const type = String(obj.type ?? "").toLowerCase();
+      const role = typeof obj.swibpRole === "string" ? obj.swibpRole : "";
+      if (TEXT_TYPES.has(type) && typeof obj.text === "string" && !CHROME_ROLES.has(role)) {
+        const characters = obj.text.trim().length;
+        if (characters > limit) {
+          blocks.push({ preview: previewText(obj.text), characters, limit });
+        }
+      }
+      walk(childObjects(obj));
+    }
+  };
+  walk(objects);
+  return blocks;
+}
+
 function textNote(platform: InsightPlatform, average: number) {
   const [min, max] = TEXT_BANDS[platform].ideal;
   const shown = Math.round(average);

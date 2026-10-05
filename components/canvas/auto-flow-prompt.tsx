@@ -8,13 +8,17 @@ import { useCanvasManager, useSlidesController } from "@/context/canvas-manager"
 import { useCanvasStore } from "@/store/useCanvasStore";
 import {
   isObjectOutOfBounds,
+  moveObjectBoundingRectTo,
+  PLACE_PADDING,
   placeObjectOnNewSlide,
   resolveAutoFlowTargets,
 } from "@/lib/canvas/auto-flow";
+import { continuationForText, writeTextPart } from "@/lib/canvas/text-continue";
 
 /**
  * When Auto Flow is on and an object leaves the slide, offer to create
- * a new slide and move that object there.
+ * the next slide. Text that runs past the bottom continues there; anything
+ * else moves across as a whole object.
  */
 export function AutoFlowPrompt() {
   const manager = useCanvasManager();
@@ -53,7 +57,11 @@ export function AutoFlowPrompt() {
     };
   }, [manager, autoFlowEnabled, canvasDimensions]);
 
-  if (!pending || !autoFlowEnabled) return null;
+  if (!pending || !autoFlowEnabled || !manager) return null;
+
+  const continuing = Boolean(
+    continuationForText(pending, canvasDimensions.width, canvasDimensions.height),
+  );
 
   const dismiss = () => {
     dismissedFor.current.add(pending);
@@ -72,6 +80,27 @@ export function AutoFlowPrompt() {
       if (targets.length === 0) return;
 
       manager.canvas.discardActiveObject();
+
+      const { width, height } = canvasDimensions;
+      const split = targets.length === 1 ? continuationForText(targets[0]!, width, height) : null;
+      if (split && targets[0]) {
+        const textObj = targets[0];
+        const clone = await textObj.clone();
+        writeTextPart(textObj, split.keptText, split.keptStyles);
+        manager.canvas.requestRenderAll();
+        manager.commit();
+
+        await slidesController.add();
+
+        writeTextPart(clone, split.restText, split.restStyles);
+        moveObjectBoundingRectTo(clone, split.left, PLACE_PADDING);
+        manager.canvas.add(clone);
+        manager.canvas.setActiveObject(clone);
+        manager.canvas.requestRenderAll();
+        manager.commit();
+        return;
+      }
+
       const clones = await Promise.all(targets.map((obj) => obj.clone()));
 
       for (const obj of targets) {
@@ -82,12 +111,10 @@ export function AutoFlowPrompt() {
 
       await slidesController.add();
 
-      const { width: w, height: h } = canvasDimensions;
       for (const cloned of clones) {
-        placeObjectOnNewSlide(cloned, w, h);
+        placeObjectOnNewSlide(cloned, width, height);
         manager.canvas.add(cloned);
       }
-
       if (clones.length === 1) {
         manager.canvas.setActiveObject(clones[0]!);
       }
@@ -104,15 +131,17 @@ export function AutoFlowPrompt() {
     <div className="pointer-events-none absolute bottom-20 left-1/2 z-30 -translate-x-1/2 px-3">
       <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-border/60 bg-background/95 px-3 py-2 shadow-lg backdrop-blur-md">
         <Layers className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <p className="text-xs text-foreground max-w-[240px]">
-          This object runs past the slide edge. Create the next slide and move it?
+        <p className="max-w-[280px] text-xs text-foreground">
+          {continuing
+            ? "This text runs past the slide. Continue it on the next slide?"
+            : "This object runs past the slide edge. Create the next slide and move it?"}
         </p>
         <Button
           size="sm"
-          className="h-7 rounded-xl text-xs px-2.5 shrink-0"
+          className="h-7 shrink-0 rounded-xl px-2.5 text-xs"
           onClick={() => void accept()}
         >
-          Create
+          {continuing ? "Continue" : "Create"}
         </Button>
         <Button
           variant="ghost"

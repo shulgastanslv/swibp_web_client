@@ -5,6 +5,7 @@ import { Search, X, Loader2, LayoutGrid, FileJson } from "lucide-react";
 
 import {
   getTemplates,
+  getTemplateById,
   getTemplateCategories,
   type TemplateListItem,
 } from "@/actions/templates";
@@ -14,9 +15,12 @@ import { useCanvasStore } from "@/store/useCanvasStore";
 import { cn } from "@/lib/utils";
 import { CarouselStack } from "@/components/canvas/sidebar/carousel-stack";
 import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
+import { PreviewTemplateDialog } from "@/components/canvas/preview-template-dialog";
+import type { FabricCanvasJSON, RatioKey } from "@/lib/types";
 
 export function SidebarTemplates() {
-  const { applyTemplateById, applyPayload } = useApplyTemplate();
+  const { applyPayload, insertTemplateSlide } = useApplyTemplate();
+  const currentRatio = useCanvasStore((s) => s.currentRatio);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
@@ -27,6 +31,12 @@ export function SidebarTemplates() {
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{
+    title: string;
+    aspectRatio?: RatioKey;
+    slides: FabricCanvasJSON[];
+    thumbnails: Array<string | null>;
+  } | null>(null);
 
   const fetchTemplates = useCallback(async () => {
     setLoading(true);
@@ -79,15 +89,12 @@ export function SidebarTemplates() {
       }
 
       const store = useCanvasStore.getState();
-      await applyPayload({
-        title: parsed.template.title,
+      setPreview({
+        title: parsed.template.title?.trim() || file.name.replace(/\.json$/i, ""),
         aspectRatio: parsed.template.aspectRatio ?? store.currentRatio,
         slides: parsed.template.slides,
         thumbnails: parsed.template.thumbnails,
-        previewUrl: parsed.template.previewUrl,
       });
-      const title = parsed.template.title?.trim();
-      if (title) useCanvasStore.getState().setProjectTitle(title);
     } catch (err) {
       console.error(err);
       setError("Couldn't import that template");
@@ -104,8 +111,58 @@ export function SidebarTemplates() {
     setApplyingId(id);
     setError(null);
     try {
-      const res = await applyTemplateById(id);
-      if (!res.success) alert("Couldn't apply the template");
+      const res = await getTemplateById(id);
+      if (!res.success) {
+        alert("Couldn't open the template");
+        return;
+      }
+      setPreview({
+        title: res.template.title,
+        aspectRatio: res.template.aspectRatio,
+        slides: res.template.slides,
+        thumbnails: res.template.thumbnails,
+      });
+    } finally {
+      setApplyingId(null);
+    }
+  };
+
+  const insertPreviewSlides = async (indices: number[]) => {
+    if (!preview || applyingId) return;
+    const ordered = [...new Set(indices)]
+      .filter((index) => index >= 0 && index < preview.slides.length)
+      .sort((a, b) => a - b);
+    if (ordered.length === 0) return;
+    setApplyingId("insert");
+    try {
+      for (const index of ordered) {
+        await insertTemplateSlide(preview.slides[index]!, preview.thumbnails[index] ?? null);
+      }
+      setPreview(null);
+    } catch (err) {
+      console.error(err);
+      setError("Couldn't insert those slides");
+    } finally {
+      setApplyingId(null);
+    }
+  };
+
+  const replaceWithPreview = async () => {
+    if (!preview || applyingId) return;
+    setApplyingId("replace");
+    try {
+      await applyPayload({
+        title: preview.title,
+        aspectRatio: preview.aspectRatio ?? currentRatio,
+        slides: preview.slides,
+        thumbnails: preview.thumbnails,
+      });
+      const title = preview.title.trim();
+      if (title) useCanvasStore.getState().setProjectTitle(title);
+      setPreview(null);
+    } catch (err) {
+      console.error(err);
+      setError("Couldn't replace the carousel");
     } finally {
       setApplyingId(null);
     }
@@ -235,7 +292,7 @@ export function SidebarTemplates() {
                     </p>
                   </div>
                   <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground ring-1 ring-border/40">
-                    {busy ? "…" : "Apply"}
+                    {busy ? "…" : "Preview"}
                   </span>
                 </div>
               </button>
@@ -243,6 +300,20 @@ export function SidebarTemplates() {
           })}
         </div>
       )}
+      <PreviewTemplateDialog
+        open={preview != null}
+        onOpenChange={(open) => {
+          if (!open) setPreview(null);
+        }}
+        title={preview?.title ?? "Template"}
+        aspectRatio={preview?.aspectRatio}
+        currentRatio={currentRatio}
+        slides={preview?.slides ?? []}
+        thumbnails={preview?.thumbnails ?? []}
+        busy={applyingId === "insert" || applyingId === "replace"}
+        onInsert={(indices) => void insertPreviewSlides(indices)}
+        onReplace={() => void replaceWithPreview()}
+      />
     </div>
   );
 }

@@ -11,15 +11,9 @@ import type { Side, SlideNumberStyle } from "@/lib/canvas/objects";
 import { formatSlideNumber } from "@/lib/canvas/objects";
 import { slidesFromLines, splitSlideLines, TEXT_STYLES, type TextStyleId } from "@/lib/canvas/document";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import {
-  attentionZones,
-  scoreEngagement,
-  signalsFromSlide,
-  type InsightPlatform,
-} from "@/lib/canvas/insights";
-import { useInsightUi } from "@/lib/canvas/insight-ui";
-import { CornerLeftUpIcon, CornerRightUpIcon, MapIcon } from "lucide-react";
+import { CornerLeftUpIcon, CornerRightUpIcon } from "lucide-react";
 import { applyCarouselFont } from "@/lib/canvas/apply-carousel-font";
+import { carouselTextHits, replaceTextInJSON, replaceTextOnNodes } from "@/lib/canvas/find-text";
 import { loadGoogleFont, normalizeFontFamily, SUGGESTED_FONTS } from "@/lib/fonts/google-fonts";
 
 const NUMBER_STYLES: readonly SlideNumberStyle[] = ["1", "01", "1 / 8"];
@@ -39,8 +33,6 @@ function firstFont(objects: FabricObject[]): string | null {
   return null;
 }
 
-const PLATFORMS: readonly InsightPlatform[] = ["Telegram", "Threads", "Instagram", "X"];
-
 type CueStyleId = "brackets" | "plain" | "parentheses" | "dash";
 
 const CUE_STYLES: readonly { id: CueStyleId; label: string }[] = [
@@ -58,8 +50,6 @@ function formatCue(style: CueStyleId, raw: string): string {
   return word;
 }
 
-const fieldLabel = "px-0.5 text-[11px] text-muted-foreground";
-
 const actionButton =
   "h-8 rounded-full bg-muted px-2.5 text-xs text-foreground/80 transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40 flex items-center justify-center gap-1";
 const fieldInput =
@@ -69,18 +59,18 @@ export function SidebarTools() {
   const manager = useCanvasManager();
   const slidesController = useSlidesController();
   const { currentIndex, currentSlideId, slides } = useSlides();
-  const ratio = useCanvasStore((s) => s.currentRatio);
   const [prompt, setPrompt] = useState("");
   const [slideStyle, setSlideStyle] = useState<TextStyleId>("heading");
   const [handle, setHandle] = useState("@username");
-  const platform = useInsightUi((s) => s.platform);
-  const setPlatform = useInsightUi((s) => s.setPlatform);
-  const showAttention = useInsightUi((s) => s.showAttention);
-  const setShowAttention = useInsightUi((s) => s.setShowAttention);
   const [info, setInfo] = useState("swipe");
   const [cueStyle, setCueStyle] = useState<CueStyleId>("brackets");
   const [textTick, setTextTick] = useState(0);
   const objects = useCanvasObjects();
+  const markedSlideIds = useCanvasStore((s) => s.markedSlideIds);
+  const [fontScope, setFontScope] = useState<"all" | "marked">("all");
+  const [findQuery, setFindQuery] = useState("");
+  const [findReplacement, setFindReplacement] = useState("");
+  const [matchCase, setMatchCase] = useState(false);
   const activeFont = firstFont(objects);
 
   useEffect(() => {
@@ -88,8 +78,13 @@ export function SidebarTools() {
   }, []);
 
   const useFont = (family: string) => {
+    if (fontScope === "marked" && markedSlideIds.length === 0) return;
     void loadGoogleFont(family).then(() => {
-      applyCarouselFont(family, manager);
+      applyCarouselFont(
+        family,
+        manager,
+        fontScope === "marked" ? markedSlideIds : undefined,
+      );
     });
   };
 
@@ -100,10 +95,9 @@ export function SidebarTools() {
   const cueText = formatCue(cueStyle, info);
 
   const addHandle = (side: Side) =>
-    manager?.objects.addCornerHandle(handle.trim() || "@username", side, platform ?? undefined);
+    manager?.objects.addCornerHandle(handle.trim() || "@username", side);
 
   const lineCount = splitSlideLines(prompt).length;
-  const insightPlatform = platform ?? "Instagram";
 
   useEffect(() => {
     if (!manager) return;
@@ -114,25 +108,40 @@ export function SidebarTools() {
     };
   }, [manager]);
 
-  const reach = useMemo(() => {
-    const signals = slides.map((slide) => {
-      if (slide.id === currentSlideId && manager) {
-        return signalsFromSlide({
-          objects: manager.canvas.getObjects(),
-          background: manager.canvas.backgroundColor,
-          backgroundImage: manager.canvas.backgroundImage,
-        });
-      }
-      return signalsFromSlide({
-        objects: slide.canvasJSON.objects ?? [],
-        background: slide.canvasJSON.background ?? slide.canvasJSON.backgroundColor,
-        backgroundImage: slide.canvasJSON.backgroundImage,
-      });
+  const textHits = useMemo(() => {
+    return carouselTextHits({
+      query: findQuery.trim(),
+      matchCase,
+      slides: slides.map((slide) => ({
+        id: slide.id,
+        objects:
+          slide.id === currentSlideId && manager
+            ? manager.canvas.getObjects()
+            : (slide.canvasJSON.objects ?? []),
+      })),
     });
-    return scoreEngagement(insightPlatform, signals);
-  }, [slides, currentSlideId, manager, insightPlatform, textTick, objects]);
+  }, [slides, currentSlideId, manager, findQuery, matchCase, textTick, objects]);
 
-  const attention = attentionZones(insightPlatform, ratio);
+  const replaceText = () => {
+    const query = findQuery.trim();
+    if (!query || !slidesController) return;
+    slidesController.saveCurrent();
+    const store = useCanvasStore.getState();
+    let total = 0;
+    const next = store.slides.map((slide) => {
+      const replaced = replaceTextInJSON(slide.canvasJSON, query, findReplacement, matchCase);
+      total += replaced.count;
+      return replaced.count > 0 ? { ...slide, canvasJSON: replaced.json } : slide;
+    });
+    if (total === 0) return;
+    store.setSlides(next);
+    if (manager) {
+      replaceTextOnNodes(manager.canvas.getObjects(), query, findReplacement, matchCase);
+      manager.canvas.requestRenderAll();
+      manager.commit();
+    }
+    store.setDirty(true);
+  };
 
   const generateSlides = () => {
     if (!lineCount || !slidesController) return;
@@ -156,6 +165,26 @@ export function SidebarTools() {
   return (
     <div className="flex flex-col text-xs text-foreground">
       <CollapsibleGroup id="tools-fonts" title="Fonts">
+        <div className="flex rounded-full bg-muted/50 p-0.5">
+          {(
+            [
+              ["all", "All slides"],
+              ["marked", markedSlideIds.length > 0 ? `Marked ${markedSlideIds.length}` : "Marked"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setFontScope(id)}
+              className={cn(
+                "h-7 flex-1 rounded-full text-xs transition-colors",
+                fontScope === id ? "bg-background text-foreground" : "text-muted-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-2 gap-1">
           {SUGGESTED_FONTS.map((family) => {
             const selected = activeFont === family;
@@ -163,7 +192,11 @@ export function SidebarTools() {
               <button
                 key={family}
                 type="button"
-                title={`Use ${family} on every text`}
+                title={
+                  fontScope === "marked"
+                    ? `Use ${family} on marked slides`
+                    : `Use ${family} on every text`
+                }
                 disabled={!manager}
                 onClick={() => useFont(family)}
                 style={{ fontFamily: `"${family}", sans-serif` }}
@@ -178,6 +211,49 @@ export function SidebarTools() {
               </button>
             );
           })}
+        </div>
+      </CollapsibleGroup>
+
+      <CollapsibleGroup id="tools-find" title="Find">
+        <div className="space-y-1.5">
+          <input
+            value={findQuery}
+            onChange={(event) => setFindQuery(event.target.value)}
+            placeholder="Find"
+            aria-label="Find text"
+            className={fieldInput}
+          />
+          <input
+            value={findReplacement}
+            onChange={(event) => setFindReplacement(event.target.value)}
+            placeholder="Replace with"
+            aria-label="Replacement text"
+            className={fieldInput}
+          />
+          <label className="flex items-center gap-2 px-0.5 text-[11px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={matchCase}
+              onChange={(event) => setMatchCase(event.target.checked)}
+              className="size-3.5 rounded-sm"
+            />
+            Match case
+          </label>
+          <p className="px-0.5 text-[11px] text-muted-foreground">
+            {findQuery.trim()
+              ? textHits.count === 0
+                ? "No matches"
+                : `${textHits.count} on slide${textHits.slides.length === 1 ? "" : "s"} ${textHits.slides.join(", ")}`
+              : "Searches every slide"}
+          </p>
+          <button
+            type="button"
+            disabled={!findQuery.trim() || textHits.count === 0}
+            onClick={replaceText}
+            className={cn(actionButton, "w-full")}
+          >
+            Replace
+          </button>
         </div>
       </CollapsibleGroup>
 
@@ -241,19 +317,7 @@ export function SidebarTools() {
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-xs font-semibold">
               {handleInitial}
             </span>
-            <span className="min-w-0 leading-tight">
-              {platform ? (
-                <span className="block truncate text-xs font-medium">{platform}</span>
-              ) : null}
-              <span
-                className={cn(
-                  "block truncate",
-                  platform ? "text-[11px] text-muted-foreground" : "text-xs font-medium",
-                )}
-              >
-                ({handleText})
-              </span>
-            </span>
+            <span className="min-w-0 truncate text-xs font-medium leading-tight">{handleText}</span>
           </div>
           <input
             value={handle}
@@ -262,176 +326,79 @@ export function SidebarTools() {
             aria-label="Handle"
             className={fieldInput}
           />
-          <div className="space-y-1">
-            <p className={fieldLabel}>Platform name</p>
-            <div className="grid grid-cols-2 gap-1">
-              {PLATFORMS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  aria-pressed={platform === p}
-                  title={`Print ${p} above the handle`}
-                  onClick={() => setPlatform(p)}
-                  className={cn(
-                    "h-7 truncate rounded-full px-2 text-xs transition-colors",
-                    platform === p
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                  )}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className={fieldLabel}>Top edge</p>
-            <div className="grid grid-cols-2 gap-1">
-              <button
-                type="button"
-                disabled={!manager}
-                onClick={() => addHandle("left")}
-                className={actionButton}
-              >
-                <CornerLeftUpIcon className="size-3.5" />
-                Top left
-              </button>
-              <button
-                type="button"
-                disabled={!manager}
-                onClick={() => addHandle("right")}
-                className={actionButton}
-              >
-                <CornerRightUpIcon className="size-3.5" />
-                Top right
-              </button>
-            </div>
-          </div>
-        </div>
-      </CollapsibleGroup>
-
-      <CollapsibleGroup id="tools-look" title="Attention">
-        <div className="space-y-2.5">
-          <div className="space-y-1.5">
-            <p className={fieldLabel}>Where eyes go · {insightPlatform}</p>
-            <ol className="space-y-1.5">
-              {attention.map((zone, index) => (
-                <li key={zone.id} className="flex gap-2">
-                  <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] tabular-nums text-muted-foreground">
-                    {index + 1}
-                  </span>
-                  <span className="min-w-0 leading-snug">
-                    <span className="text-foreground">{zone.label}</span>
-                    <span className="mt-0.5 block text-[11px] text-muted-foreground">{zone.hint}</span>
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </div>
-          <button
-            type="button"
-            aria-pressed={showAttention}
-            onClick={() => setShowAttention(!showAttention)}
-            className={cn(
-              actionButton,
-              "w-full justify-between px-3",
-              showAttention && "bg-foreground text-background hover:bg-foreground",
-            )}
-          >
-            <span className="flex items-center gap-1.5">
-              <MapIcon className="size-3.5" />
-              Show on the slide
-            </span>
-            <span>{showAttention ? "On" : "Off"}</span>
-          </button>
-          <div className="space-y-1.5 rounded-xl bg-muted/30 px-2.5 py-2">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-foreground">Reach</span>
-              <span className="tabular-nums text-muted-foreground">
-                <span className="text-foreground">{reach.score}</span> {reach.label}
-              </span>
-            </div>
-            <div className="h-1 overflow-hidden rounded-full bg-foreground/10">
-              <div
-                className="h-full rounded-full bg-foreground/70"
-                style={{ width: `${reach.score}%` }}
-              />
-            </div>
-            {(
-              [
-                ["Slides", reach.notes[0]],
-                ["Text", reach.notes[1]],
-                ["Contrast", reach.notes[2]],
-              ] as const
-            ).map(([name, note]) => (
-              <div key={name} className="flex items-baseline justify-between gap-2 text-muted-foreground">
-                <span>{name}</span>
-                <span className="truncate text-foreground/80">{note}</span>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              disabled={!manager}
+              onClick={() => addHandle("left")}
+              className={actionButton}
+            >
+              <CornerLeftUpIcon className="size-3.5" />
+              Top left
+            </button>
+            <button
+              type="button"
+              disabled={!manager}
+              onClick={() => addHandle("right")}
+              className={actionButton}
+            >
+              <CornerRightUpIcon className="size-3.5" />
+              Top right
+            </button>
           </div>
         </div>
       </CollapsibleGroup>
 
       <CollapsibleGroup id="tools-cues" title="Swipe">
         <div className="space-y-2">
-          <div className="relative h-24 rounded-xl bg-muted/30">
+          <input
+            value={info}
+            onChange={(e) => setInfo(e.target.value)}
+            placeholder="swipe"
+            aria-label="Swipe text"
+            className={fieldInput}
+          />
+          <div className="grid grid-cols-2 gap-1">
+            {CUE_STYLES.map((style) => {
+              const sample = formatCue(style.id, info);
+              const selected = cueStyle === style.id;
+              return (
+                <button
+                  key={style.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setCueStyle(style.id)}
+                  className={cn(
+                    "h-8 min-w-0 truncate rounded-full px-2.5 text-xs transition-colors",
+                    selected
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                  )}
+                >
+                  {sample}
+                </button>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-2 gap-1">
             <button
               type="button"
               disabled={!manager}
-              title={`Place “${cueText}” at the bottom left`}
+              title="Bottom left"
               onClick={() => manager?.objects.addSwipeCue(cueText)}
-              className="absolute bottom-2 left-2 flex max-w-[58%] flex-col items-start rounded-lg bg-background px-2 py-1 text-left shadow-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+              className={actionButton}
             >
-              <span className="max-w-full truncate text-xs text-foreground">{cueText}</span>
-              <span className="text-[10px] text-muted-foreground">Bottom left</span>
+              <span className="truncate">{cueText}</span>
             </button>
             <button
               type="button"
               disabled={!manager}
-              title="Place an arrow at the bottom right"
+              title="Bottom right"
               onClick={() => manager?.objects.addSwipeArrow()}
-              className="absolute bottom-2 right-2 flex flex-col items-end rounded-lg bg-background px-2 py-1 shadow-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+              className={actionButton}
             >
-              <span className="font-mono text-sm leading-none text-foreground">→</span>
-              <span className="text-[10px] text-muted-foreground">Bottom right</span>
+              Arrow →
             </button>
-          </div>
-          <div className="space-y-1">
-            <p className={fieldLabel}>Caption</p>
-            <input
-              value={info}
-              onChange={(e) => setInfo(e.target.value)}
-              placeholder="swipe"
-              aria-label="Swipe caption"
-              className={fieldInput}
-            />
-          </div>
-          <div className="space-y-1">
-            <p className={fieldLabel}>Style</p>
-            <div className="grid grid-cols-2 gap-1">
-              {CUE_STYLES.map((style) => {
-                const sample = formatCue(style.id, info);
-                const selected = cueStyle === style.id;
-                return (
-                  <button
-                    key={style.id}
-                    type="button"
-                    title={style.label}
-                    aria-pressed={selected}
-                    onClick={() => setCueStyle(style.id)}
-                    className={cn(
-                      "h-8 min-w-0 truncate rounded-full px-2.5 text-xs transition-colors",
-                      selected
-                        ? "bg-foreground text-background"
-                        : "bg-muted/40 text-foreground hover:bg-muted",
-                    )}
-                  >
-                    {sample}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </div>
       </CollapsibleGroup>

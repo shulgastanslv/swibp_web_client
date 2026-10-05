@@ -3,14 +3,14 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type { CanvasManager } from "@/lib/canvas/manager";
 import type { SlidesController } from "@/lib/canvas/slides";
-import { createEditor, type Editor } from "@/lib/canvas/editor";
+import { createEditor, type Editor, type InitialViewport } from "@/lib/canvas/editor";
 import { useCanvasStore } from "@/store/useCanvasStore";
 
 interface CanvasContextValue {
   manager: CanvasManager | null;
   slides: SlidesController | null;
   /** Creates the editor on a mounted `<canvas>` and returns its cleanup. */
-  attach: (element: HTMLCanvasElement) => () => void;
+  attach: (element: HTMLCanvasElement, viewport?: InitialViewport) => () => void;
 }
 
 const CanvasContext = createContext<CanvasContextValue | null>(null);
@@ -18,8 +18,8 @@ const CanvasContext = createContext<CanvasContextValue | null>(null);
 export function CanvasManagerProvider({ children }: { children: React.ReactNode }) {
   const [editor, setEditor] = useState<Editor | null>(null);
 
-  const attach = useCallback((element: HTMLCanvasElement) => {
-    const created = createEditor(element, useCanvasStore);
+  const attach = useCallback((element: HTMLCanvasElement, viewport?: InitialViewport) => {
+    const created = createEditor(element, useCanvasStore, viewport);
     setEditor(created);
     return () => {
       setEditor((current) => (current === created ? null : current));

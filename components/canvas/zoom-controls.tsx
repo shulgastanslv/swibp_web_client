@@ -8,7 +8,7 @@ export const MIN_ZOOM = 25;
 export const MAX_ZOOM = 400;
 
 export function clampZoom(value: number) {
-  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(value)));
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
 }
 
 export function ZoomControls() {
@@ -48,7 +48,7 @@ export function ZoomControls() {
         onClick={() => setZoom(100)}
         title="Reset zoom. Ctrl + scroll also zooms"
       >
-        {zoom}%
+        {Math.round(zoom)}%
       </button>
       <Button
         variant="ghost"

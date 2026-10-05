@@ -63,11 +63,13 @@ function Segmented<T extends string | number>({
 export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const slidesController = useSlidesController();
   const slides = useCanvasStore((s) => s.slides);
+  const markedSlideIds = useCanvasStore((s) => s.markedSlideIds);
   const canvasDimensions = useCanvasStore((s) => s.canvasDimensions);
 
   const [format, setFormat] = useState<ExportFormat>("png");
   const [pack, setPack] = useState<PackMode>("zip");
   const [scale, setScale] = useState<ScaleOption>(1);
+  const [scope, setScope] = useState<"all" | "marked">("all");
   const [exporting, setExporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
@@ -92,8 +94,16 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     return `${w}×${h}`;
   }, [canvasDimensions, scale]);
 
+  const exportSlides = useMemo(
+    () =>
+      scope === "marked"
+        ? slides.filter((slide) => markedSlideIds.includes(slide.id))
+        : slides,
+    [scope, slides, markedSlideIds],
+  );
+
   const handleExport = async () => {
-    if (exporting) return;
+    if (exporting || exportSlides.length === 0) return;
     setError(null);
     setDone(false);
     setExporting(true);
@@ -107,7 +117,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
     try {
       const rendered = await renderSlidesToImages(
-        state.slides.map((s) => ({ id: s.id, canvasJSON: s.canvasJSON })),
+        state.slides
+          .filter((slide) => exportSlides.some((chosen) => chosen.id === slide.id))
+          .map((s) => ({ id: s.id, canvasJSON: s.canvasJSON })),
         state.canvasDimensions,
         {
           format,
@@ -146,11 +158,27 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
             Export
           </DialogTitle>
           <p className="text-xs text-muted-foreground">
-            {slides.length} slide{slides.length === 1 ? "" : "s"} · {sizeLabel}
+            {scope === "marked"
+              ? `${exportSlides.length} of ${slides.length} marked`
+              : `${slides.length} slide${slides.length === 1 ? "" : "s"}`}
+            {" · "}
+            {sizeLabel}
           </p>
         </DialogHeader>
 
         <div className="space-y-3">
+          <Segmented
+            value={scope}
+            disabled={exporting}
+            onChange={(value) => setScope(value as "all" | "marked")}
+            options={[
+              { value: "all", label: "All" },
+              {
+                value: "marked",
+                label: markedSlideIds.length > 0 ? `Marked ${markedSlideIds.length}` : "Marked",
+              },
+            ]}
+          />
           <Segmented
             value={format}
             disabled={exporting}
@@ -178,6 +206,11 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               { value: "files", label: "Files" },
             ]}
           />
+          {scope === "marked" && exportSlides.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Mark slides with the corner check on the strip.
+            </p>
+          )}
         </div>
 
         {(exporting || done) && (
@@ -201,7 +234,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           type="button"
           size="lg"
           className="w-full rounded-full"
-          disabled={exporting || slides.length === 0}
+          disabled={exporting || exportSlides.length === 0}
           onClick={() => void handleExport()}
         >
           {exporting ? (

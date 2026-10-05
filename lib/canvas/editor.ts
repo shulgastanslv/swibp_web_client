@@ -15,9 +15,20 @@ export interface Editor {
   dispose: () => void;
 }
 
+export type InitialViewport = {
+  scale: number;
+  nativeW: number;
+  nativeH: number;
+};
+
 /** Creates the canvas editor for a `<canvas>` element and wires it to the store. */
-export function createEditor(element: HTMLCanvasElement, store: EditorStore): Editor {
+export function createEditor(
+  element: HTMLCanvasElement,
+  store: EditorStore,
+  viewport?: InitialViewport,
+): Editor {
   const manager = new CanvasManager(element);
+  if (viewport) manager.setViewportScale(viewport.scale, viewport.nativeW, viewport.nativeH);
   const slides = new SlidesController(manager, store);
 
   const unsubscribers = [

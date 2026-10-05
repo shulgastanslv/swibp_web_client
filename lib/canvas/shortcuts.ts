@@ -8,6 +8,8 @@ import {
   pasteRemembered,
   rememberSelection,
 } from "./clipboard";
+import { canUngroup, groupSelection, ungroupSelection } from "./group";
+import { copyStyleFromSelection, hasCopiedStyle, pasteObjectStyle } from "./style-clipboard";
 import {
   CANVAS_CLIPBOARD_MARKER,
   CANVAS_CLIPBOARD_MIME,
@@ -163,6 +165,19 @@ export function bindKeyboardShortcuts(
       e.preventDefault();
       manager.grid.centerObject(active, "both");
       manager.commit();
+    } else if (mod && key === "g") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        if (canUngroup(active)) manager.transact(() => ungroupSelection(manager.canvas));
+      } else if (manager.canvas.getActiveObjects().length >= 2) {
+        manager.transact(() => groupSelection(manager.canvas));
+      }
+    } else if (mod && e.shiftKey && key === "c") {
+      e.preventDefault();
+      copyStyleFromSelection(manager.canvas);
+    } else if (mod && e.shiftKey && key === "v") {
+      e.preventDefault();
+      if (hasCopiedStyle()) manager.transact(() => pasteObjectStyle(manager.canvas));
     }
   };
 
