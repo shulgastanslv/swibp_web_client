@@ -160,7 +160,7 @@ export function SlideNavigator() {
                 switchTo(slide.id);
               }}
               title={`Slide ${idx + 1}. Drag to reorder.`}
-              className={`relative shrink-0 cursor-grab overflow-hidden rounded-xl border bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing ${
+              className={`relative shrink-0 cursor-grab overflow-hidden rounded-none border bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing ${
                 isActive
                   ? "border-foreground/70"
                   : "border-transparent opacity-70 hover:opacity-100"

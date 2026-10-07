@@ -50,6 +50,7 @@ import {
 import { useCanvasManager } from "@/context/canvas-manager";
 import { fileToDataUrl } from "@/lib/image/file-to-data-url";
 import { canFillShape } from "@/lib/canvas/objects";
+import { iconFill } from "@/lib/canvas/recolor-icon";
 import { removeImageBackground } from "@/lib/image/remove-background";
 import { FontSelect } from "@/components/canvas/font-select";
 import {
@@ -382,8 +383,10 @@ export function RightSidebar({
     }
 
     const type = selectedObject.type ?? "object";
+    const icon = selectedObject as FabricObject & { swibpIcon?: boolean };
+    const painted = icon.swibpIcon ? iconFill(icon) : null;
     const rawFill = selectedObject.fill;
-    const fill = typeof rawFill === "string" ? rawFill : "#000000";
+    const fill = painted ?? (typeof rawFill === "string" ? rawFill : "#000000");
 
     const rawStroke = selectedObject.stroke;
     const stroke = typeof rawStroke === "string" ? rawStroke : "#000000";

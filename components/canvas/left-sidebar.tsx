@@ -17,8 +17,6 @@ import {
   StickerIcon,
   WandSparklesIcon,
 } from "lucide-react";
-import { Object as FabricObject } from "fabric";
-
 import { SidebarProjects } from "@/components/canvas/sidebar/projects/sidebar-projects";
 import { SidebarTemplates } from "@/components/canvas/sidebar/sidebar-templates";
 import { SidebarElements } from "@/components/canvas/sidebar/sidebar-elements";
@@ -36,9 +34,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCanvasManager } from "@/context/canvas-manager";
-import { useCanvasObjects } from "@/hooks/use-canvas-objects";
-
 export type NavId =
   | "projects"
   | "templates"
@@ -99,27 +94,7 @@ export function LeftSidebar({
   setShowDotGrid,
 }: LeftSidebarProps) {
 
-  const manager = useCanvasManager();
-  const canvasObjects = useCanvasObjects();
   const [legal, setLegal] = useState<LegalKind | null>(null);
-
-  const selectObject = (obj: FabricObject) => manager?.selectObject(obj);
-
-  const deleteObject = (obj: FabricObject) => manager?.removeObject(obj);
-
-  const reorderObjects = (fromIndex: number, toIndex: number) => {
-    const obj = canvasObjects[fromIndex];
-    if (obj) manager?.moveObjectTo(obj, toIndex);
-  };
-
-  const getObjectLabel = (obj: FabricObject): string => {
-    const type = obj.type ?? "object";
-    const text = (obj as unknown as Record<string, unknown>).text;
-    if (typeof text === "string" && text.length > 0) {
-      return `${type}: "${text.slice(0, 22)}${text.length > 22 ? "…" : ""}"`;
-    }
-    return type.charAt(0).toUpperCase() + type.slice(1);
-  };
 
   const navItems: { id: NavId; icon: React.ElementType | null; label: string }[] = [
     { id: "generate", icon: Sparkles, label: "AI" },
@@ -206,13 +181,7 @@ export function LeftSidebar({
           {activeNav === "templates" && <SidebarTemplates />}
           {activeNav === "elements" && <SidebarElements />}
           {activeNav === "layers" && (
-            <SidebarLayers
-              canvasObjects={canvasObjects}
-              selectObject={selectObject}
-              deleteObject={deleteObject}
-              getObjectLabel={getObjectLabel}
-              reorderObjects={reorderObjects}
-            />
+            <SidebarLayers />
           )}
           {activeNav === "filters" && <SidebarFilters />}
           {activeNav === "icons" && <SidebarIcons />}

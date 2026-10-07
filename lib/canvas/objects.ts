@@ -12,6 +12,8 @@ import {
   Group,
   Object as FabricObject,
   Image,
+  loadSVGFromString,
+  util,
 } from "fabric";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { formatSlideNumber, type ChromeRole, type SlideNumberStyle } from "@/lib/canvas/chrome";
@@ -344,6 +346,29 @@ export class ObjectFactory {
     });
     this.canvas.add(img);
     this.canvas.setActiveObject(img);
+    this.canvas.renderAll();
+  }
+
+  /** Place an SVG icon as vectors so the fill control can recolor it. */
+  async addSvgIcon(svg: string, options?: { maxSize?: number }): Promise<void> {
+    const parsed = await loadSVGFromString(svg);
+    const parts = parsed.objects.filter((obj): obj is FabricObject => Boolean(obj));
+    if (parts.length === 0) throw new Error("IconScout SVG had no shapes");
+    const icon = util.groupSVGElements(parts, parsed.options);
+    const maxSize = options?.maxSize ?? 280;
+    const scale = Math.min(maxSize / (icon.width || 1), maxSize / (icon.height || 1), 1);
+    const center = this.getLogicalCenter();
+    icon.set({
+      left: center.x,
+      top: center.y,
+      originX: "center",
+      originY: "center",
+      scaleX: scale,
+      scaleY: scale,
+      swibpIcon: true,
+    });
+    this.canvas.add(icon);
+    this.canvas.setActiveObject(icon);
     this.canvas.renderAll();
   }
 
@@ -700,6 +725,7 @@ export class ObjectFactory {
       { fill: "#000" },
     );
     const group = new Group([line, arrowHead], pos);
+    this.mark(group, { swibpRole: "arrow" });
     this.addToCanvas(group);
     return group;
   }
@@ -862,6 +888,7 @@ export class ObjectFactory {
     });
 
     const group = new Group([handle, channel], pos);
+    this.mark(group, { swibpRole: "caption" });
     this.addToCanvas(group);
     return group;
   }

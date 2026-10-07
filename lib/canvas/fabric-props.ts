@@ -9,6 +9,9 @@ const EXTRA = [
   "swibpFrameKind",
   "swibpIcon",
   "swibpMask",
+  "swibpName",
+  "swibpId",
+  "swibpLocked",
 ];
 
 for (const key of EXTRA) {

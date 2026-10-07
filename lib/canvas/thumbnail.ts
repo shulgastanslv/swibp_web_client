@@ -1,7 +1,9 @@
 import { renderSlidesToImages } from "@/lib/export/carousel";
 import type { FabricCanvasJSON } from "@/lib/types";
 
-export const THUMB_TARGET_WIDTH = 96;
+/** Wide enough for a retina sidebar card; the slide strip downscales this cleanly. */
+export const THUMB_TARGET_WIDTH = 480;
+const THUMB_QUALITY = 0.92;
 
 interface ThumbnailCanvas {
   getZoom(): number;
@@ -10,7 +12,7 @@ interface ThumbnailCanvas {
   toDataURL(options: { format: "jpeg"; quality: number; multiplier: number }): string;
 }
 
-/** Small JPEG of the live canvas. Does not change zoom or dimensions. */
+/** JPEG preview of the live canvas. Does not change zoom or dimensions. */
 export function captureCanvasThumbnail(
   canvas: ThumbnailCanvas,
   disposed = false,
@@ -19,12 +21,12 @@ export function captureCanvasThumbnail(
     if (disposed || !canvas.lowerCanvasEl) return null;
     const displayWidth = canvas.width || 1;
     const multiplier = Math.min(
-      1,
+      2,
       Math.max(0.05, THUMB_TARGET_WIDTH / Math.max(1, displayWidth)),
     );
     const url = canvas.toDataURL({
       format: "jpeg",
-      quality: 0.72,
+      quality: THUMB_QUALITY,
       multiplier,
     });
     return url || null;
@@ -45,8 +47,8 @@ export async function renderMissingThumbnails(
     size,
     {
       format: "jpeg",
-      quality: 0.72,
-      multiplier: Math.min(1, Math.max(0.05, THUMB_TARGET_WIDTH / Math.max(1, size.width))),
+      quality: THUMB_QUALITY,
+      multiplier: Math.min(2, Math.max(0.05, THUMB_TARGET_WIDTH / Math.max(1, size.width))),
     },
   );
 

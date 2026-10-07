@@ -5,6 +5,7 @@ import {
   Pattern,
   Object as FabricObject,
   Point,
+  util,
 } from "fabric";
 import { LayoutManager } from "./layouts";
 import { splitFrame, type CanvasSplit } from "./splits";
@@ -138,8 +139,7 @@ export class GridManager {
       axis === "vertical" ? center.x : width / 2,
       axis === "horizontal" ? center.y : height / 2,
     );
-    obj.setPositionByOrigin(next, "center", "center");
-    obj.setCoords();
+    this.setCenter(obj, next.x, next.y);
     this.canvas.requestRenderAll();
   }
 
@@ -169,7 +169,13 @@ export class GridManager {
   }
 
   private setCenter(obj: FabricObject, x: number, y: number) {
-    obj.setPositionByOrigin(new Point(x, y), "center", "center");
+    const scene = new Point(x, y);
+    // Grouped objects store left/top in the parent plane. Snap math is in
+    // scene space, so write it back through the group's transform.
+    const local = obj.group
+      ? scene.transform(util.invertTransform(obj.group.calcTransformMatrix()))
+      : scene;
+    obj.setPositionByOrigin(local, "center", "center");
     obj.setCoords();
   }
 

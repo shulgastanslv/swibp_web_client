@@ -15,7 +15,7 @@ import { useCanvasStore } from "@/store/useCanvasStore";
 import { cn } from "@/lib/utils";
 import { ProjectActionsDropdown } from "./project_actions_dropdown";
 import { Input } from "@/components/ui/input";
-import { CarouselStack } from "@/components/canvas/sidebar/carousel-stack";
+import { GalleryCard, GallerySection, carouselMeta, splitGallery } from "@/components/canvas/sidebar/gallery-card";
 import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
 
 type Filter = "all" | "saved";
@@ -30,6 +30,7 @@ export function SidebarProjects() {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const currentProjectId = useCanvasStore((s) => s.currentProjectId);
   const { loadProject } = useProject();
@@ -109,6 +110,9 @@ export function SidebarProjects() {
     });
   }, [projects, filter, ratio, search]);
 
+  const filtering = search.trim().length > 0 || filter !== "all" || ratio !== "all";
+  const { recent, more } = splitGallery(visibleProjects, showAll || filtering);
+
   if (!userId) {
     return (
       <div className="p-4 text-center text-xs text-muted-foreground">
@@ -118,29 +122,8 @@ export function SidebarProjects() {
   }
 
 
-  const formatDate = (date: string) => {
-    const diff = new Date().getTime() - new Date(date).getTime();
-    if (diff < 1000 * 60 * 60 * 24) {
-      return "Today";
-    } else if (diff < 1000 * 60 * 60 * 24 * 2) {
-      return "Yesterday";
-    } else {
-      return new Date(date).toLocaleDateString();
-    }
-  }
-  
   return (
-    <div className="flex flex-col gap-3 p-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground font-medium">
-          Your projects
-        </span>
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {visibleProjects.length}
-          </span>
-        </div>
-      </div>
+    <div className="flex flex-col gap-4 p-1">
 
       <div className="relative flex items-center px-2 gap-2">
         <Search className="absolute left-6 size-4 text-muted-foreground pointer-events-none" />
@@ -159,36 +142,36 @@ export function SidebarProjects() {
             <X className="h-3.5 w-3.5" />
           </button>
         )}
-      <div className="flex flex-row justify-between">
-        <FilterMenu
-          icon={Library}
-          value={filter}
-          onChange={(id) => setFilter(id as Filter)}
-          groups={[
-            {
-              label: "Library",
-              options: [
-                { id: "all", label: "All" },
-                { id: "saved", label: "Saved" },
-              ],
-            },
-          ]}
-        />
-        <FilterMenu
-          icon={Ratio}
-          value={ratio}
-          onChange={setRatio}
-          groups={[
-            {
-              label: "Ratio",
-              options: [
-                { id: "all", label: "All ratios" },
-                ...RATIOS.map((item) => ({ id: item, label: item })),
-              ],
-            },
-          ]}
-        />
-      </div>
+        <div className="flex flex-row justify-between">
+          <FilterMenu
+            icon={Library}
+            value={filter}
+            onChange={(id) => setFilter(id as Filter)}
+            groups={[
+              {
+                label: "Library",
+                options: [
+                  { id: "all", label: "All" },
+                  { id: "saved", label: "Saved" },
+                ],
+              },
+            ]}
+          />
+          <FilterMenu
+            icon={Ratio}
+            value={ratio}
+            onChange={setRatio}
+            groups={[
+              {
+                label: "Ratio",
+                options: [
+                  { id: "all", label: "All ratios" },
+                  ...RATIOS.map((item) => ({ id: item, label: item })),
+                ],
+              },
+            ]}
+          />
+        </div>
       </div>
 
 
@@ -201,74 +184,83 @@ export function SidebarProjects() {
           No projects found
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {visibleProjects.map((p) => {
-            const isActive = p.id === currentProjectId;
-            const busy = loadingId === p.id;
-
-            return (
-              <div
+        <div className="flex flex-col gap-4">
+          <GallerySection
+            title={filtering ? "Projects" : "Recently used"}
+            action={!filtering && more.length > 0 ? (showAll ? "Show less" : "See all") : undefined}
+            onAction={() => setShowAll((open) => !open)}
+          >
+            {recent.map((p) => (
+              <ProjectCard
                 key={p.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => void handleSelectProject(p.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    void handleSelectProject(p.id);
-                  }
-                }}
-                className={cn(
-                  "group flex flex-col p-3 rounded-2xl bg-muted/30 hover:bg-muted/70 text-left gap-2 transition-colors cursor-pointer",
-                  isActive && "bg-muted/70",
-                  busy && "opacity-60",
-                )}
-              >
-                <CarouselStack
-                  slideCount={p.slideCount}
-                  previewUrl={p.previewUrl}
-                  createdAt={formatDate(p.createdAt)}
-                  busy={busy}
-                >
-                  <div className="absolute top-1.5 right-1.5 flex items-start gap-0.5 z-10">
-                    <button
-                      type="button"
-                      onClick={(e) => void handleToggleSave(e, p.id)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
-                      title={p.isSaved ? "Remove from saved" : "Save"}
-                    >
-                      <Bookmark
-                        className={cn(
-                          "h-3.5 w-3.5",
-                          p.isSaved && "fill-primary text-primary",
-                        )}
-                      />
-                    </button>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <ProjectActionsDropdown
-                        onDelete={() => void handleDelete(p.id)}
-                      />
-                    </div>
-                  </div>
-                </CarouselStack>
-
-                <div className="flex items-center justify-between w-full gap-2">
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium truncate line-clamp-1 max-w-full text-wrap">{p.title}</p>
-                    <p className="text-xs text-muted-foreground truncate line-clamp-1">
-                      {p.slideCount} slides · {p.aspectRatio}
-                      {isActive ? " · Open" : ""}
-                    </p>
-                  </div>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-background shrink-0">
-                    {busy ? "…" : isActive ? "Open" : "Open"}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+                project={p}
+                active={p.id === currentProjectId}
+                busy={loadingId === p.id}
+                onOpen={() => void handleSelectProject(p.id)}
+                onToggleSave={(e) => void handleToggleSave(e, p.id)}
+                onDelete={() => void handleDelete(p.id)}
+              />
+            ))}
+          </GallerySection>
+          {more.length > 0 ? (
+            <GallerySection title="More projects">
+              {more.map((p) => (
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  active={p.id === currentProjectId}
+                  busy={loadingId === p.id}
+                  onOpen={() => void handleSelectProject(p.id)}
+                  onToggleSave={(e) => void handleToggleSave(e, p.id)}
+                  onDelete={() => void handleDelete(p.id)}
+                />
+              ))}
+            </GallerySection>
+          ) : null}
         </div>
       )}
     </div>
+  );
+}
+
+function ProjectCard({
+  project,
+  active,
+  busy,
+  onOpen,
+  onToggleSave,
+  onDelete,
+}: {
+  project: ProjectListItem;
+  active: boolean;
+  busy: boolean;
+  onOpen: () => void;
+  onToggleSave: (event: React.MouseEvent) => void;
+  onDelete: () => void;
+}) {
+  return (
+    <GalleryCard
+      title={project.title}
+      meta={carouselMeta(project.slideCount, project.aspectRatio)}
+      previewUrl={project.previewUrl}
+      busy={busy}
+      active={active}
+      onClick={onOpen}
+      menu={
+        <div onClick={(event) => event.stopPropagation()}>
+          <ProjectActionsDropdown onDelete={onDelete} />
+        </div>
+      }
+      badge={
+        <button
+          type="button"
+          onClick={onToggleSave}
+          title={project.isSaved ? "Remove from saved" : "Save"}
+          className="flex size-5 items-center justify-center rounded-full bg-background text-muted-foreground ring-1 ring-border/60 transition-colors hover:text-foreground"
+        >
+          <Bookmark className={cn("size-3", project.isSaved && "fill-primary text-primary")} />
+        </button>
+      }
+    />
   );
 }

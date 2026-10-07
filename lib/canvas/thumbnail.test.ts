@@ -16,7 +16,7 @@ test("captureCanvasThumbnail returns a jpeg and ignores a disposed canvas", () =
 
   assert.equal(captureCanvasThumbnail(canvas, true), null);
   assert.equal(captureCanvasThumbnail(canvas), "data:image/jpeg,abc");
-  assert.deepEqual(calls, [{ format: "jpeg", quality: 0.72, multiplier: 96 / 480 }]);
+  assert.deepEqual(calls, [{ format: "jpeg", quality: 0.92, multiplier: 1 }]);
 });
 
 test("captureCanvasThumbnail returns null when the canvas is tainted", () => {

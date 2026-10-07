@@ -52,8 +52,8 @@ async function captureTemplateAssets(): Promise<{
   try {
     const [preview] = await renderSlidesToImages(slides.slice(0, 1), state.canvasDimensions, {
       format: "jpeg",
-      quality: 0.82,
-      multiplier: Math.min(1, 540 / width),
+      quality: 0.92,
+      multiplier: Math.min(1, 720 / width),
     });
     previewUrl = preview?.dataUrl ?? previewUrl;
   } catch (err) {

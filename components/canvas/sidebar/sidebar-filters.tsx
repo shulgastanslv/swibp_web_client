@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { Library, RotateCcw } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCanvasManager } from "@/context/canvas-manager";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import type { FilterPresetValues } from "@/store/slices/settingsSlice";
-import { cn } from "@/lib/utils";
+import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
 
 type Tab = "slide" | "image";
 
@@ -214,59 +215,53 @@ export function SidebarFilters() {
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-3 overflow-hidden p-1.5 text-xs">
-      <div className="flex flex-wrap items-center gap-1">
-        {PRESETS.map((preset) => (
-          <button
-            key={preset.id}
-            type="button"
-            onClick={() => handlePreset(preset.id, preset.values)}
-            className={cn(
-              "h-7 rounded-full px-2.5 text-xs transition-colors",
-              activePreset === preset.id
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
+    <Tabs
+      value={tab}
+      onValueChange={(value) => setTab(value as Tab)}
+      className="gap-3 overflow-hidden p-1.5 text-xs"
+    >
+      <div className="flex items-center gap-1">
+        <TabsList className="grid h-8 min-w-0 flex-1 grid-cols-2 rounded-full">
+          <TabsTrigger
+            value="slide"
+            className="rounded-full text-xs shadow-none data-active:border-transparent dark:data-active:border-transparent"
           >
-            {preset.label}
-          </button>
-        ))}
+            Slide
+          </TabsTrigger>
+          <TabsTrigger
+            value="image"
+            className="rounded-full text-xs shadow-none data-active:border-transparent dark:data-active:border-transparent"
+          >
+            Image
+          </TabsTrigger>
+        </TabsList>
+        <FilterMenu
+          icon={Library}
+          value={activePreset ?? "none"}
+          onChange={(id) => {
+            const preset = PRESETS.find((item) => item.id === id);
+            if (preset) handlePreset(preset.id, preset.values);
+          }}
+          groups={[
+            {
+              label: "Preset",
+              options: PRESETS.map((preset) => ({ id: preset.id, label: preset.label })),
+            },
+          ]}
+        />
         {hasActive && (
           <button
             type="button"
             onClick={handleReset}
             title="Reset"
-            className="ml-auto inline-flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           >
             <RotateCcw className="size-3.5" />
           </button>
         )}
       </div>
 
-      <nav className="grid grid-cols-2 rounded-full bg-muted/30 p-0.5">
-        {(
-          [
-            ["slide", "Slide"],
-            ["image", "Image"],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setTab(id)}
-            className={cn(
-              "h-7 rounded-full text-xs transition-colors",
-              tab === id
-                ? "bg-background text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      {tab === "slide" && (
+      <TabsContent value="slide">
         <div className="flex flex-col gap-3">
           <Control label="Vignette" valueLabel={`${Math.round(vignette * 100)}%`}>
             <Slider
@@ -323,9 +318,9 @@ export function SidebarFilters() {
             />
           </Control>
         </div>
-      )}
+      </TabsContent>
 
-      {tab === "image" && (
+      <TabsContent value="image">
         <div className="flex flex-col gap-3">
           {!hasImageTarget && (
             <p className="text-xs text-muted-foreground">
@@ -430,7 +425,7 @@ export function SidebarFilters() {
             />
           </Control>
         </div>
-      )}
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }

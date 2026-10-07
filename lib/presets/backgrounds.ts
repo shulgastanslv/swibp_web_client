@@ -17,7 +17,7 @@ export interface SuggestedSet {
   card: string;
 }
 
-/** White, black, and the grays between them. */
+/** Neutrals plus the warmer and clearer colors showing up in 2026 carousels. */
 export const SOLID_PRESETS: SolidPreset[] = [
   { type: "solid", color: "#000000" },
   { type: "solid", color: "#0a0a0a" },
@@ -42,6 +42,22 @@ export const SOLID_PRESETS: SolidPreset[] = [
   { type: "solid", color: "#f5f5f5" },
   { type: "solid", color: "#f9f9f9" },
   { type: "solid", color: "#ffffff" },
+  { type: "solid", color: "#F7F1E5" },
+  { type: "solid", color: "#F6E27A" },
+  { type: "solid", color: "#F4A261" },
+  { type: "solid", color: "#E7D3C0" },
+  { type: "solid", color: "#C46B4A" },
+  { type: "solid", color: "#A47864" },
+  { type: "solid", color: "#D7263D" },
+  { type: "solid", color: "#F3D1C8" },
+  { type: "solid", color: "#7D9B76" },
+  { type: "solid", color: "#5C6B3A" },
+  { type: "solid", color: "#1F7A6B" },
+  { type: "solid", color: "#7FDBDA" },
+  { type: "solid", color: "#2F5DFF" },
+  { type: "solid", color: "#1C2B4A" },
+  { type: "solid", color: "#CDB4DB" },
+  { type: "solid", color: "#6C4AB6" },
 ];
 
 export const GRADIENT_PRESETS: GradientPreset[] = [
@@ -61,9 +77,17 @@ export const GRADIENT_PRESETS: GradientPreset[] = [
   { type: "gradient", colors: ["#f1f1f1", "#c8c8c8"] },
   { type: "gradient", colors: ["#e5e5e5", "#ffffff"] },
   { type: "gradient", colors: ["#181818", "#303030"] },
+  { type: "gradient", colors: ["#F6E27A", "#F7F1E5"] },
+  { type: "gradient", colors: ["#F4A261", "#F3D1C8"] },
+  { type: "gradient", colors: ["#1F7A6B", "#1C2B4A"] },
+  { type: "gradient", colors: ["#2F5DFF", "#CDB4DB"] },
+  { type: "gradient", colors: ["#7D9B76", "#F7F1E5"] },
+  { type: "gradient", colors: ["#D7263D", "#A47864"] },
+  { type: "gradient", colors: ["#7FDBDA", "#F6E27A"] },
+  { type: "gradient", colors: ["#6C4AB6", "#1C2B4A"] },
 ];
 
-/** Carousel sets built only from that same neutral range. */
+/** Carousel sets: the neutral range, then the 2026 color stories. */
 export const SUGGESTED_SETS: SuggestedSet[] = [
   {
     id: "white",
@@ -128,5 +152,69 @@ export const SUGGESTED_SETS: SuggestedSet[] = [
     text: "#fafafa",
     accent: "#e5e5e5",
     card: "#141414",
+  },
+  {
+    id: "butter",
+    label: "Butter",
+    background: "#F7F1E5",
+    text: "#1C2B4A",
+    accent: "#E3B505",
+    card: "#FFFFFF",
+  },
+  {
+    id: "clay",
+    label: "Clay",
+    background: "#F6EDE6",
+    text: "#3D2418",
+    accent: "#C46B4A",
+    card: "#FFFFFF",
+  },
+  {
+    id: "cherry",
+    label: "Cherry",
+    background: "#F8F1F1",
+    text: "#1A1214",
+    accent: "#D7263D",
+    card: "#FFFFFF",
+  },
+  {
+    id: "sage",
+    label: "Sage",
+    background: "#F3F5EF",
+    text: "#1E2A1C",
+    accent: "#5C6B3A",
+    card: "#FFFFFF",
+  },
+  {
+    id: "teal",
+    label: "Teal",
+    background: "#F2F7F6",
+    text: "#102421",
+    accent: "#1F7A6B",
+    card: "#FFFFFF",
+  },
+  {
+    id: "cobalt",
+    label: "Cobalt",
+    background: "#F4F6FB",
+    text: "#12182B",
+    accent: "#2F5DFF",
+    card: "#FFFFFF",
+  },
+  {
+    id: "lilac",
+    label: "Lilac",
+    background: "#F6F3F8",
+    text: "#241A33",
+    accent: "#6C4AB6",
+    card: "#FFFFFF",
+  },
+  {
+    id: "night",
+    label: "Night",
+    background: "#1C2B4A",
+    text: "#F7F1E5",
+    accent: "#7FDBDA",
+    card: "#243656",
   },
 ];

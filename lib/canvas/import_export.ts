@@ -1,67 +1,16 @@
 import {
   Canvas,
   Image as FabricImage,
-  loadSVGFromString,
-  Object as FabricObject,
-  Group,
   Rect,
   Gradient,
 } from "fabric";
 import type { BackgroundConfig, CanvasState, ExportOptions } from "./types";
-
-function markVector(target: FabricObject, recolorable: boolean): void {
-  const node = target as FabricObject & {
-    swibpIcon?: boolean;
-    getObjects?: () => FabricObject[];
-  };
-  node.set({ objectCaching: false });
-  if (recolorable) node.swibpIcon = true;
-  node.getObjects?.().forEach((child) => markVector(child, false));
-}
 
 export class ImportExportManager {
   private canvas: Canvas;
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
-  }
-
-  async addSVG(svgContent: string, options?: { maxSize?: number; recolorable?: boolean }) {
-    const result = await loadSVGFromString(svgContent);
-    const objects = (result.objects ?? []).filter(
-      (o): o is FabricObject => o != null,
-    );
-
-    if (objects.length === 0) {
-      throw new Error("SVG has no drawable elements");
-    }
-
-    const target: FabricObject =
-      objects.length > 1
-        ? new Group(objects, {
-            originX: "center",
-            originY: "center",
-          })
-        : objects[0];
-
-    target.set({
-      originX: "center",
-      originY: "center",
-    });
-    markVector(target, options?.recolorable ?? false);
-
-    const maxSize = options?.maxSize ?? 120;
-    const scale = Math.min(
-      maxSize / (target.width || 1),
-      maxSize / (target.height || 1),
-      1,
-    );
-    target.scale(scale);
-
-    this.canvas.add(target);
-    this.canvas.centerObject(target);
-    this.canvas.setActiveObject(target);
-    this.canvas.requestRenderAll();
   }
 
   async setBackground(config: BackgroundConfig): Promise<void> {

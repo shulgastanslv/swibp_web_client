@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, X, Loader2, LayoutGrid, FileJson } from "lucide-react";
+import { Search, X, Loader2, LayoutGrid, FileJson, Crown } from "lucide-react";
 
 import {
   getTemplates,
@@ -12,8 +12,7 @@ import {
 import { useApplyTemplate } from "@/hooks/use-apply-template";
 import { parseImportedTemplate } from "@/lib/templates/parse";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import { cn } from "@/lib/utils";
-import { CarouselStack } from "@/components/canvas/sidebar/carousel-stack";
+import { GalleryCard, GallerySection, carouselMeta, splitGallery } from "@/components/canvas/sidebar/gallery-card";
 import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
 import { PreviewTemplateDialog } from "@/components/canvas/preview-template-dialog";
 import type { FabricCanvasJSON, RatioKey } from "@/lib/types";
@@ -31,6 +30,7 @@ export function SidebarTemplates() {
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const [preview, setPreview] = useState<{
     title: string;
     aspectRatio?: RatioKey;
@@ -169,17 +169,11 @@ export function SidebarTemplates() {
   };
 
   const tabs = useMemo(() => ["all", ...categories], [categories]);
+  const filtering = search.trim().length > 0 || category !== "all";
+  const { recent, more } = splitGallery(templates, showAll || filtering);
 
   return (
-    <div className="flex flex-col gap-3 p-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground font-medium">Templates</span>
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {templates.length}
-          </span>
-        </div>
-      </div>
+    <div className="flex flex-col gap-4 p-1">
 
       <input
         ref={fileInputRef}
@@ -263,41 +257,51 @@ export function SidebarTemplates() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {templates.map((tpl) => {
-            const busy = applyingId === tpl.id;
-
-            return (
-              <button
+        <div className="flex flex-col gap-4">
+          <GallerySection
+            title={filtering ? "Templates" : "Recently used"}
+            action={!filtering && more.length > 0 ? (showAll ? "Show less" : "See all") : undefined}
+            onAction={() => setShowAll((open) => !open)}
+          >
+            {recent.map((tpl) => (
+              <GalleryCard
                 key={tpl.id}
-                type="button"
-                disabled={!!applyingId}
+                title={tpl.title}
+                meta={carouselMeta(tpl.slideCount, tpl.aspectRatio)}
+                previewUrl={tpl.previewUrl}
+                busy={applyingId === tpl.id}
                 onClick={() => void handleApply(tpl.id)}
-                className={cn(
-                  "flex flex-col gap-2 rounded-2xl bg-muted/30 p-3 text-left transition-colors hover:bg-muted/70 disabled:opacity-60",
-                  busy && "ring-1 ring-foreground/15",
-                )}
-              >
-                <CarouselStack
-                  slideCount={tpl.slideCount}
+                badge={
+                  tpl.badge ? (
+                    <span className="flex size-5 items-center justify-center rounded-full bg-background text-foreground ring-1 ring-border/60">
+                      <Crown className="size-2.5" />
+                    </span>
+                  ) : null
+                }
+              />
+            ))}
+          </GallerySection>
+          {more.length > 0 ? (
+            <GallerySection title="Templates">
+              {more.map((tpl) => (
+                <GalleryCard
+                  key={tpl.id}
+                  title={tpl.title}
+                  meta={carouselMeta(tpl.slideCount, tpl.aspectRatio)}
                   previewUrl={tpl.previewUrl}
-                  busy={busy}
+                  busy={applyingId === tpl.id}
+                  onClick={() => void handleApply(tpl.id)}
+                  badge={
+                    tpl.badge ? (
+                    <span className="flex size-5 items-center justify-center rounded-full bg-background text-foreground ring-1 ring-border/60">
+                      <Crown className="size-2.5" />
+                    </span>
+                    ) : null
+                  }
                 />
-
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-medium">{tpl.title}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {tpl.category} · {tpl.slideCount} slides · {tpl.aspectRatio}
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground ring-1 ring-border/40">
-                    {busy ? "…" : "Preview"}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+              ))}
+            </GallerySection>
+          ) : null}
         </div>
       )}
       <PreviewTemplateDialog

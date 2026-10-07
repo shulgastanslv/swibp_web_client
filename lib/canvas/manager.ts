@@ -14,6 +14,7 @@ import { recolorIcon } from "./recolor-icon";
 import { withRemoteImageCors } from "./image-cors";
 import { ImageCropSession } from "./crop-session";
 import { refreshMask } from "./object-appearance";
+import { stabilizeGroups } from "./group";
 
 const DEFAULT_BACKGROUND = "#ffffff";
 
@@ -317,6 +318,7 @@ export class CanvasManager {
         this.canvas.clear();
       }
       if (this.disposed || abort.signal.aborted || !this.canvas.contextTop) return;
+      stabilizeGroups(this.canvas.getObjects());
       if (!this.canvas.backgroundColor) {
         this.canvas.backgroundColor = DEFAULT_BACKGROUND;
       }
@@ -353,7 +355,10 @@ export class CanvasManager {
       else if (target) this.objects.pickShapeImage(target);
     });
 
-    this.canvas.on("object:added", onMutation);
+    this.canvas.on("object:added", (e) => {
+      if (e.target?.type === "group") stabilizeGroups([e.target]);
+      onMutation(e);
+    });
     this.canvas.on("object:removed", onMutation);
     this.canvas.on("object:modified", onMutation);
     this.canvas.on("selection:created", onSelection);
