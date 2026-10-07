@@ -11,6 +11,7 @@
     "postinstall": "prisma skills sync || exit 0"
   },
   "dependencies": {
+    "@google/genai": "^2.27.0",
     "@google/generative-ai": "^0.24.1",
     "@imgly/background-removal": "^1.7.0",
     "@phosphor-icons/react": "^2.1.10",

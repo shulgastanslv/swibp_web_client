@@ -230,7 +230,7 @@ export function SidebarTools() {
             aria-label="Replacement text"
             className={fieldInput}
           />
-          <label className="flex items-center gap-2 px-0.5 text-[11px] text-muted-foreground">
+          <label className="flex items-center gap-2 px-0.5 text-xs text-muted-foreground">
             <input
               type="checkbox"
               checked={matchCase}
@@ -239,7 +239,7 @@ export function SidebarTools() {
             />
             Match case
           </label>
-          <p className="px-0.5 text-[11px] text-muted-foreground">
+          <p className="px-0.5 text-xs text-muted-foreground">
             {findQuery.trim()
               ? textHits.count === 0
                 ? "No matches"

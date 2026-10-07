@@ -150,14 +150,13 @@ export default function CarouselStudio() {
               : {}
           }
         >
-          {focusMode ? (
-            <ElementsToolbar onExit={() => setFocusMode(false)} />
-          ) : (
-            <CanvasToolbar />
-          )}
+          {!focusMode && <CanvasToolbar />}
 
           <div className="flex flex-1 min-h-0 relative">
             <CanvasView />
+            {focusMode && (
+              <ElementsToolbar onExit={() => setFocusMode(false)} />
+            )}
             {!focusMode && <ReferencePanel />}
             {!focusMode && <AutoFlowPrompt />}
             {focusMode && focusInspector && (

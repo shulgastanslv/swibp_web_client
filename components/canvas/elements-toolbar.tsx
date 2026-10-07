@@ -1,12 +1,40 @@
 "use client";
 
-import { useEffect, useMemo, type DragEvent, type ReactNode } from "react";
-import { ChevronDown, ImagePlus, Link2, Loader2, Minimize2 } from "lucide-react";
+import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from "react";
+import {
+  AlignLeft,
+  Circle,
+  Diamond,
+  Ellipse,
+  Hand,
+  Heading1,
+  Heading2,
+  Hexagon,
+  ImagePlus,
+  Link2,
+  Loader2,
+  Minimize2,
+  Minus,
+  MousePointer2,
+  Quote,
+  SeparatorHorizontal,
+  Square,
+  Star,
+  Triangle,
+  Type,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -17,123 +45,209 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useElementLibrary } from "@/components/canvas/use-element-library";
-import { ZoomControls } from "@/components/canvas/zoom-controls";
+import { clampZoom } from "@/components/canvas/zoom-controls";
+import { useCanvasStore } from "@/store/useCanvasStore";
 
 interface ElementsToolbarProps {
   onExit: () => void;
 }
 
-const HINTS: Record<string, string> = {
-  "Upload image": "Adds a picture from a file",
-  "Image from a link": "Adds a picture from a URL",
-  iPhone: "iPhone mockup",
-  Android: "Android phone mockup",
-  iPad: "iPad mockup",
-  Tablet: "Android tablet mockup",
-  Laptop: "Laptop mockup",
-  Monitor: "Monitor mockup",
-  "Image in frame": "Puts a picture on the selected device",
-  Heading: "Large title",
-  Subtitle: "Smaller title under the heading",
-  Paragraph: "Body text",
-  Text: "Single line of text",
-  Quote: "Quoted line",
-  Rectangle: "Rectangle",
-  Circle: "Circle",
-  Triangle: "Triangle",
-  Diamond: "Diamond",
-  Star: "Five-point star",
-  Hexagon: "Hexagon",
-  Ellipse: "Oval",
-  Line: "Straight line",
-  Divider: "Thin horizontal rule",
-};
-
-function shortcutFor(index: number) {
-  const n = (index % 10) + 1;
-  const digit = n === 10 ? "0" : String(n);
-  const shift = index >= 10;
-  return { digit, shift, shortcut: shift ? `⇧${digit}` : digit };
+interface ToolDef {
+  id: string;
+  label: string;
+  hint: string;
+  icon: LucideIcon;
+  shortcut?: string;
+  key?: string;
 }
 
-function digitFromCode(code: string): string | null {
-  if (code.startsWith("Digit") && code.length === 6) return code.slice(5);
-  if (code.startsWith("Numpad") && code.length === 7) return code.slice(6);
-  return null;
+const SHAPES: ToolDef[] = [
+  { id: "rectangle", label: "Rectangle", hint: "Rectangle", icon: Square, shortcut: "R", key: "r" },
+  { id: "ellipse", label: "Ellipse", hint: "Oval", icon: Ellipse, shortcut: "O", key: "o" },
+  { id: "circle", label: "Circle", hint: "Circle", icon: Circle },
+  { id: "line", label: "Line", hint: "Straight line", icon: Minus, shortcut: "L", key: "l" },
+  { id: "triangle", label: "Triangle", hint: "Triangle", icon: Triangle },
+  { id: "diamond", label: "Diamond", hint: "Diamond", icon: Diamond },
+  { id: "star", label: "Star", hint: "Five-point star", icon: Star },
+  { id: "hexagon", label: "Hexagon", hint: "Hexagon", icon: Hexagon },
+  { id: "divider", label: "Divider", hint: "Thin horizontal rule", icon: SeparatorHorizontal },
+];
+
+const TEXTS: ToolDef[] = [
+  { id: "text", label: "Text", hint: "Single line of text", icon: Type, shortcut: "T", key: "t" },
+  { id: "heading", label: "Heading", hint: "Large title", icon: Heading1 },
+  { id: "subtitle", label: "Subtitle", hint: "Smaller title under the heading", icon: Heading2 },
+  { id: "paragraph", label: "Paragraph", hint: "Body text", icon: AlignLeft },
+  { id: "quote", label: "Quote", hint: "Quoted line", icon: Quote },
+];
+
+function isTypingTarget() {
+  const el = document.activeElement;
+  if (
+    el instanceof HTMLElement &&
+    (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)
+  ) {
+    return true;
+  }
+  return false;
 }
 
-function ToolButton({
+function ToolHint({ label, shortcut, hint }: { label: string; shortcut?: string; hint?: string }) {
+  return (
+    <span className="flex flex-col items-start gap-0.5">
+      <span className="flex items-center gap-1.5">
+        {label}
+        {shortcut && (
+          <kbd className="rounded-sm bg-background/15 px-1 font-mono text-[10px]">{shortcut}</kbd>
+        )}
+      </span>
+      {hint && <span className="opacity-80">{hint}</span>}
+    </span>
+  );
+}
+
+function RailTool({
   label,
   hint,
   shortcut,
+  active,
+  dragging,
   disabled,
   onClick,
   onDragOver,
+  onDragLeave,
   onDrop,
+  menu,
   children,
 }: {
   label: string;
   hint?: string;
   shortcut?: string;
+  active?: boolean;
+  dragging?: boolean;
   disabled?: boolean;
   onClick?: () => void;
   onDragOver?: (event: DragEvent<HTMLButtonElement>) => void;
+  onDragLeave?: () => void;
   onDrop?: (event: DragEvent<HTMLButtonElement>) => void;
+  menu?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={shortcut ? `${label}, ${shortcut}` : label}
-          disabled={disabled}
-          onClick={onClick}
-          onDragOver={onDragOver}
-          onDrop={onDrop}
-          className={cn(
-            "flex h-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:pointer-events-none disabled:opacity-40",
-            shortcut ? "gap-1 px-2" : "size-8",
-          )}
-        >
-          {children}
-          {shortcut && (
-            <span className="font-mono text-[11px] font-medium leading-none tabular-nums text-foreground/80">
-              {shortcut}
-            </span>
-          )}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" sideOffset={6}>
-        <span className="flex flex-col items-start gap-0.5">
-          <span className="flex items-center gap-1.5">
-            {label}
-            {shortcut && (
-              <kbd className="rounded-sm bg-background/15 px-1 font-mono text-[10px]">{shortcut}</kbd>
+    <div className="relative size-8 shrink-0">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label={shortcut ? `${label}, ${shortcut}` : label}
+            aria-pressed={active}
+            disabled={disabled}
+            onClick={onClick}
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full transition-colors disabled:pointer-events-none disabled:opacity-40",
+              active || dragging
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
-          </span>
-          {hint && <span className="opacity-80">{hint}</span>}
-        </span>
-      </TooltipContent>
-    </Tooltip>
+          >
+            {children}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={10}>
+          <ToolHint label={label} shortcut={shortcut} hint={hint} />
+        </TooltipContent>
+      </Tooltip>
+      {menu}
+    </div>
   );
 }
 
-function Group({ children }: { children: ReactNode }) {
+function CornerMenu({
+  label,
+  disabled,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex shrink-0 items-center gap-0.5 rounded-full bg-muted/50 p-0.5">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          disabled={disabled}
+          className="absolute right-0 bottom-0 z-10 flex size-3 items-center justify-center text-muted-foreground disabled:pointer-events-none"
+        >
+          <span className="block size-0 border-y-[2.5px] border-l-[4px] border-y-transparent border-l-current" />
+        </button>
+      </DropdownMenuTrigger>
       {children}
-    </div>
+    </DropdownMenu>
   );
+}
+
+function ToolFlyout({
+  tools,
+  activeId,
+  disabled,
+  onUse,
+}: {
+  tools: ToolDef[];
+  activeId: string;
+  disabled?: boolean;
+  onUse: (tool: ToolDef) => void;
+}) {
+  const active = tools.find((tool) => tool.id === activeId) ?? tools[0];
+  const Icon = active.icon;
+
+  return (
+    <RailTool
+      label={active.label}
+      hint={active.hint}
+      shortcut={active.shortcut}
+      disabled={disabled}
+      onClick={() => onUse(active)}
+      menu={
+        <CornerMenu label={`${active.label} options`} disabled={disabled}>
+          <DropdownMenuContent side="right" align="start" sideOffset={8} className="w-52!">
+            {tools.map((tool) => {
+              const ItemIcon = tool.icon;
+              const selected = tool.id === active.id;
+              return (
+                <DropdownMenuItem
+                  key={tool.id}
+                  onSelect={() => onUse(tool)}
+                  className={cn("gap-2", selected && "bg-accent")}
+                >
+                  <ItemIcon />
+                  <span className="flex-1">{tool.label}</span>
+                  {tool.shortcut && <DropdownMenuShortcut>{tool.shortcut}</DropdownMenuShortcut>}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </CornerMenu>
+      }
+    >
+      <Icon className="size-4" />
+    </RailTool>
+  );
+}
+
+function BarDivider() {
+  return <div className="my-1 h-px w-4 shrink-0 bg-border" />;
 }
 
 export function ElementsToolbar({ onExit }: ElementsToolbarProps) {
   const {
     manager,
     sections,
-    frames,
     fileInputRef,
-    frameInputRef,
     isDragging,
     setIsDragging,
     imageUrl,
@@ -142,223 +256,205 @@ export function ElementsToolbar({ onExit }: ElementsToolbarProps) {
     urlError,
     setUrlError,
     addImageFromFile,
-    fillFrameFromFile,
     handleImageFileChange,
-    handleFrameFileChange,
     addImageFromUrl,
   } = useElementLibrary();
 
-  const numbered = useMemo(() => {
-    const items: { label: string; action: () => void }[] = [];
+  const handActive = useCanvasStore((s) => s.handActive);
+  const setHandActive = useCanvasStore((s) => s.setHandActive);
+  const zoom = useCanvasStore((s) => s.zoom);
+  const setZoom = useCanvasStore((s) => s.setZoom);
+  const [shapeId, setShapeId] = useState(SHAPES[0].id);
+  const [textId, setTextId] = useState(TEXTS[0].id);
+
+  const actions = useMemo(() => {
+    const map = new Map<string, () => void>();
     for (const section of sections) {
-      for (const item of section.items) items.push({ label: item.label, action: item.action });
+      for (const item of section.items) map.set(item.label, item.action);
     }
-    return items.map((item, index) => ({ ...item, ...shortcutFor(index) }));
-  }, [sections, manager]);
+    return map;
+  }, [sections]);
+
+  const useTool = (tool: ToolDef, slot: "shape" | "text") => {
+    if (slot === "shape") setShapeId(tool.id);
+    else setTextId(tool.id);
+    actions.get(tool.label)?.();
+  };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
-      const el = document.activeElement;
-      if (
-        el instanceof HTMLElement &&
-        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)
-      ) {
-        return;
-      }
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.repeat) return;
+      if (isTypingTarget()) return;
+      if (event.target instanceof Element && event.target.closest("[data-slot='dropdown-menu-content']")) return;
       const active = manager?.getActiveObject() as { isEditing?: boolean } | null;
       if (active?.isEditing) return;
-      const digit = digitFromCode(event.code);
-      if (!digit) return;
-      const tool = numbered.find((item) => item.digit === digit && item.shift === event.shiftKey);
-      if (!tool || !manager) return;
-      event.preventDefault();
-      tool.action();
+
+      const key = event.key.toLowerCase();
+      if (key === "v") {
+        event.preventDefault();
+        setHandActive(false);
+        return;
+      }
+
+      const shape = SHAPES.find((tool) => tool.key === key);
+      if (shape) {
+        event.preventDefault();
+        setShapeId(shape.id);
+        actions.get(shape.label)?.();
+        return;
+      }
+      const text = TEXTS.find((tool) => tool.key === key);
+      if (text) {
+        event.preventDefault();
+        setTextId(text.id);
+        actions.get(text.label)?.();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [manager, numbered]);
+  }, [actions, manager, setHandActive]);
 
-  const shortcutByLabel = new Map(numbered.map((item) => [item.label, item.shortcut]));
+  const onImageDragOver = (event: DragEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (manager) setIsDragging(true);
+  };
+
+  const onImageDrop = (event: DragEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) addImageFromFile(file);
+  };
 
   return (
-    <TooltipProvider delayDuration={250}>
-      <div className="z-10 flex h-12 w-full shrink-0 items-center gap-1.5 border-b border-border/40 bg-background/80 px-2 backdrop-blur-md">
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleImageFileChange}
-          accept="image/*"
-          className="hidden"
-          disabled={!manager}
-        />
-        <input
-          type="file"
-          ref={frameInputRef}
-          onChange={handleFrameFileChange}
-          accept="image/*"
-          className="hidden"
-          disabled={!manager}
-        />
-
-      
-
-        <Group>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                aria-label="Upload image"
-                title="Upload image"
-                disabled={!manager}
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  if (manager) setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDragging(false);
-                  const file = e.dataTransfer.files?.[0];
-                  if (file) addImageFromFile(file);
-                }}
-                className={cn(
-                  "flex size-8 items-center justify-center rounded-full transition-colors disabled:pointer-events-none disabled:opacity-40",
-                  isDragging
-                    ? "bg-background text-foreground"
-                    : "text-muted-foreground hover:bg-background hover:text-foreground",
-                )}
-              >
-                <ImagePlus className="size-4" strokeWidth={1.5} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={6}>
-              <span className="flex flex-col items-start gap-0.5">
-                <span>Upload image</span>
-                <span className="opacity-80">{HINTS["Upload image"]}</span>
-              </span>
-            </TooltipContent>
-          </Tooltip>
-
-          <DropdownMenu>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Image from a link"
-                    title="Image from a link"
-                    disabled={!manager}
-                    className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-                  >
-                    <ChevronDown className="size-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={6}>
-                <span className="flex flex-col items-start gap-0.5">
-                  <span>Image from a link</span>
-                  <span className="opacity-80">{HINTS["Image from a link"]}</span>
-                </span>
-              </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent align="start" className="w-64 p-2">
-              <div className="flex items-center gap-1.5">
-                <div className="relative min-w-0 flex-1">
-                  <Link2 className="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type="url"
-                    placeholder="Image URL"
-                    value={imageUrl}
-                    disabled={!manager}
-                    onChange={(e) => {
-                      setImageUrl(e.target.value);
-                      setUrlError(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void addImageFromUrl();
-                      }
-                    }}
-                    className="h-8 rounded-full border-border/50 bg-muted/30 pl-7 text-xs shadow-none"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={!manager || urlLoading || !imageUrl.trim()}
-                  onClick={() => void addImageFromUrl()}
-                  className="h-8 shrink-0 rounded-full px-2.5 text-xs"
-                >
-                  {urlLoading ? <Loader2 className="size-3 animate-spin" /> : "Add"}
-                </Button>
-              </div>
-              {urlError && <p className="px-1 pt-1.5 text-xs text-destructive">{urlError}</p>}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </Group>
-
-        <Group>
-          {frames.map(({ kind, label, icon: Icon }) => (
-            <ToolButton
-              key={kind}
-              label={label}
-              hint={HINTS[label]}
-              disabled={!manager}
-              onClick={() => manager?.objects.addFrame(kind)}
-            >
-              <Icon className="size-4" strokeWidth={1.5} />
-            </ToolButton>
-          ))}
-          <ToolButton
-            label="Image in frame"
-            hint={HINTS["Image in frame"]}
+    <TooltipProvider delayDuration={300}>
+      <div className="pointer-events-none fixed top-1/2 left-2 z-30 -translate-y-1/2">
+        <div className="pointer-events-auto flex max-h-[calc(100vh-16px)] w-fit flex-col items-center gap-0.5 overflow-y-auto rounded-full border border-border/50 bg-background/90 p-1 shadow-lg backdrop-blur-md">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageFileChange}
+            accept="image/*"
+            className="hidden"
             disabled={!manager}
-            onClick={() => frameInputRef.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const file = e.dataTransfer.files?.[0];
-              if (file) fillFrameFromFile(file);
-            }}
-          >
-            <ImagePlus className="size-4" strokeWidth={1.5} />
-          </ToolButton>
-        </Group>
+          />
 
-        {sections.map((section) => (
-          <Group key={section.id}>
-            {section.items.map(({ label, icon: Icon, action, title }) => (
-              <ToolButton
-                key={label}
-                label={label}
-                hint={title ?? HINTS[label]}
-                shortcut={shortcutByLabel.get(label)}
-                disabled={!manager}
-                onClick={action}
-              >
-                <Icon className="size-4" strokeWidth={1.5} />
-              </ToolButton>
-            ))}
-          </Group>
-        ))}
+          <RailTool
+            label="Move"
+            hint="Select and move objects"
+            shortcut="V"
+            active={!handActive}
+            disabled={!manager}
+            onClick={() => setHandActive(false)}
+          >
+            <MousePointer2 className="size-4" />
+          </RailTool>
+          <RailTool
+            label="Hand"
+            hint="Drag to pan. Hold Space"
+            shortcut="H"
+            active={handActive}
+            disabled={!manager}
+            onClick={() => setHandActive(!handActive)}
+          >
+            <Hand className="size-4" />
+          </RailTool>
+
+          <BarDivider />
+
+          <ToolFlyout
+            tools={SHAPES}
+            activeId={shapeId}
+            disabled={!manager}
+            onUse={(tool) => useTool(tool, "shape")}
+          />
+          <ToolFlyout
+            tools={TEXTS}
+            activeId={textId}
+            disabled={!manager}
+            onUse={(tool) => useTool(tool, "text")}
+          />
+
+          <RailTool
+            label="Image"
+            hint="Upload or drop a picture"
+            dragging={isDragging}
+            disabled={!manager}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={onImageDragOver}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={onImageDrop}
+            menu={
+              <CornerMenu label="Image options" disabled={!manager}>
+              <DropdownMenuContent side="right" align="start" sideOffset={8} className="w-64!">
+                <DropdownMenuItem onSelect={() => fileInputRef.current?.click()} className="gap-2">
+                  <ImagePlus />
+                  Upload image
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Image from a link</DropdownMenuLabel>
+                <div className="flex items-center gap-1.5 px-1.5 pb-1.5" onKeyDown={(event) => event.stopPropagation()}>
+                  <div className="relative min-w-0 flex-1">
+                    <Link2 className="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="url"
+                      placeholder="Image URL"
+                      value={imageUrl}
+                      disabled={!manager}
+                      onChange={(event) => {
+                        setImageUrl(event.target.value);
+                        setUrlError(null);
+                      }}
+                      onKeyDown={(event) => {
+                        event.stopPropagation();
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void addImageFromUrl();
+                        }
+                      }}
+                      className="h-8 rounded-full border-border/50 bg-muted/30 pl-7 text-xs shadow-none"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={!manager || urlLoading || !imageUrl.trim()}
+                    onClick={() => void addImageFromUrl()}
+                    className="h-8 shrink-0 rounded-full px-2.5 text-xs"
+                  >
+                    {urlLoading ? <Loader2 className="size-3 animate-spin" /> : "Add"}
+                  </Button>
+                </div>
+                {urlError && <p className="px-2 pb-1.5 text-xs text-destructive">{urlError}</p>}
+              </DropdownMenuContent>
+              </CornerMenu>
+            }
+          >
+            <ImagePlus className="size-4" />
+          </RailTool>
+
+          <BarDivider />
+          <RailTool label="Zoom out" onClick={() => setZoom(clampZoom(zoom - 10))}>
+            <ZoomOut className="size-4" />
+          </RailTool>
+          <button
+            type="button"
+            onClick={() => setZoom(100)}
+            title="Reset zoom"
+            className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg font-mono text-[10px] leading-none text-muted-foreground tabular-nums hover:bg-muted hover:text-foreground"
+          >
+            {Math.round(zoom)}%
+          </button>
+          <RailTool label="Zoom in" onClick={() => setZoom(clampZoom(zoom + 10))}>
+            <ZoomIn className="size-4" />
+          </RailTool>
+          <BarDivider />
+
+          <RailTool label="Exit" hint="Leave focus mode" onClick={onExit}>
+            <Minimize2 className="size-4" />
+          </RailTool>
         </div>
-        <ZoomControls />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onExit}
-          className="h-8 shrink-0 gap-1.5 rounded-full px-2.5 text-xs"
-          title="Leave focus mode"
-        >
-          <Minimize2 className="size-3.5" />
-          Exit
-        </Button>
       </div>
     </TooltipProvider>
   );

@@ -58,7 +58,7 @@ export function ZoomControls() {
         title="Zoom in"
       >
         <ZoomIn className="size-3.5" />
-      </Button>
+      </Button> 
     </div>
   );
 }

@@ -218,6 +218,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-1">
+        
           <div className="flex items-center p-0.5 rounded-full">
             <Button
               variant="ghost"
@@ -274,6 +275,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             <Layers2 className="w-3 h-3 fill-current text-muted-foreground" />
             <span className="hidden sm:inline">Preview</span>
           </Button>
+          
           <Button
             variant="ghost"
             size="sm"

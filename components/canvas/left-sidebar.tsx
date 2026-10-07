@@ -13,6 +13,7 @@ import {
   FilterIcon,
   Folder,
   Shapes,
+  Sparkles,
   StickerIcon,
   WandSparklesIcon,
 } from "lucide-react";
@@ -28,6 +29,7 @@ import { SidebarFilters } from "./sidebar/sidebar-filters";
 import { LegalDialog, type LegalKind } from "@/components/legal-dialog";
 import { SidebarIcons } from "./sidebar/sidebar-icons";
 import { SidebarTools } from "./sidebar/sidebar-tools";
+import { SidebarGenerate } from "./sidebar/sidebar-generate";
 import {
   Tooltip,
   TooltipContent,
@@ -46,7 +48,8 @@ export type NavId =
   | "filters"
   | "icons"
   | "background"
-  | "tools";
+  | "tools"
+  | "generate";
 
 interface LeftSidebarProps {
   activeNav: NavId;
@@ -84,6 +87,7 @@ const PANEL_TITLES: Record<NavId, string> = {
   filters: "Filters",
   background: "Background",
   tools: "Tools",
+  generate: "Generate",
 };
 
 export function LeftSidebar({
@@ -118,7 +122,8 @@ export function LeftSidebar({
   };
 
   const navItems: { id: NavId; icon: React.ElementType | null; label: string }[] = [
-    { id : "tools", icon: WandSparklesIcon, label: "Tools" },
+    { id: "generate", icon: Sparkles, label: "AI" },
+    { id: "tools", icon: WandSparklesIcon, label: "Tools" },
     { id: "elements", icon: Shapes, label: "Elements" },
     { id: "projects", icon: Folder, label: "Projects" },
     { id: "layers", icon: Layers, label: "Layers" },
@@ -219,6 +224,7 @@ export function LeftSidebar({
           )}
           {activeNav === "background" && <SidebarBackground />}
           {activeNav === "tools" && <SidebarTools />}
+          {activeNav === "generate" && <SidebarGenerate />}
         </ScrollArea>
         <div className="px-4 py-2 border-t border-border/40 shrink-0 flex items-center justify-start gap-2 text-xs text-muted-foreground">
           <button
