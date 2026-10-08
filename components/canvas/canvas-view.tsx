@@ -5,7 +5,23 @@ import { useCanvasStore } from "@/store/useCanvasStore";
 import { useAttachCanvas, useCanvasManager } from "@/context/canvas-manager";
 import { clampZoom } from "@/components/canvas/zoom-controls";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StitchCanvasFx } from "@/components/canvas/stitch-canvas-fx";
 import { cn } from "@/lib/utils";
+
+function useStitchPulse(pulse: number) {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    if (pulse <= 0) return;
+    setActive(false);
+    const frame = requestAnimationFrame(() => setActive(true));
+    const clear = window.setTimeout(() => setActive(false), 600);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(clear);
+    };
+  }, [pulse]);
+  return active;
+}
 
 const PADDING = 48;
 /** Re-rasterize once the stretched bitmap would look soft. */
@@ -70,6 +86,9 @@ export function CanvasView() {
   const zoom = useCanvasStore((s) => s.zoom);
   const isLoadingProject = useCanvasStore((s) => s.isLoadingProject);
   const handActive = useCanvasStore((s) => s.handActive);
+  const genStagePulse = useCanvasStore((s) => s.genStagePulse);
+  const genFx = useCanvasStore((s) => s.genFx);
+  const stitchIn = useStitchPulse(genStagePulse);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [spaceDown, setSpaceDown] = useState(false);
   const [grabbing, setGrabbing] = useState(false);
@@ -365,7 +384,12 @@ export function CanvasView() {
       >
         <div
           ref={stageRef}
-          className="absolute bg-white shadow-2xl ring-1 ring-border/20"
+          className={cn(
+            "absolute bg-white shadow-2xl ring-1 ring-border/20",
+            stitchIn && "stitch-stage-in",
+            genFx === "composing" && "stitch-canvas-dim",
+            (genFx === "revealing" || genFx === "idle") && genStagePulse > 0 && "stitch-canvas-live",
+          )}
           style={
             frame
               ? { width: frame.width, height: frame.height, left: frame.left, top: frame.top }
@@ -383,6 +407,13 @@ export function CanvasView() {
         >
           <canvas ref={canvasElementRef} />
         </div>
+        <StitchCanvasFx
+          frame={
+            frame
+              ? { width: frame.width, height: frame.height, left: frame.left, top: frame.top }
+              : null
+          }
+        />
       </div>
       {isLoadingProject && (
         <div

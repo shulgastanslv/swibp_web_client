@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import { useElementLibrary } from "@/components/canvas/use-element-library";
 import { clampZoom } from "@/components/canvas/zoom-controls";
 import { useCanvasStore } from "@/store/useCanvasStore";
+import { GridControls } from "@/components/canvas/grid-controls";
 
 interface ElementsToolbarProps {
   onExit: () => void;
@@ -329,7 +330,7 @@ export function ElementsToolbar({ onExit }: ElementsToolbarProps) {
   return (
     <TooltipProvider delayDuration={300}>
       <div className="pointer-events-none fixed top-1/2 left-2 z-30 -translate-y-1/2">
-        <div className="pointer-events-auto flex max-h-[calc(100vh-16px)] w-fit flex-col items-center gap-0.5 overflow-y-auto rounded-full border border-border/50 bg-background/90 p-1 shadow-lg backdrop-blur-md">
+        <div className="pointer-events-auto flex max-h-[calc(100vh-16px)] w-fit flex-col items-center gap-1 overflow-y-auto rounded-full border border-border/50 bg-background/90 p-1 shadow-lg backdrop-blur-md">
           <input
             type="file"
             ref={fileInputRef}
@@ -434,7 +435,6 @@ export function ElementsToolbar({ onExit }: ElementsToolbarProps) {
             <ImagePlus className="size-4" />
           </RailTool>
 
-          <BarDivider />
           <RailTool label="Zoom out" onClick={() => setZoom(clampZoom(zoom - 10))}>
             <ZoomOut className="size-4" />
           </RailTool>
@@ -451,7 +451,7 @@ export function ElementsToolbar({ onExit }: ElementsToolbarProps) {
           </RailTool>
           <BarDivider />
 
-          <RailTool label="Exit" hint="Leave focus mode" onClick={onExit}>
+          <RailTool label="Exit" hint="Leave focus mode. Esc" onClick={onExit}>
             <Minimize2 className="size-4" />
           </RailTool>
         </div>

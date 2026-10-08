@@ -5,12 +5,13 @@ import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 
 import { Header } from "@/components/header";
-import { LeftSidebar } from "@/components/canvas/left-sidebar";
+import { LeftSidebar, RAIL_SHORTCUTS } from "@/components/canvas/left-sidebar";
 import { CanvasToolbar } from "@/components/canvas/canvas-toolbar";
 import { ElementsToolbar } from "@/components/canvas/elements-toolbar";
 import { CanvasView } from "@/components/canvas/canvas-view";
 import { ReferencePanel } from "@/components/canvas/reference-panel";
 import { AutoFlowPrompt } from "@/components/canvas/auto-flow-prompt";
+import { GenerateOverlay } from "@/components/canvas/generate-overlay";
 import { RightSidebar } from "@/components/canvas/right-sidebar";
 import { PreviewModal } from "@/components/canvas/preview-modal";
 import type { NavId } from "@/components/canvas/left-sidebar";
@@ -110,6 +111,39 @@ export default function CarouselStudio() {
     };
   }, [focusMode, manager]);
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const el = document.activeElement;
+      const typing =
+        el instanceof HTMLElement &&
+        (el.tagName === "INPUT" ||
+          el.tagName === "TEXTAREA" ||
+          el.tagName === "SELECT" ||
+          el.isContentEditable);
+      const editing = manager?.getActiveObject() as { isEditing?: boolean } | null;
+      if (typing || editing?.isEditing) return;
+      if (document.querySelector("[role='dialog'][data-state='open'], [data-slot='select-content'], [data-slot='dropdown-menu-content']")) {
+        return;
+      }
+
+      if (focusMode && event.key === "Escape" && !event.defaultPrevented && !manager?.crop.active) {
+        event.preventDefault();
+        setFocusMode(false);
+        return;
+      }
+
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.repeat) return;
+      if (!/^[1-9]$/.test(event.key)) return;
+      const next = RAIL_SHORTCUTS[Number(event.key) - 1];
+      if (!next) return;
+      event.preventDefault();
+      setActiveNav(next);
+      setIsLeftCollapsed(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focusMode, manager]);
+
   return (
     <div className="flex flex-col h-screen w-full bg-background text-foreground font-sans overflow-hidden select-none">
       {!focusMode && (
@@ -156,6 +190,7 @@ export default function CarouselStudio() {
 
           <div className="flex flex-1 min-h-0 relative">
             <CanvasView />
+            <GenerateOverlay />
             {focusMode && (
               <ElementsToolbar onExit={() => setFocusMode(false)} />
             )}

@@ -46,6 +46,18 @@ export type NavId =
   | "tools"
   | "generate";
 
+export const RAIL_SHORTCUTS: NavId[] = [
+  "generate",
+  "tools",
+  "elements",
+  "projects",
+  "layers",
+  "templates",
+  "background",
+  "filters",
+  "icons",
+];
+
 interface LeftSidebarProps {
   activeNav: NavId;
   setActiveNav: (nav: NavId) => void;
@@ -113,8 +125,8 @@ export function LeftSidebar({
       <aside className="w-12 flex flex-col items-center justify-between py-3 border-r border-border/50 bg-muted/20 shrink-0">
         <TooltipProvider delayDuration={300}>
           <div className="flex flex-col gap-1.5">
-            {navItems.map(({ id, icon: Icon, label }) => (
-              <RailTooltip key={id} label={label}>
+            {navItems.map(({ id, icon: Icon, label }, index) => (
+              <RailTooltip key={id} label={`${index + 1}  ${label}`}>
                 <Button
                   variant={activeNav === id ? "secondary" : "ghost"}
                   size="icon"

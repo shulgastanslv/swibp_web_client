@@ -6,56 +6,53 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { HelpCircle } from "lucide-react";
 
 interface HelpDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const SECTIONS: { title: string; body: string }[] = [
-  {
-    title: "Canvas",
-    body: "The stage is one slide of a carousel. Drag to move, corner handles to resize, and the side handles to restack. Space pans the view. Hold Ctrl or ⌘ and scroll to zoom toward the pointer. H switches to the hand.",
-  },
-  {
-    title: "Slides",
-    body: "The strip under the canvas is the carousel. Click a frame to open it. Drag a frame to reorder. The corner mark includes that slide in a font change, a palette, and export.",
-  },
-  {
-    title: "Templates and projects",
-    body: "Templates start a layout. Apply one, then edit the copy on your canvas. Projects are yours: the card menu renames, duplicates, and shows who made it and which ratio it uses. Autosave keeps the open project, and Save writes it now.",
-  },
-  {
-    title: "Left rail",
-    body: "Templates, projects, text, icons, photos, and background live in the left panel. Background covers fill, pattern, and palette. A suggested set can paint every slide, only marked slides, or the slide you have open.",
-  },
-  {
-    title: "Type, color, and share",
-    body: "Select text and pick a face in the right panel. The new face is applied as soon as it finishes loading. Palette slots recolor text, accent, and cards that were tagged with those roles. Share and export use the marked slides when you have marked any.",
-  },
+const NOTES = [
+  "Drag to move. Space pans. Scroll zooms.",
+  "Right-click an object for its actions.",
+  "Keys 1–9 switch panels. Esc leaves focus.",
 ];
 
 export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden rounded-2xl border-border/70 p-0 sm:max-w-md">
-        <DialogHeader className="border-b border-border/40 px-4 py-3 text-left">
-          <DialogTitle className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-            <HelpCircle className="size-4 text-muted-foreground" />
-            Help
-          </DialogTitle>
-        </DialogHeader>
-        <div className="max-h-[min(70vh,520px)] space-y-4 overflow-y-auto px-4 py-3">
-          {SECTIONS.map((section) => (
-            <section key={section.title} className="space-y-1">
-              <h3 className="text-[11px] text-muted-foreground">{section.title}</h3>
-              <p className="text-xs leading-relaxed text-foreground">{section.body}</p>
-            </section>
-          ))}
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Every shortcut is listed in the command menu in the header.
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[340px]">
+        <div className="relative bg-[#efe6d8] px-6 pt-8 pb-5">
+          <div className="flex items-end justify-center">
+            <div className="z-0 mb-1 flex aspect-4/5 w-[68px] -rotate-6 flex-col justify-between rounded-[3px] bg-[#f3d6d0] p-2 shadow-[0_10px_24px_rgba(40,24,16,0.12)]">
+              <span className="font-serif text-[18px] leading-none text-[#6b2430]">01</span>
+              <span className="h-px w-7 bg-[#6b2430]/50" />
+            </div>
+            <div className="z-10 -mx-3 flex aspect-4/5 w-[86px] flex-col justify-between rounded-[3px] bg-[#171513] p-2.5 text-[#f6f1e8] shadow-[0_16px_30px_rgba(40,24,16,0.22)]">
+              <span className="text-[9px] tracking-[0.18em] uppercase opacity-60">Slide</span>
+              <div>
+                <p className="font-serif text-[17px] leading-none">Hold</p>
+                <span className="mt-2 block h-px w-8 bg-[#f3d6d0]" />
+              </div>
+            </div>
+            <div className="z-0 mb-1 flex aspect-4/5 w-[68px] rotate-6 flex-col justify-between rounded-[3px] border border-[#171513]/10 bg-[#fbf7f1] p-2 shadow-[0_10px_24px_rgba(40,24,16,0.1)]">
+              <span className="size-2 bg-[#6b2430]" />
+              <span className="font-serif text-[18px] leading-none text-[#171513]">02</span>
+            </div>
+          </div>
+        </div>
+        <div className="px-4 py-3.5">
+          <DialogHeader className="gap-1 text-left">
+            <DialogTitle className="text-sm font-medium">Help</DialogTitle>
+          </DialogHeader>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            One slide at a time. The strip under the canvas is the carousel.
           </p>
+          <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-foreground">
+            {NOTES.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
         </div>
       </DialogContent>
     </Dialog>

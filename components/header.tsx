@@ -190,7 +190,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
     <>
       <header className="h-12 w-full flex items-center justify-between px-4 bg-background/80 backdrop-blur-md border-b border-border/60 text-xs z-20 shrink-0 gap-3 select-none">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Logo width={25} height={25} />
+          <Logo width={25} height={25} className="hover:opacity-80 transition-opacity cursor-pointer duration-300" />
           <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
           <input
             type="text"

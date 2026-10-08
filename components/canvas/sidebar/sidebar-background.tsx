@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScreenSplit } from "@/components/canvas/sidebar/screen-split";
 import { BackgroundPattern } from "@/components/canvas/sidebar/background-pattern";
 import { CollapsibleGroup } from "@/components/ui/collapsible-group";
-import { BackgroundScenes } from "@/components/canvas/sidebar/background-scenes";
+import { BackgroundSlideSets } from "@/components/canvas/sidebar/background-slide-sets";
 
 type Tab = "color" | "gradient" | "image";
 
@@ -394,6 +394,8 @@ export function SidebarBackground() {
           ))}
         </div>
       </CollapsibleGroup>
+
+      <BackgroundSlideSets />
 
       <CollapsibleGroup id="background-sets" title="Suggest a set">
         <div className="flex flex-col gap-1">

@@ -98,7 +98,11 @@ export class ObjectFactory {
   }
 
   private removeRole(role: ChromeRole) {
-    for (const obj of this.canvas.getObjects()) {
+    this.removeTagged(role);
+  }
+
+  private removeTagged(role: string) {
+    for (const obj of [...this.canvas.getObjects()]) {
       if ((obj as FabricObject & { swibpRole?: string }).swibpRole === role) {
         this.canvas.remove(obj);
       }
@@ -148,7 +152,12 @@ export class ObjectFactory {
       .getObjects()
       .find((obj) => (obj as FabricObject & { swibpRole?: string }).swibpRole === "number");
     if (existing) {
-      existing.set({ text: textValue, swibpNumberStyle: style });
+      existing.set({
+        text: textValue,
+        swibpNumberStyle: style,
+        ...this.getCornerPosition(corner),
+      });
+      existing.setCoords();
       this.canvas.requestRenderAll();
       this.canvas.fire("object:modified", { target: existing });
       return existing as IText;
@@ -170,11 +179,12 @@ export class ObjectFactory {
    * Author chip at the top edge.
    * Avatar on the left, channel name above, and the handle in parentheses beside it.
    */
-  addCornerHandle(
+  async addCornerHandle(
     handle = "@username",
     side: Side = "right",
     platform?: string,
-  ): Group {
+    avatarUrl?: string | null,
+  ): Promise<Group> {
     const corner: Corner = side === "right" ? "top-right" : "top-left";
     const pos = this.getCornerPosition(corner);
     const ink = this.slotColor("text", CORNER_INK);
@@ -206,7 +216,8 @@ export class ObjectFactory {
       selectable: false,
     });
 
-    const parts: FabricObject[] = [avatar, letter];
+    const photo = avatarUrl ? await this.circlePhoto(avatarUrl, size) : null;
+    const parts: FabricObject[] = photo ? [photo] : [avatar, letter];
     const channelName = platform?.trim();
 
     if (channelName) {
@@ -248,9 +259,37 @@ export class ObjectFactory {
     return group;
   }
 
+  private async circlePhoto(url: string, size: number): Promise<FabricObject | null> {
+    try {
+      const img = await Image.fromURL(url);
+      const width = img.width || 1;
+      const height = img.height || 1;
+      const cover = size / Math.min(width, height);
+      img.set({
+        originX: "left",
+        originY: "top",
+        left: 0,
+        top: 0,
+        scaleX: cover,
+        scaleY: cover,
+        evented: false,
+        selectable: false,
+        clipPath: new Circle({
+          radius: Math.min(width, height) / 2,
+          originX: "center",
+          originY: "center",
+        }),
+      });
+      return img;
+    } catch {
+      return null;
+    }
+  }
+
   /** Text swipe cue (e.g. "->") pinned bottom-right. */
   addSwipeArrow(text = "→", corner: Corner = "bottom-right"): IText {
-    this.removeRole("swipe");
+    this.removeTagged("swipe");
+    this.removeTagged("cue");
     const arrow = new IText(text, {
       ...this.getCornerPosition(corner),
       fontSize: 56,
@@ -263,21 +302,45 @@ export class ObjectFactory {
     return arrow;
   }
 
-  /** Bottom-left swipe caption. Replaces the previous caption. */
-  addSwipeCue(text: string): IText {
-    for (const obj of [...this.canvas.getObjects()]) {
-      if ((obj as FabricObject & { swibpRole?: string }).swibpRole === "cue") {
-        this.canvas.remove(obj);
-      }
-    }
+  /** Swipe caption in a corner. Replaces the previous swipe. */
+  addSwipeCue(text: string, corner: Corner = "bottom-right"): IText {
+    this.removeTagged("swipe");
+    this.removeTagged("cue");
     const label = new IText(text, {
-      ...this.getCornerPosition("bottom-left"),
+      ...this.getCornerPosition(corner),
       fontSize: 28,
+      fontFamily: CORNER_FONT,
+      fontWeight: "600",
+      fill: this.slotColor("accent", CORNER_INK),
+      textAlign: corner.endsWith("right") ? "right" : "left",
+    });
+    this.mark(label, { swibpRole: "swipe", swibpSlot: "accent" });
+    this.addToCanvas(label);
+    return label;
+  }
+
+  /** Corner line such as "Telegram: @name". */
+  addSocials(
+    entries: readonly { label: string; value: string }[],
+    corner: Corner = "bottom-left",
+  ): IText | null {
+    const lines = entries
+      .map((entry) => ({ label: entry.label.trim(), value: entry.value.trim() }))
+      .filter((entry) => entry.label && entry.value)
+      .map((entry) => `${entry.label}: ${entry.value}`);
+    if (lines.length === 0) return null;
+
+    this.removeTagged("social");
+    const label = new IText(lines.join("\n"), {
+      ...this.getCornerPosition(corner),
+      fontSize: 26,
       fontFamily: CORNER_FONT,
       fontWeight: "500",
       fill: this.slotColor("text", CORNER_INK),
+      lineHeight: 1.28,
+      textAlign: corner.endsWith("right") ? "right" : "left",
     });
-    this.mark(label, { swibpRole: "cue", swibpSlot: "text" });
+    this.mark(label, { swibpRole: "social", swibpSlot: "text" });
     this.addToCanvas(label);
     return label;
   }

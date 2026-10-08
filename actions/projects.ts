@@ -331,7 +331,7 @@ export async function saveProject(
         },
         select: { updatedAt: true },
       });
-    });
+    }, { maxWait: 10_000, timeout: 30_000 });
 
     revalidatePath("/");
     return { success: true, updatedAt: updated.updatedAt.toISOString() };
@@ -440,7 +440,7 @@ export async function saveProjectThumbnails(
           data: { thumbnail: first, updatedAt: project.updatedAt },
         });
       }
-    });
+    }, { maxWait: 10_000, timeout: 30_000 });
     return { success: true, updated: true };
   } catch (err) {
     console.error("saveProjectThumbnails error:", err);

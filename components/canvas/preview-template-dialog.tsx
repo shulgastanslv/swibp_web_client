@@ -234,7 +234,7 @@ export function PreviewTemplateDialog({
           "flex flex-col gap-0 overflow-hidden p-0",
           expanded
             ? "top-0 right-0 bottom-0 left-0 h-auto w-auto max-w-none translate-x-0 translate-y-0 rounded-none border-none bg-black text-white ring-0 sm:max-w-none"
-            : "h-[calc(100dvh-2rem)] w-[min(1080px,calc(100%-2rem))] rounded-2xl border-border/70 sm:max-w-[1080px]",
+            : "h-[calc(100dvh-2rem)] w-[min(1080px,calc(100%-2rem))] rounded-2xl border border-border/50 sm:max-w-[1080px]",
         )}
         onEscapeKeyDown={(event) => {
           if (!expanded) return;

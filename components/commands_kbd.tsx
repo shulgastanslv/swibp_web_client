@@ -44,6 +44,7 @@ const GROUPS: { title: string; rows: Shortcut[] }[] = [
       { label: "Select", keys: "V" },
       { label: "Zoom", keys: "scroll", mod: true },
       { label: "Leave crop", keys: "Esc" },
+      { label: "Leave focus", keys: "Esc" },
     ],
   },
   {
@@ -53,6 +54,20 @@ const GROUPS: { title: string; rows: Shortcut[] }[] = [
       { label: "Rectangle", keys: "R" },
       { label: "Ellipse", keys: "O" },
       { label: "Line", keys: "L" },
+    ],
+  },
+  {
+    title: "Panels",
+    rows: [
+      { label: "AI", keys: "1" },
+      { label: "Tools", keys: "2" },
+      { label: "Elements", keys: "3" },
+      { label: "Projects", keys: "4" },
+      { label: "Layers", keys: "5" },
+      { label: "Templates", keys: "6" },
+      { label: "Background", keys: "7" },
+      { label: "Filter", keys: "8" },
+      { label: "Icons", keys: "9" },
     ],
   },
 ];

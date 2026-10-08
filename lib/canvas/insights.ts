@@ -41,7 +41,7 @@ interface ReadableObject {
 }
 
 const TEXT_TYPES = new Set(["text", "i-text", "itext", "textbox"]);
-const CHROME_ROLES = new Set(["number", "handle", "swipe", "cue"]);
+const CHROME_ROLES = new Set(["number", "handle", "swipe", "cue", "social", "cta"]);
 
 const ZONES: Record<InsightPlatform, AttentionZone[]> = {
   Instagram: [

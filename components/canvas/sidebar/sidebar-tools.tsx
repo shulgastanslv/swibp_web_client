@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FabricObject } from "fabric";
 import { useCanvasManager, useSlidesController } from "@/context/canvas-manager";
 import { useSlides } from "@/hooks/use-slides";
 import { useCanvasObjects } from "@/hooks/use-canvas-objects";
 import { CollapsibleGroup } from "@/components/ui/collapsible-group";
 import { cn } from "@/lib/utils";
-import type { Side, SlideNumberStyle } from "@/lib/canvas/objects";
+import type { Corner, Side, SlideNumberStyle } from "@/lib/canvas/objects";
 import { formatSlideNumber } from "@/lib/canvas/objects";
 import { slidesFromLines, splitSlideLines, TEXT_STYLES, type TextStyleId } from "@/lib/canvas/document";
 import { useCanvasStore } from "@/store/useCanvasStore";
@@ -15,6 +15,15 @@ import { CornerLeftUpIcon, CornerRightUpIcon } from "lucide-react";
 import { applyCarouselFont } from "@/lib/canvas/apply-carousel-font";
 import { carouselTextHits, replaceTextInJSON, replaceTextOnNodes } from "@/lib/canvas/find-text";
 import { loadGoogleFont, normalizeFontFamily, SUGGESTED_FONTS } from "@/lib/fonts/google-fonts";
+import { FontSelect } from "@/components/canvas/font-select";
+import { fileToDataUrl } from "@/lib/image/file-to-data-url";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const NUMBER_STYLES: readonly SlideNumberStyle[] = ["1", "01", "1 / 8"];
 
@@ -33,21 +42,87 @@ function firstFont(objects: FabricObject[]): string | null {
   return null;
 }
 
-type CueStyleId = "brackets" | "plain" | "parentheses" | "dash";
-
-const CUE_STYLES: readonly { id: CueStyleId; label: string }[] = [
-  { id: "brackets", label: "Brackets" },
-  { id: "plain", label: "Plain" },
-  { id: "parentheses", label: "Parentheses" },
-  { id: "dash", label: "Dash" },
+const CORNERS: readonly { id: Corner; label: string }[] = [
+  { id: "top-left", label: "Top left" },
+  { id: "top-right", label: "Top right" },
+  { id: "bottom-left", label: "Bottom left" },
+  { id: "bottom-right", label: "Bottom right" },
 ];
 
-function formatCue(style: CueStyleId, raw: string): string {
-  const word = raw.trim() || "swipe";
-  if (style === "brackets") return `[${word}]`;
-  if (style === "parentheses") return `(${word})`;
-  if (style === "dash") return `– ${word}`;
-  return word;
+const SWIPE_VARIANTS = [
+  "swipe →",
+  "→",
+  "next →",
+  "more →",
+  "keep going →",
+  "swipe for more",
+  "read on →",
+  "continue →",
+  "see the rest →",
+  "don't stop →",
+  "part 2 →",
+  "[swipe]",
+  "(swipe)",
+  "– swipe",
+  ">>>",
+] as const;
+
+const SOCIAL_NETWORKS = [
+  "Telegram",
+  "Threads",
+  "Instagram",
+  "X",
+  "YouTube",
+  "TikTok",
+  "LinkedIn",
+  "Facebook",
+  "Pinterest",
+  "WhatsApp",
+  "Discord",
+  "GitHub",
+  "Spotify",
+  "Snapchat",
+  "Reddit",
+  "Behance",
+  "Dribbble",
+  "Website",
+  "Email",
+  "Newsletter",
+] as const;
+
+function isCorner(value: string): value is Corner {
+  return CORNERS.some((corner) => corner.id === value);
+}
+
+function CornerSelect({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: Corner;
+  onChange: (corner: Corner) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Select
+      value={value}
+      disabled={disabled}
+      onValueChange={(next) => {
+        if (isCorner(next)) onChange(next);
+      }}
+    >
+      <SelectTrigger className="h-8 w-[7.25rem] shrink-0 rounded-full px-2.5 text-xs" aria-label="Position">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent position="popper" align="end">
+        {CORNERS.map((corner) => (
+          <SelectItem key={corner.id} value={corner.id} className="text-xs">
+            {corner.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 }
 
 const actionButton =
@@ -62,8 +137,15 @@ export function SidebarTools() {
   const [prompt, setPrompt] = useState("");
   const [slideStyle, setSlideStyle] = useState<TextStyleId>("heading");
   const [handle, setHandle] = useState("@username");
-  const [info, setInfo] = useState("swipe");
-  const [cueStyle, setCueStyle] = useState<CueStyleId>("brackets");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [numberStyle, setNumberStyle] = useState<SlideNumberStyle>("1");
+  const [numberCorner, setNumberCorner] = useState<Corner>("top-left");
+  const [swipeCorner, setSwipeCorner] = useState<Corner>("bottom-right");
+  const [socialNetwork, setSocialNetwork] = useState<string>(SOCIAL_NETWORKS[0]);
+  const [socialHandle, setSocialHandle] = useState("");
+  const [socialCorner, setSocialCorner] = useState<Corner>("bottom-left");
+  const [extraFonts, setExtraFonts] = useState<string[]>([]);
   const [textTick, setTextTick] = useState(0);
   const objects = useCanvasObjects();
   const markedSlideIds = useCanvasStore((s) => s.markedSlideIds);
@@ -71,6 +153,7 @@ export function SidebarTools() {
   const [findQuery, setFindQuery] = useState("");
   const [findReplacement, setFindReplacement] = useState("");
   const [matchCase, setMatchCase] = useState(false);
+  const [swipeVariant, setSwipeVariant] = useState<string>(SWIPE_VARIANTS[0]);
   const activeFont = firstFont(objects);
 
   useEffect(() => {
@@ -92,10 +175,27 @@ export function SidebarTools() {
   const slideTotal = Math.max(slides.length, 1);
   const handleText = handle.trim() || "@username";
   const handleInitial = (handleText.replace(/^@/, "")[0] || "?").toUpperCase();
-  const cueText = formatCue(cueStyle, info);
+  const fontChoices = [
+    ...SUGGESTED_FONTS,
+    ...extraFonts.filter((family) => !(SUGGESTED_FONTS as readonly string[]).includes(family)),
+  ];
 
-  const addHandle = (side: Side) =>
-    manager?.objects.addCornerHandle(handle.trim() || "@username", side);
+  const addFont = (family: string) => {
+    const name = normalizeFontFamily(family);
+    setExtraFonts((prev) =>
+      prev.includes(name) || (SUGGESTED_FONTS as readonly string[]).includes(name) ? prev : [...prev, name],
+    );
+    useFont(name);
+  };
+
+  const addHandle = (side: Side) => {
+    void manager?.objects.addCornerHandle(handle.trim() || "@username", side, undefined, avatarUrl);
+  };
+
+  const onAvatarFile = (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    void fileToDataUrl(file, { maxEdge: 512, quality: 0.86 }).then(setAvatarUrl).catch(console.error);
+  };
 
   const lineCount = splitSlideLines(prompt).length;
 
@@ -164,55 +264,6 @@ export function SidebarTools() {
 
   return (
     <div className="flex flex-col text-xs text-foreground">
-      <CollapsibleGroup id="tools-fonts" title="Fonts">
-        <div className="flex rounded-full bg-muted/50 p-0.5">
-          {(
-            [
-              ["all", "All slides"],
-              ["marked", markedSlideIds.length > 0 ? `Marked ${markedSlideIds.length}` : "Marked"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setFontScope(id)}
-              className={cn(
-                "h-7 flex-1 rounded-full text-xs transition-colors",
-                fontScope === id ? "bg-background text-foreground" : "text-muted-foreground",
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-1">
-          {SUGGESTED_FONTS.map((family) => {
-            const selected = activeFont === family;
-            return (
-              <button
-                key={family}
-                type="button"
-                title={
-                  fontScope === "marked"
-                    ? `Use ${family} on marked slides`
-                    : `Use ${family} on every text`
-                }
-                disabled={!manager}
-                onClick={() => useFont(family)}
-                style={{ fontFamily: `"${family}", sans-serif` }}
-                className={cn(
-                  "h-8 truncate rounded-full px-2.5 text-left text-xs transition-colors disabled:pointer-events-none disabled:opacity-40",
-                  selected
-                    ? "bg-foreground text-background"
-                    : "bg-muted/40 text-foreground hover:bg-muted",
-                )}
-              >
-                {family}
-              </button>
-            );
-          })}
-        </div>
-      </CollapsibleGroup>
 
       <CollapsibleGroup id="tools-find" title="Find">
         <div className="space-y-1.5">
@@ -295,29 +346,82 @@ export function SidebarTools() {
       </CollapsibleGroup>
 
       <CollapsibleGroup id="tools-numbers" title="Slide numbers">
-        <div className="grid grid-cols-4 gap-1">
-          {NUMBER_STYLES.map((style) => (
-            <button
-              key={style}
-              type="button"
-              disabled={!manager}
-              title={`Add "${formatSlideNumber(style, slideIndex, slideTotal)}" to the top-left corner`}
-              onClick={() => manager?.objects.addSlideNumber(style, slideIndex, slideTotal)}
-              className={actionButton}
+        <div className="space-y-1.5">
+          <div className="flex gap-1">
+            <Select
+              value={numberStyle}
+              onValueChange={(next) => {
+                if (next === "1" || next === "01" || next === "1 / 8") setNumberStyle(next);
+              }}
             >
-              {formatSlideNumber(style, slideIndex, slideTotal)}
-            </button>
-          ))}
+              <SelectTrigger className="h-8 min-w-0 flex-1 rounded-full px-2.5 text-xs" aria-label="Slide number">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {NUMBER_STYLES.map((style) => (
+                  <SelectItem key={style} value={style} className="text-xs">
+                    {formatSlideNumber(style, slideIndex, slideTotal)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <CornerSelect value={numberCorner} onChange={setNumberCorner} disabled={!manager} />
+          </div>
+          <button
+            type="button"
+            disabled={!manager}
+            onClick={() => manager?.objects.addSlideNumber(numberStyle, slideIndex, slideTotal, numberCorner)}
+            className={cn(actionButton, "w-full")}
+          >
+            Place
+          </button>
         </div>
       </CollapsibleGroup>
 
       <CollapsibleGroup id="tools-handle" title="Author">
         <div className="space-y-2">
           <div className="flex items-center gap-2.5 rounded-xl bg-muted/30 px-2.5 py-2">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-xs font-semibold">
-              {handleInitial}
-            </span>
-            <span className="min-w-0 truncate text-xs font-medium leading-tight">{handleText}</span>
+            <button
+              type="button"
+              title="Change avatar"
+              onClick={() => avatarInputRef.current?.click()}
+              className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-foreground/10 text-xs font-semibold"
+            >
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="" className="size-full object-cover" />
+              ) : (
+                handleInitial
+              )}
+            </button>
+            <span className="min-w-0 flex-1 truncate text-xs font-medium leading-tight">{handleText}</span>
+            {avatarUrl ? (
+              <button
+                type="button"
+                onClick={() => setAvatarUrl(null)}
+                className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                Remove
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                Avatar
+              </button>
+            )}
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => {
+                onAvatarFile(event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
           </div>
           <input
             value={handle}
@@ -351,55 +455,66 @@ export function SidebarTools() {
 
       <CollapsibleGroup id="tools-cues" title="Swipe">
         <div className="space-y-2">
+          <div className="flex gap-1">
+            <Select value={swipeVariant} onValueChange={setSwipeVariant}>
+              <SelectTrigger className="h-8 min-w-0 flex-1 rounded-full px-2.5 text-xs" aria-label="Swipe">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper" className="max-h-72">
+                {SWIPE_VARIANTS.map((variant) => (
+                  <SelectItem key={variant} value={variant} className="text-xs">
+                    {variant}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <CornerSelect value={swipeCorner} onChange={setSwipeCorner} disabled={!manager} />
+          </div>
+          <button
+            type="button"
+            disabled={!manager}
+            onClick={() => manager?.objects.addSwipeCue(swipeVariant, swipeCorner)}
+            className={cn(actionButton, "w-full")}
+          >
+            Place
+          </button>
+        </div>
+      </CollapsibleGroup>
+
+      <CollapsibleGroup id="tools-socials" title="Socials">
+        <div className="space-y-1.5">
+          <div className="flex gap-1">
+            <Select value={socialNetwork} onValueChange={setSocialNetwork}>
+              <SelectTrigger className="h-8 min-w-0 flex-1 rounded-full px-2.5 text-xs" aria-label="Network">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper" className="max-h-72">
+                {SOCIAL_NETWORKS.map((network) => (
+                  <SelectItem key={network} value={network} className="text-xs">
+                    {network}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <CornerSelect value={socialCorner} onChange={setSocialCorner} disabled={!manager} />
+          </div>
           <input
-            value={info}
-            onChange={(e) => setInfo(e.target.value)}
-            placeholder="swipe"
-            aria-label="Swipe text"
+            value={socialHandle}
+            onChange={(event) => setSocialHandle(event.target.value)}
+            placeholder="@name"
+            aria-label="Handle"
             className={fieldInput}
           />
-          <div className="grid grid-cols-2 gap-1">
-            {CUE_STYLES.map((style) => {
-              const sample = formatCue(style.id, info);
-              const selected = cueStyle === style.id;
-              return (
-                <button
-                  key={style.id}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => setCueStyle(style.id)}
-                  className={cn(
-                    "h-8 min-w-0 truncate rounded-full px-2.5 text-xs transition-colors",
-                    selected
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                  )}
-                >
-                  {sample}
-                </button>
-              );
-            })}
-          </div>
-          <div className="grid grid-cols-2 gap-1">
-            <button
-              type="button"
-              disabled={!manager}
-              title="Bottom left"
-              onClick={() => manager?.objects.addSwipeCue(cueText)}
-              className={actionButton}
-            >
-              <span className="truncate">{cueText}</span>
-            </button>
-            <button
-              type="button"
-              disabled={!manager}
-              title="Bottom right"
-              onClick={() => manager?.objects.addSwipeArrow()}
-              className={actionButton}
-            >
-              Arrow →
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={!manager || !socialHandle.trim()}
+            onClick={() =>
+              manager?.objects.addSocials([{ label: socialNetwork, value: socialHandle }], socialCorner)
+            }
+            className={cn(actionButton, "w-full")}
+          >
+            Place
+          </button>
         </div>
       </CollapsibleGroup>
     </div>

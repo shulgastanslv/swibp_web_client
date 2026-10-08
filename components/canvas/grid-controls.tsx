@@ -45,7 +45,7 @@ function CountField({
   );
 }
 
-export function GridControls() {
+export function GridControls({ menuSide = "bottom" }: { menuSide?: "bottom" | "right" }) {
   const manager = useCanvasManager();
 
   const isGridVisible = useCanvasStore((s) => s.isGridVisible);
@@ -119,6 +119,7 @@ export function GridControls() {
         </DropdownMenuTrigger>
 
         <DropdownMenuContent
+          side={menuSide}
           align="start"
           sideOffset={8}
           className="w-64 rounded-2xl p-0 overflow-hidden border-none backdrop-blur-md"

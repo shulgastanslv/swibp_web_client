@@ -36,7 +36,7 @@ export function SocialSubscribeDialog({
         <div className="flex flex-col gap-2 px-4 py-4">
           <Button
             variant="outline"
-            className="h-9 w-full justify-start gap-2 rounded-full text-xs"
+            className="h-9 w-full justify-start gap-2 rounded-full text-xs border-none bg-muted/50 backdrop-blur-sm"
             asChild
           >
             <a href={SOCIAL_LINKS.telegram} target="_blank" rel="noopener noreferrer">
@@ -46,7 +46,7 @@ export function SocialSubscribeDialog({
           </Button>
           <Button
             variant="outline"
-            className="h-9 w-full justify-start gap-2 rounded-full text-xs"
+            className="h-9 w-full justify-start gap-2 rounded-full text-xs border-none bg-muted/50 backdrop-blur-sm"
             asChild
           >
             <a href={SOCIAL_LINKS.threads} target="_blank" rel="noopener noreferrer">
