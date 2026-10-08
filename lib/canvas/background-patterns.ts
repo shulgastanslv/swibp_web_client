@@ -7,6 +7,14 @@ export const BACKGROUND_PATTERNS = [
   { id: "plus", label: "Plus" },
   { id: "diamond", label: "Diamond" },
   { id: "rings", label: "Rings" },
+  { id: "waves", label: "Waves" },
+  { id: "chevron", label: "Chevron" },
+  { id: "cross", label: "Cross" },
+  { id: "dashes", label: "Dashes" },
+  { id: "bricks", label: "Bricks" },
+  { id: "zigzag", label: "Zigzag" },
+  { id: "triangles", label: "Triangles" },
+  { id: "squares", label: "Squares" },
 ] as const;
 
 export type BackgroundPatternId = (typeof BACKGROUND_PATTERNS)[number]["id"];
@@ -20,6 +28,14 @@ const TILE_SIZE: Record<BackgroundPatternId, number> = {
   plus: 32,
   diamond: 32,
   rings: 36,
+  waves: 32,
+  chevron: 28,
+  cross: 32,
+  dashes: 24,
+  bricks: 28,
+  zigzag: 24,
+  triangles: 32,
+  squares: 28,
 };
 
 function luminance(color: string): number | null {
@@ -142,6 +158,78 @@ function drawMark(ctx: CanvasRenderingContext2D, id: BackgroundPatternId, size: 
       ctx.arc(size / 2, size / 2, size * 0.28, 0, Math.PI * 2);
       ctx.stroke();
       return;
+    case "waves": {
+      ctx.beginPath();
+      const mid = size / 2;
+      const amp = size * 0.18;
+      ctx.moveTo(0, mid);
+      for (let x = 0; x <= size; x += 2) {
+        ctx.lineTo(x, mid + Math.sin((x / size) * Math.PI * 2) * amp);
+      }
+      ctx.stroke();
+      return;
+    }
+    case "chevron": {
+      ctx.beginPath();
+      const peak = size * 0.22;
+      ctx.moveTo(0, size * 0.5 - peak);
+      ctx.lineTo(size / 2, size * 0.5);
+      ctx.lineTo(0, size * 0.5 + peak);
+      ctx.moveTo(size / 2, size * 0.5 - peak);
+      ctx.lineTo(size, size * 0.5);
+      ctx.lineTo(size / 2, size * 0.5 + peak);
+      ctx.stroke();
+      return;
+    }
+    case "cross": {
+      const inset = size * 0.32;
+      ctx.beginPath();
+      ctx.moveTo(inset, inset);
+      ctx.lineTo(size - inset, size - inset);
+      ctx.moveTo(size - inset, inset);
+      ctx.lineTo(inset, size - inset);
+      ctx.stroke();
+      return;
+    }
+    case "dashes":
+      ctx.beginPath();
+      ctx.moveTo(size * 0.12, size / 2);
+      ctx.lineTo(size * 0.62, size / 2);
+      ctx.stroke();
+      return;
+    case "bricks": {
+      const row = size / 2;
+      ctx.strokeRect(0.5, 0.5, size - 1, row - 1);
+      ctx.beginPath();
+      ctx.moveTo(size / 2, row);
+      ctx.lineTo(size / 2, size);
+      ctx.moveTo(0, row);
+      ctx.lineTo(size, row);
+      ctx.stroke();
+      return;
+    }
+    case "zigzag":
+      ctx.beginPath();
+      ctx.moveTo(0, size * 0.35);
+      ctx.lineTo(size / 2, size * 0.65);
+      ctx.lineTo(size, size * 0.35);
+      ctx.stroke();
+      return;
+    case "triangles": {
+      const pad = size * 0.22;
+      ctx.beginPath();
+      ctx.moveTo(size / 2, pad);
+      ctx.lineTo(size - pad, size - pad);
+      ctx.lineTo(pad, size - pad);
+      ctx.closePath();
+      ctx.stroke();
+      return;
+    }
+    case "squares": {
+      const inset = size * 0.28;
+      ctx.strokeRect(inset, inset, size - inset * 2, size - inset * 2);
+      return;
+    }
   }
 }
 

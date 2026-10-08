@@ -8,12 +8,14 @@ import {
   getUserProjects,
   toggleSaveProject,
   deleteProject,
+  updateProjectTitle,
+  duplicateProject,
   type ProjectListItem,
 } from "@/actions/projects";
 import { useProject } from "@/hooks/use-project";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { cn } from "@/lib/utils";
-import { ProjectActionsDropdown } from "./project_actions_dropdown";
+import { GalleryMenu } from "@/components/canvas/sidebar/gallery-menu";
 import { Input } from "@/components/ui/input";
 import { GalleryCard, GallerySection, carouselMeta, splitGallery } from "@/components/canvas/sidebar/gallery-card";
 import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
@@ -86,6 +88,21 @@ export function SidebarProjects() {
     } finally {
       setLoadingId(null);
     }
+  };
+
+  const handleRename = async (id: string, title: string) => {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, title } : p)));
+    const res = await updateProjectTitle(id, title);
+    if (!res.success) {
+      void fetchProjects();
+      return;
+    }
+    if (id === currentProjectId) useCanvasStore.getState().setProjectTitle(title);
+  };
+
+  const handleDuplicate = async (id: string) => {
+    const res = await duplicateProject(id);
+    if (res.success) void fetchProjects();
   };
 
   const handleDelete = async (id: string) => {
@@ -199,6 +216,8 @@ export function SidebarProjects() {
                 onOpen={() => void handleSelectProject(p.id)}
                 onToggleSave={(e) => void handleToggleSave(e, p.id)}
                 onDelete={() => void handleDelete(p.id)}
+                onRename={(title) => void handleRename(p.id, title)}
+                onDuplicate={() => void handleDuplicate(p.id)}
               />
             ))}
           </GallerySection>
@@ -213,6 +232,8 @@ export function SidebarProjects() {
                   onOpen={() => void handleSelectProject(p.id)}
                   onToggleSave={(e) => void handleToggleSave(e, p.id)}
                   onDelete={() => void handleDelete(p.id)}
+                  onRename={(title) => void handleRename(p.id, title)}
+                  onDuplicate={() => void handleDuplicate(p.id)}
                 />
               ))}
             </GallerySection>
@@ -230,6 +251,8 @@ function ProjectCard({
   onOpen,
   onToggleSave,
   onDelete,
+  onRename,
+  onDuplicate,
 }: {
   project: ProjectListItem;
   active: boolean;
@@ -237,6 +260,8 @@ function ProjectCard({
   onOpen: () => void;
   onToggleSave: (event: React.MouseEvent) => void;
   onDelete: () => void;
+  onRename: (title: string) => void;
+  onDuplicate: () => void;
 }) {
   return (
     <GalleryCard
@@ -248,7 +273,17 @@ function ProjectCard({
       onClick={onOpen}
       menu={
         <div onClick={(event) => event.stopPropagation()}>
-          <ProjectActionsDropdown onDelete={onDelete} />
+          <GalleryMenu
+            title={project.title}
+            createdAt={project.createdAt}
+            createdBy={project.authorName}
+            ratio={project.aspectRatio}
+            onRename={onRename}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
+            starred={project.isSaved}
+            onStar={() => onToggleSave({ stopPropagation() {} } as React.MouseEvent)}
+          />
         </div>
       }
       badge={

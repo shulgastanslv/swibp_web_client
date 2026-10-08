@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { UploadCloud, Loader2, Plus, ImageIcon } from "lucide-react";
 import {
   SOLID_PRESETS,
@@ -89,14 +89,27 @@ export function SidebarBackground() {
 
   const projectPalette = useCanvasStore((s) => s.palette);
   const markedSlideIds = useCanvasStore((s) => s.markedSlideIds);
-  const [paletteScope, setPaletteScope] = useState<"all" | "marked">("all");
+  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
+  const [paletteScope, setPaletteScope] = useState<"all" | "marked" | "slide">("all");
+  const [slidePalette, setSlidePalette] = useState<ProjectPalette | null>(null);
+
+  useEffect(() => {
+    setSlidePalette((current) => (current ? useCanvasStore.getState().palette : current));
+  }, [currentSlideId]);
+
+  const shownPalette = paletteScope === "slide" && slidePalette ? slidePalette : projectPalette;
 
   const applyProjectPalette = (next: ProjectPalette) => {
     const store = useCanvasStore.getState();
-    const ids = paletteScope === "marked" ? new Set(store.markedSlideIds) : null;
+    const ids =
+      paletteScope === "slide"
+        ? new Set([store.currentSlideId])
+        : paletteScope === "marked"
+          ? new Set(store.markedSlideIds)
+          : null;
     if (ids && ids.size === 0) return;
 
-    const before = store.palette;
+    const before = paletteScope === "slide" && slidePalette ? slidePalette : store.palette;
     const slots = Object.keys(next) as PaletteSlot[];
     if (slots.every((slot) => next[slot] === before[slot])) return;
 
@@ -108,7 +121,8 @@ export function SidebarBackground() {
       return { ...slide, canvasJSON };
     });
 
-    store.setPalette(next);
+    if (paletteScope === "slide") setSlidePalette(next);
+    else store.setPalette(next);
     store.setSlides(slides);
     store.setDirty(true);
 
@@ -124,7 +138,7 @@ export function SidebarBackground() {
   };
 
   const setProjectSlot = (slot: PaletteSlot, color: string) => {
-    applyProjectPalette({ ...projectPalette, [slot]: color });
+    applyProjectPalette({ ...shownPalette, [slot]: color });
   };
 
   const applySolid = (color: string) => {
@@ -331,14 +345,18 @@ export function SidebarBackground() {
         <div className="flex rounded-full bg-muted/50 p-0.5">
           {(
             [
-              ["all", "All slides"],
+              ["all", "All"],
               ["marked", markedSlideIds.length > 0 ? `Marked ${markedSlideIds.length}` : "Marked"],
+              ["slide", "This slide"],
             ] as const
           ).map(([id, label]) => (
             <button
               key={id}
               type="button"
-              onClick={() => setPaletteScope(id)}
+              onClick={() => {
+                setPaletteScope(id);
+                setSlidePalette(id === "slide" ? useCanvasStore.getState().palette : null);
+              }}
               className={cn(
                 "h-7 flex-1 rounded-full text-xs transition-colors",
                 paletteScope === id ? "bg-background text-foreground shadow-xs" : "text-muted-foreground",
@@ -349,9 +367,11 @@ export function SidebarBackground() {
           ))}
         </div>
         <p className="text-[11px] leading-snug text-muted-foreground">
-          {paletteScope === "marked"
-            ? "Colors land on marked slides. Mark them with the corner check."
-            : "Text, accent, and cards use these colors on the whole carousel."}
+          {paletteScope === "slide"
+            ? "Colors land on this slide only. The carousel default stays as it is."
+            : paletteScope === "marked"
+              ? "Colors land on marked slides. Mark them with the corner check."
+              : "Text, accent, and cards use these colors on the whole carousel."}
         </p>
         <div className="flex flex-col">
           {PALETTE_SLOTS.map((slot) => (
@@ -361,14 +381,14 @@ export function SidebarBackground() {
             >
               <input
                 type="color"
-                value={projectPalette[slot.id]}
+                value={shownPalette[slot.id]}
                 onChange={(e) => setProjectSlot(slot.id, e.target.value)}
                 aria-label={slot.label}
                 className="size-7 shrink-0 cursor-pointer rounded-full border border-border/50 bg-transparent p-0"
               />
               <span className="flex-1 text-foreground">{slot.label}</span>
               <span className="font-mono text-[10px] uppercase text-muted-foreground">
-                {projectPalette[slot.id]}
+                {shownPalette[slot.id]}
               </span>
             </label>
           ))}
@@ -387,7 +407,7 @@ export function SidebarBackground() {
           ))}
         </div>
         <p className="text-[11px] leading-snug text-muted-foreground">
-          The large swatch fills this slide. Apply follows the All / Marked choice above.
+          The large swatch fills this slide. Apply follows All, Marked, or This slide.
         </p>
       </CollapsibleGroup>
     </div>

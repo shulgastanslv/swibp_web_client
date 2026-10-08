@@ -2,22 +2,27 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, X, Loader2, LayoutGrid, FileJson, Crown } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 import {
   getTemplates,
   getTemplateById,
   getTemplateCategories,
+  renameTemplate,
+  duplicateTemplate,
   type TemplateListItem,
 } from "@/actions/templates";
 import { useApplyTemplate } from "@/hooks/use-apply-template";
 import { parseImportedTemplate } from "@/lib/templates/parse";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { GalleryCard, GallerySection, carouselMeta, splitGallery } from "@/components/canvas/sidebar/gallery-card";
+import { GalleryMenu } from "@/components/canvas/sidebar/gallery-menu";
 import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
 import { PreviewTemplateDialog } from "@/components/canvas/preview-template-dialog";
 import type { FabricCanvasJSON, RatioKey } from "@/lib/types";
 
 export function SidebarTemplates() {
+  const { data: session } = useSession();
   const { applyPayload, insertTemplateSlide } = useApplyTemplate();
   const currentRatio = useCanvasStore((s) => s.currentRatio);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +81,36 @@ export function SidebarTemplates() {
     return () => window.removeEventListener("core:templates-changed", onChanged);
   }, [fetchTemplates]);
 
+  const handleRename = async (id: string, title: string) => {
+    setTemplates((prev) => prev.map((tpl) => (tpl.id === id ? { ...tpl, title } : tpl)));
+    const res = await renameTemplate(id, title);
+    if (!res.success) void fetchTemplates();
+  };
+
+  const handleDuplicate = async (id: string) => {
+    const res = await duplicateTemplate(id);
+    if (res.success) void fetchTemplates();
+  };
+
+  const templateMenu = (tpl: TemplateListItem) => {
+    const canRename = Boolean(
+      session?.user && (tpl.authorId === session.user.id || session.user.role === "ADMIN"),
+    );
+    return (
+      <div onClick={(event) => event.stopPropagation()}>
+        <GalleryMenu
+          title={tpl.title}
+          createdAt={tpl.createdAt}
+          createdBy={tpl.authorName}
+          category={tpl.category}
+          ratio={tpl.aspectRatio}
+          canRename={canRename}
+          onRename={canRename ? (title) => void handleRename(tpl.id, title) : undefined}
+          onDuplicate={session?.user ? () => void handleDuplicate(tpl.id) : undefined}
+        />
+      </div>
+    );
+  };
 
   const handleImportFile = async (file: File | undefined) => {
     if (!file || importing) return;
@@ -271,6 +306,7 @@ export function SidebarTemplates() {
                 previewUrl={tpl.previewUrl}
                 busy={applyingId === tpl.id}
                 onClick={() => void handleApply(tpl.id)}
+                menu={templateMenu(tpl)}
                 badge={
                   tpl.badge ? (
                     <span className="flex size-5 items-center justify-center rounded-full bg-background text-foreground ring-1 ring-border/60">
@@ -291,6 +327,7 @@ export function SidebarTemplates() {
                   previewUrl={tpl.previewUrl}
                   busy={applyingId === tpl.id}
                   onClick={() => void handleApply(tpl.id)}
+                  menu={templateMenu(tpl)}
                   badge={
                     tpl.badge ? (
                     <span className="flex size-5 items-center justify-center rounded-full bg-background text-foreground ring-1 ring-border/60">

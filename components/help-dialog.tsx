@@ -13,61 +13,26 @@ interface HelpDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const GROUPS: { title: string; rows: [string, string][] }[] = [
+const SECTIONS: { title: string; body: string }[] = [
   {
-    title: "Edit",
-    rows: [
-      ["Delete / Backspace", "Delete the selection"],
-      ["Ctrl / ⌘ D", "Duplicate the selection"],
-      ["Ctrl / ⌘ Z", "Undo"],
-      ["Ctrl / ⌘ Shift Z", "Redo"],
-      ["Ctrl / ⌘ Y", "Redo"],
-      ["Ctrl / ⌘ C", "Copy"],
-      ["Ctrl / ⌘ V", "Paste"],
-      ["Ctrl / ⌘ G", "Group"],
-      ["Ctrl / ⌘ Shift G", "Ungroup"],
-      ["Ctrl / ⌘ Shift C", "Copy style"],
-      ["Ctrl / ⌘ Shift V", "Paste style"],
-    ],
-  },
-  {
-    title: "Place",
-    rows: [
-      ["Ctrl / ⌘ Alt H", "Center horizontally"],
-      ["Ctrl / ⌘ Alt V", "Center vertically"],
-      ["Ctrl / ⌘ Alt C", "Center on the slide"],
-      ["Drag", "Snap to neighboring edges and centers"],
-      ["Space, then drag", "Pan the canvas"],
-      ["Ctrl / ⌘ scroll", "Zoom toward the pointer"],
-      ["Esc", "Leave crop"],
-    ],
-  },
-  {
-    title: "Add",
-    rows: [
-      ["1", "Heading"],
-      ["2", "Subtitle"],
-      ["3", "Paragraph"],
-      ["4", "Text"],
-      ["5", "Quote"],
-      ["6", "Rectangle"],
-      ["7", "Circle"],
-      ["8", "Triangle"],
-      ["9", "Diamond"],
-      ["0", "Star"],
-      ["Shift 1", "Hexagon"],
-      ["Shift 2", "Ellipse"],
-      ["Shift 3", "Line"],
-      ["Shift 4", "Divider"],
-    ],
+    title: "Canvas",
+    body: "The stage is one slide of a carousel. Drag to move, corner handles to resize, and the side handles to restack. Space pans the view. Hold Ctrl or ⌘ and scroll to zoom toward the pointer. H switches to the hand.",
   },
   {
     title: "Slides",
-    rows: [
-      ["Click a frame", "Open that slide"],
-      ["Corner mark", "Include it in font, palette, and export"],
-      ["Drag a frame", "Reorder"],
-    ],
+    body: "The strip under the canvas is the carousel. Click a frame to open it. Drag a frame to reorder. The corner mark includes that slide in a font change, a palette, and export.",
+  },
+  {
+    title: "Templates and projects",
+    body: "Templates start a layout. Apply one, then edit the copy on your canvas. Projects are yours: the card menu renames, duplicates, and shows who made it and which ratio it uses. Autosave keeps the open project, and Save writes it now.",
+  },
+  {
+    title: "Left rail",
+    body: "Templates, projects, text, icons, photos, and background live in the left panel. Background covers fill, pattern, and palette. A suggested set can paint every slide, only marked slides, or the slide you have open.",
+  },
+  {
+    title: "Type, color, and share",
+    body: "Select text and pick a face in the right panel. The new face is applied as soon as it finishes loading. Palette slots recolor text, accent, and cards that were tagged with those roles. Share and export use the marked slides when you have marked any.",
   },
 ];
 
@@ -82,19 +47,15 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
           </DialogTitle>
         </DialogHeader>
         <div className="max-h-[min(70vh,520px)] space-y-4 overflow-y-auto px-4 py-3">
-          {GROUPS.map((group) => (
-            <section key={group.title} className="space-y-1.5">
-              <h3 className="text-[11px] text-muted-foreground">{group.title}</h3>
-              <ul className="space-y-1.5">
-                {group.rows.map(([keys, action]) => (
-                  <li key={keys} className="flex items-baseline justify-between gap-4 text-xs">
-                    <span className="font-medium text-foreground">{keys}</span>
-                    <span className="text-right text-muted-foreground">{action}</span>
-                  </li>
-                ))}
-              </ul>
+          {SECTIONS.map((section) => (
+            <section key={section.title} className="space-y-1">
+              <h3 className="text-[11px] text-muted-foreground">{section.title}</h3>
+              <p className="text-xs leading-relaxed text-foreground">{section.body}</p>
             </section>
           ))}
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            Every shortcut is listed in the command menu in the header.
+          </p>
         </div>
       </DialogContent>
     </Dialog>

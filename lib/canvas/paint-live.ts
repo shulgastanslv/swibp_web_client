@@ -6,6 +6,7 @@ type Tagged = FabricObject & {
   swibpStyle?: string;
   initDimensions?: () => void;
   dirty?: boolean;
+  _forceClearCache?: boolean;
 };
 
 function visit(obj: FabricObject, fn: (node: Tagged) => void): void {
@@ -27,6 +28,25 @@ export function paintSlotOnCanvas(canvas: Canvas, slot: PaletteSlot, color: stri
 
 const TEXT_TYPES = new Set(["text", "i-text", "textbox"]);
 
+function relayoutText(node: Tagged) {
+  node._forceClearCache = true;
+  node.dirty = true;
+  node.initDimensions?.();
+  node.setCoords();
+}
+
+/** Drops Fabric's measured text cache and paints with the faces that are loaded now. */
+export function refreshCanvasFonts(canvas: Canvas): void {
+  for (const obj of canvas.getObjects()) {
+    visit(obj, (node) => {
+      const type = (node.type || "").toLowerCase();
+      if (!TEXT_TYPES.has(type)) return;
+      relayoutText(node);
+    });
+  }
+  canvas.renderAll();
+}
+
 /** Repaints every text object on the open slide with one typeface. */
 export function applyFontOnCanvas(canvas: Canvas, fontFamily: string): void {
   for (const obj of canvas.getObjects()) {
@@ -34,12 +54,10 @@ export function applyFontOnCanvas(canvas: Canvas, fontFamily: string): void {
       const type = (node.type || "").toLowerCase();
       if (!TEXT_TYPES.has(type)) return;
       node.set({ fontFamily });
-      node.initDimensions?.();
-      node.dirty = true;
-      node.setCoords();
+      relayoutText(node);
     });
   }
-  canvas.requestRenderAll();
+  canvas.renderAll();
 }
 
 export function applyStyleOnCanvas(
@@ -56,10 +74,8 @@ export function applyStyleOnCanvas(
         fontWeight: style.fontWeight,
         lineHeight: style.lineHeight,
       });
-      node.initDimensions?.();
-      node.dirty = true;
-      node.setCoords();
+      relayoutText(node);
     });
   }
-  canvas.requestRenderAll();
+  canvas.renderAll();
 }

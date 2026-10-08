@@ -10,6 +10,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -17,6 +22,7 @@ model User {
   password  String?
   name      String?
   image     String?
+  role      UserRole @default(USER)
   /// Set when the user confirms the inbox, or for accounts that existed before verification.
   emailVerified DateTime?
   createdAt DateTime @default(now())
@@ -25,6 +31,9 @@ model User {
   projects      Project[]
   savedProjects SavedProject[]
   authTokens    AuthToken[]
+  templates     Template[]
+  news          News[]
+  notifications Notification[]
 }
 
 /// One-time links for email confirmation and password reset.
@@ -87,8 +96,44 @@ model Template {
   aspectRatio String   @default("4:5")
   canvasJSON  Json
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   @@index([category])
+  @@index([authorId])
+}
+
+/// A post from the admin desk. Publishing one also notifies every user.
+model News {
+  id        String   @id @default(cuid())
+  title     String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  notifications Notification[]
+
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  title     String
+  body      String    @db.Text
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  newsId String?
+  news   News?   @relation(fields: [newsId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
 }
 
 /// Bookmarks / "saved" projects for a user (not ownership).

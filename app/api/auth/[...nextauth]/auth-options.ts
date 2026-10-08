@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { emailIsAdmin } from "@/lib/auth-role";
 import { isValidEmail, normalizeEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
 import { type AuthOptions, type Profile } from "next-auth";
@@ -115,6 +116,7 @@ export const authOptions: AuthOptions = {
           email: user.email,
           name: user.name,
           image: user.image,
+          role: user.role,
         };
       },
     }),
@@ -147,18 +149,30 @@ export const authOptions: AuthOptions = {
         token.email = dbUser.email;
         token.name = dbUser.name;
         token.image = dbUser.image;
-        return token;
-      }
-
-      if (user?.id) {
+      } else if (user?.id) {
         token.id = user.id;
         token.sub = user.id;
+      }
+
+      if (token.id && (user || account || !token.role)) {
+        const row = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: { role: true, email: true },
+        });
+        if (row) {
+          const role = emailIsAdmin(row.email) ? "ADMIN" : row.role;
+          if (role !== row.role) {
+            await prisma.user.update({ where: { id: token.id }, data: { role } });
+          }
+          token.role = role;
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
+        session.user.role = token.role === "ADMIN" ? "ADMIN" : "USER";
         if (token.email) session.user.email = token.email;
         session.user.name = token.name ?? null;
         session.user.image = token.picture ?? null;

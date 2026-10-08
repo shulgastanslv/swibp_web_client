@@ -15,6 +15,7 @@ import { withRemoteImageCors } from "./image-cors";
 import { ImageCropSession } from "./crop-session";
 import { refreshMask } from "./object-appearance";
 import { stabilizeGroups } from "./group";
+import { refreshCanvasFonts } from "./paint-live";
 
 const DEFAULT_BACKGROUND = "#ffffff";
 
@@ -52,6 +53,10 @@ export class CanvasManager {
   private loadAbort: AbortController | null = null;
   private viewportNativeWidth = 0;
   private viewportNativeHeight = 0;
+  private readonly onFontsLoaded = () => {
+    if (this.disposed) return;
+    refreshCanvasFonts(this.canvas);
+  };
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.core = new CanvasCore(canvasElement);
@@ -70,6 +75,9 @@ export class CanvasManager {
 
     this.history.reset(this.getState());
     this.bindCanvasEvents();
+    if (typeof document !== "undefined") {
+      document.fonts.addEventListener("loadingdone", this.onFontsLoaded);
+    }
   }
 
   get isDisposed(): boolean {
@@ -175,17 +183,19 @@ export class CanvasManager {
       const textLike = active as FabricObject & {
         initDimensions?: () => void;
         dirty?: boolean;
+        _forceClearCache?: boolean;
       };
       const type = active.type;
       if (type === "textbox" || type === "text" || type === "i-text") {
-        textLike.initDimensions?.();
+        textLike._forceClearCache = true;
         textLike.dirty = true;
+        textLike.initDimensions?.();
       }
     }
 
     refreshMask(active);
     active.setCoords();
-    this.canvas.requestRenderAll();
+    this.canvas.renderAll();
     this.commit();
     this.events.emit("selection", active);
     return active;
@@ -285,6 +295,9 @@ export class CanvasManager {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    if (typeof document !== "undefined") {
+      document.fonts.removeEventListener("loadingdone", this.onFontsLoaded);
+    }
     this.loadAbort?.abort();
     this.loadAbort = null;
     this.events.clear();

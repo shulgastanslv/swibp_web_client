@@ -23,6 +23,7 @@ export interface ProjectListItem {
   slideCount: number;
   createdAt: string;
   previewUrl: string | null;
+  authorName: string | null;
 }
 
 export interface ProjectDetail {
@@ -123,6 +124,7 @@ export async function getUserProjects(): Promise<
       where: { userId },
       orderBy: { updatedAt: "desc" },
       include: {
+        user: { select: { name: true, email: true } },
         savedBy: { where: { userId }, select: { id: true } },
         _count: { select: { slides: true } },
         slides: {
@@ -142,6 +144,7 @@ export async function getUserProjects(): Promise<
       slideCount: p._count.slides,
       createdAt: p.createdAt.toISOString(),
       previewUrl: p.slides[0]?.thumbnail || p.thumbnail || null,
+      authorName: p.user.name || p.user.email,
     }));
 
     return { success: true, projects };
@@ -463,6 +466,48 @@ export async function updateProjectTitle(
     return { success: true };
   } catch {
     return { success: false, error: "Couldn't rename the project" };
+  }
+}
+
+export async function duplicateProject(
+  projectId: string,
+): Promise<ActionResult<{ projectId: string }>> {
+  try {
+    const userId = await requireUserId();
+    if (!userId) return { success: false, error: "Sign in" };
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId },
+      include: { slides: { orderBy: { order: "asc" } } },
+    });
+    if (!project) return { success: false, error: "Project not found" };
+
+    const copy = await prisma.project.create({
+      data: {
+        title: `${project.title} copy`,
+        aspectRatio: project.aspectRatio,
+        width: project.width,
+        height: project.height,
+        canvasJSON: project.canvasJSON as Prisma.InputJsonValue,
+        thumbnail: project.thumbnail,
+        isPublic: false,
+        userId,
+        slides: {
+          create: project.slides.map((slide) => ({
+            order: slide.order,
+            canvasJSON: slide.canvasJSON as Prisma.InputJsonValue,
+            thumbnail: slide.thumbnail,
+          })),
+        },
+      },
+      select: { id: true },
+    });
+
+    revalidatePath("/");
+    return { success: true, projectId: copy.id };
+  } catch (err) {
+    console.error("duplicateProject error:", err);
+    return { success: false, error: "Couldn't duplicate the project" };
   }
 }
 

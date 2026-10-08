@@ -14,7 +14,6 @@ import {
   SlidersHorizontal,
   Share,
   GalleryHorizontalEndIcon,
-  Bell,
   Globe,
   BookOpen,
   Undo2,
@@ -24,7 +23,10 @@ import {
   Save,
   CloudOff,
   Focus,
+  Shield,
 } from "lucide-react";
+import { NotificationsMenu } from "@/components/notifications-menu";
+import Link from "next/link";
 import Logo from "@/components/logo";
 import { useSession, signOut } from "next-auth/react";
 import { AuthModal } from "@/components/auth";
@@ -297,27 +299,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
           >
             <Share className="w-3.5 h-3.5" />
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 relative"
-                title="Notifications"
-              >
-                <Bell className="w-3.5 h-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 p-2 text-xs">
-              <DropdownMenuLabel className="font-semibold text-xs">
-                Notifications
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="py-4 text-center text-muted-foreground text-xs">
-                No new notifications
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NotificationsMenu />
           <Button
             variant="secondary"
             size="sm"
@@ -404,6 +386,14 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
                   <GalleryHorizontalEndIcon className="w-3.5 h-3.5 mr-2" />
                   <span>New project</span>
                 </DropdownMenuItem>
+                {session.user?.role === "ADMIN" ? (
+                  <DropdownMenuItem asChild className="cursor-pointer text-xs">
+                    <Link href="/admin">
+                      <Shield className="w-3.5 h-3.5 mr-2" />
+                      <span>Admin</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem
                   className="cursor-pointer text-xs md:hidden"
                   onClick={openPublish}

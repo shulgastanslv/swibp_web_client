@@ -32,6 +32,8 @@ export interface TemplateListItem {
   slideCount: number;
   createdAt: string;
   builtin: boolean;
+  authorId: string | null;
+  authorName: string | null;
 }
 
 export interface TemplateDetail {
@@ -63,6 +65,8 @@ interface TemplateListRow {
   aspectRatio: string;
   slideCount: number;
   createdAt: Date;
+  authorId: string | null;
+  authorName: string | null;
 }
 
 export async function getTemplates(options?: {
@@ -88,21 +92,24 @@ export async function getTemplates(options?: {
 
     const rows = await prisma.$queryRaw<TemplateListRow[]>`
       SELECT
-        id,
-        title,
-        category,
-        badge,
-        "previewUrl",
-        "aspectRatio",
-        "createdAt",
+        t.id,
+        t.title,
+        t.category,
+        t.badge,
+        t."previewUrl",
+        t."aspectRatio",
+        t."createdAt",
+        t."authorId",
+        u.name AS "authorName",
         CASE
-          WHEN jsonb_typeof("canvasJSON"->'slides') = 'array'
-            THEN GREATEST(jsonb_array_length("canvasJSON"->'slides'), 1)
+          WHEN jsonb_typeof(t."canvasJSON"->'slides') = 'array'
+            THEN GREATEST(jsonb_array_length(t."canvasJSON"->'slides'), 1)
           ELSE 1
         END::int AS "slideCount"
-      FROM "Template"
+      FROM "Template" t
+      LEFT JOIN "User" u ON u.id = t."authorId"
       WHERE ${Prisma.join(filters, " AND ")}
-      ORDER BY "createdAt" DESC
+      ORDER BY t."createdAt" DESC
     `;
 
     const templates: TemplateListItem[] = rows.map((row) => ({
@@ -115,6 +122,8 @@ export async function getTemplates(options?: {
       slideCount: Number(row.slideCount) || 1,
       createdAt: new Date(row.createdAt).toISOString(),
       builtin: row.category === "Built-in",
+      authorId: row.authorId,
+      authorName: row.authorName,
     }));
 
     return { success: true, templates };
@@ -191,6 +200,7 @@ export async function publishTemplate(
           thumbnails,
           aspectRatio: input.aspectRatio,
         } as unknown as Prisma.InputJsonValue,
+        authorId: session.user.id,
       },
       select: { id: true },
     });
@@ -220,5 +230,72 @@ export async function getTemplateCategories(): Promise<
   } catch (err) {
     console.error("getTemplateCategories error:", err);
     return { success: false, error: "Couldn't load categories" };
+  }
+}
+
+async function requireUser() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return null;
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, role: true },
+  });
+  return user;
+}
+
+export async function renameTemplate(
+  templateId: string,
+  title: string,
+): Promise<ActionResult<object>> {
+  try {
+    const user = await requireUser();
+    if (!user) return { success: false, error: "Sign in" };
+    const next = title.trim();
+    if (!next) return { success: false, error: "Enter a name" };
+
+    const row = await prisma.template.findUnique({
+      where: { id: templateId },
+      select: { authorId: true, category: true },
+    });
+    if (!row) return { success: false, error: "Template not found" };
+    const owns = row.authorId === user.id;
+    const admin = user.role === "ADMIN";
+    if (!owns && !admin) return { success: false, error: "You can't rename this template" };
+
+    await prisma.template.update({ where: { id: templateId }, data: { title: next } });
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    console.error("renameTemplate error:", err);
+    return { success: false, error: "Couldn't rename the template" };
+  }
+}
+
+export async function duplicateTemplate(
+  templateId: string,
+): Promise<ActionResult<{ templateId: string }>> {
+  try {
+    const user = await requireUser();
+    if (!user) return { success: false, error: "Sign in" };
+    const row = await prisma.template.findUnique({ where: { id: templateId } });
+    if (!row) return { success: false, error: "Template not found" };
+
+    const copy = await prisma.template.create({
+      data: {
+        title: `${row.title} copy`,
+        category: row.category,
+        badge: row.badge,
+        previewUrl: row.previewUrl,
+        aspectRatio: row.aspectRatio,
+        canvasJSON: row.canvasJSON as Prisma.InputJsonValue,
+        authorId: user.id,
+      },
+      select: { id: true },
+    });
+    revalidatePath("/");
+    return { success: true, templateId: copy.id };
+  } catch (err) {
+    console.error("duplicateTemplate error:", err);
+    return { success: false, error: "Couldn't duplicate the template" };
   }
 }

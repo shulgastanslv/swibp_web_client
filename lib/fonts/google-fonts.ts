@@ -106,28 +106,31 @@ export async function fetchGoogleFontFamilies(): Promise<string[]> {
 export async function loadGoogleFont(family: string): Promise<void> {
   if (typeof document === "undefined") return;
   if (SYSTEM_FONTS.includes(family as (typeof SYSTEM_FONTS)[number])) return;
-  if (loadedFamilies.has(family)) {
-    await document.fonts.load(`16px "${family}"`).catch(() => undefined);
-    return;
-  }
 
+  const quoted = `"${family.replace(/"/g, "")}"`;
+  if (loadedFamilies.has(family) && document.fonts.check(`16px ${quoted}`)) return;
   const id = `gf-${family.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-  if (!document.getElementById(id)) {
-    const link = document.createElement("link");
+  let link = document.getElementById(id) as HTMLLinkElement | null;
+  if (!link) {
+    link = document.createElement("link");
     link.id = id;
     link.rel = "stylesheet";
-    const familyParam = family.replace(/ /g, "+");
+    const familyParam = encodeURIComponent(family).replace(/%20/g, "+");
     link.href = `https://fonts.googleapis.com/css2?family=${familyParam}:ital,wght@0,400;0,700;1,400;1,700&display=swap`;
+    const ready = new Promise<void>((resolve) => {
+      link?.addEventListener("load", () => resolve(), { once: true });
+      link?.addEventListener("error", () => resolve(), { once: true });
+    });
     document.head.appendChild(link);
+    await ready;
   }
 
-  loadedFamilies.add(family);
-
-  try {
-    await document.fonts.load(`16px "${family}"`);
-  } catch {
-    // Font may still render after stylesheet finishes; don't block apply.
-  }
+  await Promise.all([
+    document.fonts.load(`400 16px ${quoted}`),
+    document.fonts.load(`700 16px ${quoted}`),
+  ]).catch(() => undefined);
+  await document.fonts.ready;
+  if (document.fonts.check(`16px ${quoted}`)) loadedFamilies.add(family);
 }
 
 export function normalizeFontFamily(raw: string | undefined | null): string {

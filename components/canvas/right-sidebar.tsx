@@ -67,7 +67,7 @@ import {
   type TextStyleDef,
   type TextStyleId,
 } from "@/lib/canvas/document";
-import { applyStyleOnCanvas, paintSlotOnCanvas } from "@/lib/canvas/paint-live";
+import { applyStyleOnCanvas, paintSlotOnCanvas, refreshCanvasFonts } from "@/lib/canvas/paint-live";
 import { applyCarouselFont } from "@/lib/canvas/apply-carousel-font";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { canUngroup, groupSelection, ungroupSelection } from "@/lib/canvas/group";
@@ -453,9 +453,10 @@ export function RightSidebar({
           : "transparent";
 
       const family = baseProps.fontFamily;
-      if (family) {
+      if (family && manager) {
+        const canvas = manager.canvas;
         void loadGoogleFont(family).then(() => {
-          manager?.canvas.requestRenderAll();
+          refreshCanvasFonts(canvas);
         });
       }
     }
@@ -1338,29 +1339,7 @@ export function RightSidebar({
                         fontFamily: family,
                       } as unknown as Partial<FabricObject>);
                       setFontOffer(family);
-                      // After the webfont finishes painting, force one more
-                      // layout pass so metrics match the newly loaded face.
-                      void document.fonts.ready.then(() => {
-                        const active = manager?.getActiveObject() as
-                          | (FabricObject & {
-                              initDimensions?: () => void;
-                              dirty?: boolean;
-                            })
-                          | null
-                          | undefined;
-                        if (!active) return;
-                        const type = active.type;
-                        if (
-                          type === "textbox" ||
-                          type === "text" ||
-                          type === "i-text"
-                        ) {
-                          active.initDimensions?.();
-                          active.dirty = true;
-                          active.setCoords();
-                          manager?.canvas.requestRenderAll();
-                        }
-                      });
+                      if (manager) refreshCanvasFonts(manager.canvas);
                     }}
                   />
 
