@@ -235,6 +235,7 @@ export function SidebarLayers() {
 
       {rows.map(({ obj, depth }) => {
         const id = ensureLayerId(obj);
+        const uniqueId = `${id}-${depth}-${Math.random()}`;
         const children = isLayerGroup(obj) ? obj.getObjects().some(isUserLayer) : false;
         const open = !collapsed.has(id);
         const hidden = obj.visible === false;
@@ -245,7 +246,7 @@ export function SidebarLayers() {
         const mark = drop?.id === id ? drop.edge : null;
 
         return (
-          <div key={id} className="relative" style={{ paddingLeft: depth * 12 }}>
+          <div key={uniqueId} className="relative" style={{ paddingLeft: depth * 12 }}>
             {mark === "before" && <div className="absolute inset-x-1 top-0 z-10 h-0.5 rounded-full bg-foreground" />}
             {mark === "after" && <div className="absolute inset-x-1 bottom-0 z-10 h-0.5 rounded-full bg-foreground" />}
             <div
@@ -318,7 +319,7 @@ export function SidebarLayers() {
                   className="h-5 min-w-0 flex-1 rounded-md bg-background px-1 text-xs text-foreground outline-none ring-1 ring-border"
                 />
               ) : (
-                <span className="min-w-0 flex-1 truncate">{layerLabel(obj)}</span>
+                <span className="min-w-0 flex-1 truncate max-w-40">{layerLabel(obj)}</span>
               )}
               </div>
 
@@ -366,7 +367,7 @@ export function SidebarLayers() {
                       <MoreHorizontal className="size-3.5" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" side="right" className="w-48">
+                  <DropdownMenuContent align="start" side="right" className="w-48">
                     <DropdownMenuItem onSelect={() => startRename(obj)}>
                       <Pencil />
                       Rename

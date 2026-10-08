@@ -186,6 +186,36 @@ test("saveCurrent stores a fresh thumbnail without dropping the previous one whe
   assert.equal(labelOf(store.getState().slides[0]?.canvasJSON), "a-again");
 });
 
+test("saveCurrent can skip the thumbnail capture", () => {
+  const { store, canvas, controller } = setup(["a"]);
+  store.getState().updateSlideThumbnail(1, "old");
+  canvas.content = doc("a-edited");
+  canvas.captureThumbnail = () => {
+    throw new Error("thumbnail should not run");
+  };
+
+  controller.saveCurrent({ thumbnail: false });
+
+  assert.equal(store.getState().slides[0]?.thumbnail, "old");
+  assert.equal(labelOf(store.getState().slides[0]?.canvasJSON), "a-edited");
+});
+
+test("isBusy while a slide load is still running", async () => {
+  const { canvas, controller } = setup(["a", "b"]);
+  let release!: () => void;
+  canvas.loadState = () =>
+    new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+  const pending = controller.switchTo(2);
+  await Promise.resolve();
+  assert.equal(controller.isBusy(), true);
+  release();
+  await pending;
+  assert.equal(controller.isBusy(), false);
+});
+
 test("dispose cancels pending loads without changing the current slide", async () => {
   const { store, canvas, controller } = setup(["a", "b"]);
   let release!: () => void;

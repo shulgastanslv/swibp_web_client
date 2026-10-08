@@ -15,7 +15,7 @@ export interface SlidesSlice {
   moveSlide: (direction: "left" | "right") => void;
   /** Moves `activeId` to the index currently occupied by `overId`. */
   reorderSlides: (activeId: number, overId: number) => void;
-  updateSlideJSONById: (id: number, json: FabricCanvasJSON) => void;
+  updateSlideJSONById: (id: number, json: FabricCanvasJSON, options?: { dirty?: boolean }) => void;
   updateSlideThumbnail: (id: number, thumbnail: string) => void;
   /** Slides included in font, palette, and export when the scope is “marked”. */
   markedSlideIds: number[];
@@ -165,11 +165,13 @@ export const createSlidesSlice: StateCreator<SlidesStore, [], [], SlidesSlice> =
       markDirty();
     },
 
-    updateSlideJSONById: (id: number, json: FabricCanvasJSON) => {
+    updateSlideJSONById: (id: number, json: FabricCanvasJSON, options?: { dirty?: boolean }) => {
+      const current = get().slides.find((slide) => slide.id === id);
+      if (current?.canvasJSON === json) return;
       set({
-        slides: get().slides.map((s) => (s.id === id ? { ...s, canvasJSON: json } : s)),
+        slides: get().slides.map((slide) => (slide.id === id ? { ...slide, canvasJSON: json } : slide)),
       });
-      markDirty();
+      if (options?.dirty !== false) markDirty();
     },
 
     updateSlideThumbnail: (id: number, thumbnail: string) => {

@@ -33,6 +33,14 @@ function setProjectInUrl(projectId: string) {
   window.history.replaceState({}, "", url.toString());
 }
 
+type PersistResult =
+  | { success: true; projectId: string }
+  | { success: false; error: string };
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function notifyProjectsChanged() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("core:projects-changed"));
@@ -95,6 +103,8 @@ export function useProject() {
   const { status } = useSession();
   const slidesController = useSlidesController();
   const loadSeq = useRef(0);
+  const saveWithThumbnail = useRef(false);
+  const saveFlight = useRef<Promise<PersistResult> | null>(null);
 
   const currentProjectId = useCanvasStore((s) => s.currentProjectId);
   const projectTitle = useCanvasStore((s) => s.projectTitle);
@@ -148,60 +158,75 @@ export function useProject() {
     [slidesController],
   );
 
-  const persist = useCallback(async () => {
+  const persist = useCallback(async (options?: { thumbnail?: boolean }): Promise<PersistResult> => {
     if (status !== "authenticated") {
-      return { success: false as const, error: "Sign in to save" };
+      return { success: false, error: "Sign in to save" };
     }
 
-    const store = useCanvasStore.getState();
-    if (store.isSaving) {
-      return { success: false as const, error: "A save is already in progress" };
-    }
+    if (options?.thumbnail !== false) saveWithThumbnail.current = true;
+    if (saveFlight.current) return saveFlight.current;
 
-    slidesController?.saveCurrent();
+    let finish!: (result: PersistResult) => void;
+    const job = new Promise<PersistResult>((resolve) => {
+      finish = resolve;
+    });
+    saveFlight.current = job;
 
-    const {
-      currentProjectId: projectId,
-      projectTitle: title,
-      currentRatio,
-      canvasDimensions,
-      slides,
-    } = useCanvasStore.getState();
+    void (async () => {
+      let result: PersistResult = { success: false, error: "Couldn't save" };
+      useCanvasStore.getState().setSaving(true);
+      try {
+        for (let pass = 0; pass < 4; pass += 1) {
+          while (slidesController?.isBusy() || useCanvasStore.getState().isLoadingProject) {
+            await sleep(40);
+          }
 
-    const payload = {
-      title,
-      aspectRatio: currentRatio as RatioKey,
-      width: canvasDimensions.width,
-      height: canvasDimensions.height,
-      slides: slides.map((s) => ({
-        canvasJSON: s.canvasJSON,
-        thumbnail: s.thumbnail ?? null,
-      })),
-      document: currentDocument(),
-    };
+          const thumbnail = saveWithThumbnail.current;
+          saveWithThumbnail.current = false;
+          slidesController?.saveCurrent({ thumbnail });
 
-    store.setSaving(true);
-    try {
-      if (projectId) {
-        const res = await saveProject(projectId, payload);
-        if (!res.success) return res;
-        useCanvasStore.getState().markSaved();
-        notifyProjectsChanged();
-        return { success: true as const, projectId };
+          const snap = useCanvasStore.getState();
+          const revision = snap.editRevision;
+          const payload = {
+            title: snap.projectTitle,
+            aspectRatio: snap.currentRatio as RatioKey,
+            width: snap.canvasDimensions.width,
+            height: snap.canvasDimensions.height,
+            slides: snap.slides.map((slide) => ({
+              canvasJSON: slide.canvasJSON,
+              thumbnail: slide.thumbnail ?? null,
+            })),
+            document: currentDocument(),
+          };
+
+          let projectId = snap.currentProjectId;
+          if (projectId) {
+            const res = await saveProject(projectId, payload);
+            if (!res.success) return;
+          } else {
+            const res = await saveAsNewProject(payload);
+            if (!res.success) return;
+            projectId = res.projectId;
+            useCanvasStore.getState().setCurrentProjectId(projectId);
+            setProjectInUrl(projectId);
+          }
+
+          if (useCanvasStore.getState().editRevision !== revision) continue;
+
+          useCanvasStore.getState().markSaved();
+          notifyProjectsChanged();
+          if (useCanvasStore.getState().editRevision !== revision || saveWithThumbnail.current) continue;
+          result = { success: true, projectId };
+          return;
+        }
+      } finally {
+        saveFlight.current = null;
+        useCanvasStore.getState().setSaving(false);
+        finish(result);
       }
+    })();
 
-      const res = await saveAsNewProject(payload);
-      if (!res.success) return res;
-
-      useCanvasStore.getState().setCurrentProjectId(res.projectId);
-      useCanvasStore.getState().markSaved();
-      setProjectInUrl(res.projectId);
-      notifyProjectsChanged();
-
-      return { success: true as const, projectId: res.projectId };
-    } finally {
-      useCanvasStore.getState().setSaving(false);
-    }
+    return job;
   }, [slidesController, status]);
 
   const newProject = useCallback(

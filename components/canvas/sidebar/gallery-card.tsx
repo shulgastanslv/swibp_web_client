@@ -79,7 +79,7 @@ export function GalleryCard({
           disabled={busy}
           onClick={onClick}
           className={cn(
-            "relative block aspect-4/5 w-full overflow-hidden rounded-none bg-muted/50 ring-1 ring-border/50 transition-colors hover:ring-foreground/25 disabled:opacity-60",
+            "relative block aspect-4/5 w-full overflow-hidden rounded-md bg-muted/50 ring-1 ring-border/50 transition-colors hover:ring-foreground/25 disabled:opacity-60",
             active && "ring-2 ring-foreground",
           )}
         >

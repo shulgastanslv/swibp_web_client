@@ -8,6 +8,8 @@ export interface ProjectSlice {
   isSaving: boolean;
   isLoadingProject: boolean;
   lastSavedAt: string | null;
+  /** Bumps on every edit so a save can tell new work arrived while it was in flight. */
+  editRevision: number;
 
   setCurrentProjectId: (id: string | null) => void;
   setProjectTitle: (title: string) => void;
@@ -50,10 +52,16 @@ export const createProjectSlice: StateCreator<ProjectStore, [], [], ProjectSlice
   isSaving: false,
   isLoadingProject: false,
   lastSavedAt: null,
+  editRevision: 0,
 
   setCurrentProjectId: (currentProjectId) => set({ currentProjectId }),
-  setProjectTitle: (projectTitle) => set({ projectTitle, isDirty: true }),
-  setDirty: (isDirty) => set({ isDirty }),
+  setProjectTitle: (projectTitle) =>
+    set((state) => ({ projectTitle, isDirty: true, editRevision: state.editRevision + 1 })),
+  setDirty: (isDirty) =>
+    set((state) => ({
+      isDirty,
+      editRevision: isDirty ? state.editRevision + 1 : state.editRevision,
+    })),
   setSaving: (isSaving) => set({ isSaving }),
   setLoadingProject: (isLoadingProject) => set({ isLoadingProject }),
   markSaved: () => set({ isDirty: false, lastSavedAt: new Date().toISOString() }),

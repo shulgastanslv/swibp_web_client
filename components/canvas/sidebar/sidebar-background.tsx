@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScreenSplit } from "@/components/canvas/sidebar/screen-split";
 import { BackgroundPattern } from "@/components/canvas/sidebar/background-pattern";
 import { CollapsibleGroup } from "@/components/ui/collapsible-group";
+import { BackgroundScenes } from "@/components/canvas/sidebar/background-scenes";
 
 type Tab = "color" | "gradient" | "image";
 

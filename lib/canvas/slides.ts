@@ -14,7 +14,7 @@ export interface SlidesState {
   slides: SlideItem[];
   currentSlideId: number;
   setCurrentSlideId: (id: number) => void;
-  updateSlideJSONById: (id: number, json: CanvasState) => void;
+  updateSlideJSONById: (id: number, json: CanvasState, options?: { dirty?: boolean }) => void;
   updateSlideThumbnail: (id: number, thumbnail: string) => void;
   addSlide: (afterId?: number) => number;
   duplicateSlide: (id?: number) => number | null;
@@ -35,6 +35,7 @@ export interface SlidesStore {
 export class SlidesController {
   private queue: Promise<void> = Promise.resolve();
   private disposed = false;
+  private depth = 0;
 
   constructor(
     private readonly canvas: SlideCanvas,
@@ -45,10 +46,16 @@ export class SlidesController {
     this.disposed = true;
   }
 
-  saveCurrent(): void {
+  /** True while a slide switch or load is running. Callers should not snapshot the canvas then. */
+  isBusy(): boolean {
+    return this.depth > 0;
+  }
+
+  saveCurrent(options?: { thumbnail?: boolean }): void {
     if (this.disposed || this.canvas.isDisposed) return;
     const { currentSlideId, updateSlideJSONById, updateSlideThumbnail } = this.store.getState();
-    updateSlideJSONById(currentSlideId, this.canvas.getState());
+    updateSlideJSONById(currentSlideId, this.canvas.getState(), { dirty: false });
+    if (options?.thumbnail === false) return;
     const thumbnail = this.canvas.captureThumbnail?.();
     if (thumbnail) updateSlideThumbnail(currentSlideId, thumbnail);
   }
@@ -142,7 +149,12 @@ export class SlidesController {
   private enqueue(task: () => Promise<void>): Promise<void> {
     const run = this.queue.then(async () => {
       if (this.disposed || this.canvas.isDisposed) return;
-      await task();
+      this.depth += 1;
+      try {
+        await task();
+      } finally {
+        this.depth -= 1;
+      }
     });
     this.queue = run.catch((error) => {
       if (this.disposed || this.canvas.isDisposed) return;

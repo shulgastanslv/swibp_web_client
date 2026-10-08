@@ -16,6 +16,7 @@ import { PreviewModal } from "@/components/canvas/preview-modal";
 import type { NavId } from "@/components/canvas/left-sidebar";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { useProject } from "@/hooks/use-project";
+import { useAutoSave } from "@/hooks/use-auto-save";
 import { useCanvasManager, useSlidesController } from "@/context/canvas-manager";
 
 const SlideNavigator = dynamic(
@@ -28,6 +29,7 @@ function ProjectBootstrap() {
   const projectId = searchParams.get("project");
   const { loadProject, persist } = useProject();
   const slidesController = useSlidesController();
+  useAutoSave(persist);
 
   // Hydrate once from the URL only if nothing is selected yet.
   // Do not re-apply searchParams when currentProjectId changes: sidebar uses

@@ -8,6 +8,7 @@ export interface SettingsSlice {
   gridColor: string;
   gridOpacity: number;
   snapToGrid: boolean;
+  autoSave: boolean;
   vignette: number;
   noise: number;
   warmth: number;
@@ -24,6 +25,7 @@ export interface SettingsSlice {
   setGridColor: (color: string) => void;
   setGridOpacity: (opacity: number) => void;
   setSnapToGrid: (enabled: boolean) => void;
+  setAutoSave: (enabled: boolean) => void;
   setVignette: (vignette: number) => void;
   setNoise: (noise: number) => void;
   setWarmth: (warmth: number) => void;
@@ -71,6 +73,7 @@ export const createSettingsSlice: StateCreator<
   gridColor: "#9747FF",
   gridOpacity: 0.16,
   snapToGrid: true,
+  autoSave: true,
   ...FILTER_DEFAULTS,
 
   toggleGrid: () => set((s) => ({ isGridVisible: !s.isGridVisible })),
@@ -85,6 +88,7 @@ export const createSettingsSlice: StateCreator<
   setGridOpacity: (gridOpacity) =>
     set({ gridOpacity: Math.min(1, Math.max(0, gridOpacity)) }),
   setSnapToGrid: (snapToGrid) => set({ snapToGrid }),
+  setAutoSave: (autoSave) => set({ autoSave }),
   setVignette: (vignette) => set({ vignette }),
   setNoise: (noise) => set({ noise }),
   setWarmth: (warmth) => set({ warmth }),

@@ -30,7 +30,7 @@ export function ShareModal({
   onNeedAuth,
 }: ShareModalProps) {
   const { status } = useSession();
-  const { currentProjectId, persist, isSaving } = useProject();
+  const { currentProjectId, persist } = useProject();
   const [copied, setCopied] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -155,7 +155,7 @@ export function ShareModal({
                 <Switch
                   id="share-public"
                   checked={isPublic}
-                  disabled={busy || isSaving}
+                  disabled={busy}
                   onCheckedChange={(v) => void handleTogglePublic(v)}
                 />
               </div>
@@ -169,10 +169,10 @@ export function ShareModal({
                 <Button
                   size="sm"
                   onClick={() => void handleCopy()}
-                  disabled={busy || isSaving}
+                  disabled={busy}
                   className="h-8 px-3 text-xs rounded-xl shrink-0 gap-1.5"
                 >
-                  {busy || isSaving ? (
+                  {busy ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : copied ? (
                     <>
@@ -193,7 +193,7 @@ export function ShareModal({
                   variant="outline"
                   size="sm"
                   className="h-8 text-xs rounded-xl gap-1.5"
-                  disabled={busy || isSaving}
+                  disabled={busy}
                   onClick={() => void ensureSavedAndPublic()}
                 >
                   <Link2 className="w-3.5 h-3.5" />

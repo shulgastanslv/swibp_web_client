@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Library, RotateCcw } from "lucide-react";
+import { Filter, Library, RotateCcw } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCanvasManager } from "@/context/canvas-manager";
@@ -236,7 +236,7 @@ export function SidebarFilters() {
           </TabsTrigger>
         </TabsList>
         <FilterMenu
-          icon={Library}
+          icon={Filter}
           value={activePreset ?? "none"}
           onChange={(id) => {
             const preset = PRESETS.find((item) => item.id === id);

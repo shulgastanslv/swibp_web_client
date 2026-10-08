@@ -255,7 +255,6 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             variant={isDirty ? "default" : "secondary"}
             size="sm"
             onClick={() => void handleSave()}
-            disabled={isSaving}
             className="h-8 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
             title="Save project (Ctrl+S)"
           >
