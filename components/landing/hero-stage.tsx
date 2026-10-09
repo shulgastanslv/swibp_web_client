@@ -27,11 +27,6 @@ export function HeroStage() {
           </motion.div>
         </CardItem>
 
-        <CardItem translateZ={80} className="absolute bottom-6 left-2 sm:left-4">
-          <div className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-[#14151c] shadow-xl">
-            Промпт → 6 слайдов
-          </div>
-        </CardItem>
       </CardBody>
     </CardContainer>
   );
