@@ -28,6 +28,7 @@ import { FloatingNav } from "@/components/ui/floating-navbar";
 import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 import { Highlight } from "@/components/ui/hero-highlight";
 import { HeroStage, PhoneFrame } from "@/components/landing/hero-stage";
+import { Reveal } from "@/components/landing/reveal";
 import { CoverClose, CoverHook, CoverList } from "@/components/landing/covers";
 
 const NAV = [
@@ -36,17 +37,6 @@ const NAV = [
   { name: "Иконки", link: "#icons" },
   { name: "Как это работает", link: "#how" },
   { name: "Отзывы", link: "#stories" },
-];
-
-const PALETTE = [
-  "#0a0a0a",
-  "#f5f1ea",
-  "#1e3a5f",
-  "#4c1d95",
-  "#2563eb",
-  "#0d9488",
-  "#db2777",
-  "#fde68a",
 ];
 
 const PLATFORMS = [
@@ -191,7 +181,7 @@ export function LandingPage() {
 
         <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-6 px-4 pt-4 pb-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:pt-5 lg:pb-20">
           <div>
-            <h1 className="max-w-xl text-[2.7rem] leading-[0.95] font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-xl text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
               Карусель
               <br />
               из одной мысли.
@@ -227,7 +217,7 @@ export function LandingPage() {
 
       <div className="relative z-20 mx-auto -mt-10 grid max-w-6xl gap-4 px-4 sm:px-6 md:grid-cols-2">
         <article className="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_60px_rgba(28,32,58,0.08)] sm:p-8">
-          <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+          <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
             Карусель создаётся из описания
           </h2>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-[#5c6170] sm:text-base">
@@ -252,7 +242,7 @@ export function LandingPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" />
           <div className="relative flex h-full min-h-[360px] flex-col justify-end p-6 sm:p-8">
-            <h2 className="max-w-xs text-2xl font-extrabold tracking-tight sm:text-3xl">
+            <h2 className="max-w-xs text-xl font-extrabold tracking-tight sm:text-2xl">
               Один стиль на все слайды
             </h2>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/80">
@@ -278,7 +268,8 @@ export function LandingPage() {
       </section>
 
       <section id="features" className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <h2 className="max-w-3xl text-4xl font-extrabold tracking-tight sm:text-5xl">
+        <Reveal>
+        <h2 className="max-w-3xl text-3xl font-extrabold tracking-tight sm:text-4xl">
           От промпта до готовой карусели
         </h2>
         <div className="mt-10 overflow-hidden rounded-[1.7rem] bg-white shadow-[0_10px_40px_rgba(28,32,58,0.05)]">
@@ -298,18 +289,20 @@ export function LandingPage() {
               ],
             ].map(([title, text]) => (
               <div key={title} className="p-6 sm:p-8">
-                <h3 className="text-2xl font-extrabold tracking-tight">{title}</h3>
+                <h3 className="text-xl font-extrabold tracking-tight">{title}</h3>
                 <p className="mt-3 text-base leading-relaxed text-[#5c6170]">{text}</p>
               </div>
             ))}
           </div>
         </div>
+        </Reveal>
       </section>
 
       <section id="editor" className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <Reveal>
         <div className="grid gap-4 lg:grid-cols-2">
-          <article className="rounded-[1.7rem] bg-white p-8 sm:p-10 lg:col-span-2">
-            <h2 className="max-w-2xl text-4xl font-extrabold tracking-tight sm:text-5xl">
+          <article className="rounded-[1.7rem] bg-white p-8 sm:p-10">
+            <h2 className="max-w-2xl text-3xl font-extrabold tracking-tight sm:text-4xl">
               Удобный редактор
             </h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-[#5c6170]">
@@ -318,8 +311,8 @@ export function LandingPage() {
           </article>
 
           <article className="rounded-[1.7rem] bg-[#f6f1e8] p-8 sm:p-10">
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Шаблоны</h2>
-            <ul className="mt-8 space-y-3 text-2xl font-semibold tracking-tight">
+            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Шаблоны</h2>
+            <ul className="mt-8 space-y-3 text-xl font-semibold tracking-tight">
               <li>Журнальная обложка</li>
               <li>Сетка с материалами</li>
               <li>Мудборд</li>
@@ -329,37 +322,14 @@ export function LandingPage() {
             </p>
           </article>
 
-          <article className="rounded-[1.7rem] bg-white p-8 sm:p-10">
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Палитры</h2>
-            <div className="mt-8 flex flex-wrap gap-2">
-              {PALETTE.map((color) => (
-                <span
-                  key={color}
-                  className="size-11 rounded-full border border-black/10"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div
-                className="h-16 rounded-2xl"
-                style={{ background: "linear-gradient(135deg, #f8f7f4, #c9b79c)" }}
-              />
-              <div
-                className="h-16 rounded-2xl"
-                style={{ background: "radial-gradient(circle at center, #e0e7ff, #1e1b4b)" }}
-              />
-            </div>
-            <p className="mt-6 max-w-sm text-base leading-relaxed text-[#5c6170]">
-              Сплошной цвет, линейный и радиальный градиент или свой оттенок на весь слайд.
-            </p>
-          </article>
         </div>
+        </Reveal>
       </section>
 
       <section id="icons" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <Reveal>
         <div className="rounded-[2rem] bg-[#14151c] px-6 py-12 text-white sm:px-12 sm:py-16">
-          <h2 className="text-6xl leading-none font-extrabold tracking-tighter sm:text-8xl">
+          <h2 className="text-5xl leading-none font-extrabold tracking-tighter sm:text-6xl">
             14<span className="text-[#c9b6ff]"> млн</span>
           </h2>
           <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/75">
@@ -372,11 +342,12 @@ export function LandingPage() {
             Открыть библиотеку
           </Link>
         </div>
+        </Reveal>
       </section>
 
-      <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2">
+      <Reveal className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2">
         <div>
-          <h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Как ИИ создаёт карусель
           </h2>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-[#5c6170] sm:text-base">
@@ -401,10 +372,11 @@ export function LandingPage() {
           </Accordion>
         </div>
         <CareVisual />
-      </section>
+      </Reveal>
 
       <section id="how" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <h2 className="max-w-3xl text-5xl font-extrabold tracking-tight text-[#14151c] sm:text-6xl lg:text-7xl">
+        <Reveal>
+        <h2 className="max-w-3xl text-4xl font-extrabold tracking-tight text-[#14151c] sm:text-5xl">
           Как это <Highlight className="text-[#14151c]">работает</Highlight>
         </h2>
         <div className="mt-10 grid items-stretch gap-6 lg:grid-cols-[1.05fr_0.95fr]">
@@ -432,7 +404,7 @@ export function LandingPage() {
             ))}
           </ol>
           <div className="flex min-h-[320px] flex-col justify-between rounded-[1.7rem] bg-[#6d4aff] p-8 text-white sm:p-10">
-            <p className="max-w-xs text-3xl font-extrabold tracking-tight sm:text-4xl">
+            <p className="max-w-xs text-2xl font-extrabold tracking-tight sm:text-3xl">
               «Спокойно объясни, зачем нужна карусель»
             </p>
             <div>
@@ -448,11 +420,13 @@ export function LandingPage() {
             </div>
           </div>
         </div>
+        </Reveal>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <Reveal>
         <div>
-          <h2 className="max-w-xl text-4xl font-extrabold tracking-tight sm:text-5xl">
+          <h2 className="max-w-xl text-3xl font-extrabold tracking-tight sm:text-4xl">
             Обложка, середина и финал
           </h2>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#5c6170] sm:text-base">
@@ -464,6 +438,7 @@ export function LandingPage() {
             <CoverClose />
           </div>
         </div>
+        </Reveal>
       </section>
 
       <section id="stories" className="relative overflow-hidden py-16">
@@ -474,7 +449,7 @@ export function LandingPage() {
           Отзывы
         </p>
         <div className="relative">
-          <h2 className="px-4 text-center text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h2 className="px-4 text-center text-2xl font-extrabold tracking-tight sm:text-3xl">
             Как это звучит в работе
           </h2>
           <div className="mx-auto mt-10 grid max-w-6xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
@@ -532,9 +507,10 @@ export function LandingPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pt-4 pb-16 sm:px-6">
+        <Reveal>
         <div className="grid overflow-hidden rounded-[2rem] bg-[#07111f] text-white lg:grid-cols-[1.05fr_0.95fr]">
           <div className="px-6 py-12 sm:px-12 sm:py-16">
-            <h2 className="max-w-md text-4xl font-extrabold tracking-tight sm:text-5xl">
+            <h2 className="max-w-md text-3xl font-extrabold tracking-tight sm:text-4xl">
               Опишите тему. Заберите карусель.
             </h2>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70 sm:text-base">
@@ -564,6 +540,7 @@ export function LandingPage() {
             </div>
           </div>
         </div>
+        </Reveal>
       </section>
 
       <footer>
