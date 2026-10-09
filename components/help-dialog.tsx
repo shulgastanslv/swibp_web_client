@@ -45,10 +45,10 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
           <DialogHeader className="gap-1 text-left">
             <DialogTitle className="text-sm font-medium">Help</DialogTitle>
           </DialogHeader>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
             One slide at a time. The strip under the canvas is the carousel.
           </p>
-          <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-foreground">
+          <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-foreground">
             {NOTES.map((note) => (
               <li key={note}>{note}</li>
             ))}

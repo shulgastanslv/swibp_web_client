@@ -94,7 +94,7 @@ export function FontSelect({ value, onChange, disabled }: FontSelectProps) {
 
   return (
     <div ref={rootRef} className="relative flex flex-col gap-1.5">
-      <span className="text-xs text-muted-foreground">Font</span>
+      <span className="text-sm text-muted-foreground">Font</span>
       <button
         type="button"
         disabled={disabled || loadingFont}
@@ -126,25 +126,25 @@ export function FontSelect({ value, onChange, disabled }: FontSelectProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search Google Fonts…"
-              className="h-8 w-full rounded-full bg-muted/40 pl-8 pr-3 text-xs outline-none placeholder:text-muted-foreground/70 focus:ring-1 focus:ring-ring"
+              className="h-8 w-full rounded-full bg-muted/40 pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground/70 focus:ring-1 focus:ring-ring"
             />
           </div>
 
           <div className="max-h-56 overflow-y-auto p-1">
             {loadingList && families.length === 0 ? (
-              <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                 <Loader2 className="size-3.5 animate-spin" />
                 Loading fonts…
               </div>
             ) : error ? (
-              <p className="px-3 py-4 text-center text-xs text-destructive">
+              <p className="px-3 py-4 text-center text-sm text-destructive">
                 {error}
               </p>
             ) : (
               options.groups.map((group) =>
                 group.items.length === 0 ? null : (
                   <div key={group.label} className="mb-1">
-                    <p className="px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                    <p className="px-2.5 py-1 text-sm font-medium text-muted-foreground">
                       {group.label}
                     </p>
                     {group.items.map((family) => {
@@ -155,7 +155,7 @@ export function FontSelect({ value, onChange, disabled }: FontSelectProps) {
                           type="button"
                           onClick={() => void applyFont(family)}
                           className={cn(
-                            "flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs transition-colors",
+                            "flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-sm transition-colors",
                             selected
                               ? "bg-muted text-foreground"
                               : "hover:bg-muted/50 text-foreground",

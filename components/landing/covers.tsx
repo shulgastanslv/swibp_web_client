@@ -60,7 +60,7 @@ export function CoverHook({ className }: { className?: string }) {
         </h3>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium">Обложка</span>
+        <span className="text-sm font-medium">Обложка</span>
         <Dots />
       </div>
     </PhotoSlide>

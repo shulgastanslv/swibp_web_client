@@ -56,6 +56,7 @@ import {
   copyImageToClipboard,
   renderSlidesToImages,
 } from "@/lib/export/carousel";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   onPreview?: () => void;
@@ -92,7 +93,9 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
 
   useEffect(() => {
     const onAuthLink = (event: Event) => {
-      const detail = (event as CustomEvent<{ verify?: string | null; reset?: string | null }>).detail;
+      const detail = (
+        event as CustomEvent<{ verify?: string | null; reset?: string | null }>
+      ).detail;
       if (detail?.verify) setAuthVerifyToken(detail.verify);
       if (detail?.reset) setAuthResetToken(detail.reset);
       if (detail?.verify || detail?.reset) setIsAuthModalOpen(true);
@@ -186,11 +189,19 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
   const userInitial = userName ? userName[0].toUpperCase() : "?";
   const slideCount = slides.length || 1;
 
+  const router = useRouter();
+
   return (
     <>
-      <header className="h-12 w-full flex items-center justify-between px-4 bg-background/80 backdrop-blur-md border-b border-border/60 text-xs z-20 shrink-0 gap-3 select-none">
+      <header className="h-14 w-full flex items-center justify-between px-4 bg-background/80 backdrop-blur-md border-b border-border/60 text-sm z-20 shrink-0 gap-3 select-none">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Logo width={25} height={25} className="hover:opacity-80 transition-opacity cursor-pointer duration-300" />
+          <div onClick={() => router.push("/")}>
+            <Logo
+              width={30}
+              height={30}
+              className="hover:opacity-80 transition-opacity cursor-pointer duration-300"
+            />
+          </div>
           <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
           <input
             type="text"
@@ -200,18 +211,18 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             onKeyDown={(e) => {
               if (e.key === "Enter") (e.target as HTMLInputElement).blur();
             }}
-            className="bg-muted/60 font-medium text-foreground text-xs px-2.5 py-1 rounded-full border border-transparent hover:border-border/50 focus:border-border/60 focus:bg-muted/40 focus:outline-none transition-colors w-28 sm:w-40 truncate"
+            className="bg-muted/60 font-medium text-foreground text-sm px-2.5 py-1 rounded-full border border-transparent hover:border-border/50 focus:border-border/60 focus:bg-muted/40 focus:outline-none transition-colors w-28 sm:w-40 truncate"
             placeholder="Project name..."
           />
           {isDirty && (
-            <span className="text-xs text-muted-foreground shrink-0 hidden sm:inline">
+            <span className="text-sm text-muted-foreground shrink-0 hidden sm:inline">
               <CloudOff className="w-3.5 h-3.5" />
             </span>
           )}
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0"
+            className="h-9 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0"
             title="Help"
             onClick={() => setIsHelpOpen(true)}
           >
@@ -220,12 +231,11 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-1">
-
           <div className="flex items-center p-0.5 rounded-full">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 hidden sm:inline-flex"
+              className="h-9 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 hidden sm:inline-flex"
               onClick={handleUndo}
               title="Undo (Ctrl+Z)"
             >
@@ -234,7 +244,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 hidden sm:inline-flex"
+              className="h-9 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 hidden sm:inline-flex"
               onClick={handleRedo}
               title="Redo (Ctrl+Y)"
             >
@@ -246,7 +256,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             variant="ghost"
             size="icon"
             onClick={() => setIsWhatsNewOpen(true)}
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 hidden sm:inline-flex"
+            className="h-9 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 hidden sm:inline-flex"
             title="What's new"
           >
             <BookOpen className="w-3.5 h-3.5" />
@@ -257,7 +267,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             variant={isDirty ? "default" : "secondary"}
             size="sm"
             onClick={() => void handleSave()}
-            className="h-8 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
+            className="h-9 px-3 text-sm font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
             title="Save project (Ctrl+S)"
           >
             {isSaving ? (
@@ -271,7 +281,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             variant="secondary"
             size="sm"
             onClick={onPreview}
-            className="h-8 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
+            className="h-9 px-3 text-sm font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
           >
             <Layers2 className="w-3 h-3 fill-current text-muted-foreground" />
             <span className="hidden sm:inline">Preview</span>
@@ -281,7 +291,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             variant="ghost"
             size="sm"
             onClick={onFocus}
-            className="h-8 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
+            className="h-9 px-3 text-sm font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
             title="Hide the panels and keep the canvas"
           >
             <Focus className="w-3 h-3" />
@@ -289,12 +299,11 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-1">
-
           <Button
             variant="ghost"
             onClick={() => setShowShare(true)}
             size="icon"
-            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50"
+            className="h-9 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50"
             title="Share"
           >
             <Share className="w-3.5 h-3.5" />
@@ -304,19 +313,18 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             variant="secondary"
             size="sm"
             onClick={openPublish}
-            className="h-10 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
+            className="h-9 px-3 text-sm font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
             title="Publish as Template"
           >
             <Globe className="w-3.5 h-3.5" />
             <span>Publish</span>
           </Button>
 
-
-          <div className="flex items-center h-9 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full pl-2.5 pr-0.5 shadow-2xs transition-all gap-1">
+          <div className="flex items-center h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full pl-2.5 pr-0.5 shadow-2xs transition-all gap-1">
             <button
               type="button"
               onClick={() => setShowExport(true)}
-              className="flex items-center gap-1.5 text-xs font-medium hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1.5 text-sm font-medium hover:opacity-90 transition-opacity"
             >
               <ArrowUp className="w-3.5 h-3.5" />
               <span>Export</span>
@@ -351,7 +359,6 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
 
           <div className="h-4 w-px bg-border/60 mx-0.5" />
 
-
           {status === "authenticated" ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -366,7 +373,8 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
                       src={
                         session.user?.image ??
                         `https://api.dicebear.com/10.x/squircles/svg?seed=${session.user?.id}`
-                      } alt={userName}
+                      }
+                      alt={userName}
                     />
                     <AvatarFallback className="text-sm">
                       {userInitial}
@@ -374,20 +382,23 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-background/50 backdrop-blur-sm">
-                <DropdownMenuLabel className="truncate text-xs">
+              <DropdownMenuContent
+                align="end"
+                className="w-56 bg-background/50 backdrop-blur-sm"
+              >
+                <DropdownMenuLabel className="truncate text-sm">
                   {userEmail}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="cursor-pointer text-xs"
+                  className="cursor-pointer text-sm"
                   onClick={() => setIsNewProjectOpen(true)}
                 >
                   <GalleryHorizontalEndIcon className="w-3.5 h-3.5 mr-2" />
                   <span>New project</span>
                 </DropdownMenuItem>
                 {session.user?.role === "ADMIN" ? (
-                  <DropdownMenuItem asChild className="cursor-pointer text-xs">
+                  <DropdownMenuItem asChild className="cursor-pointer text-sm">
                     <Link href="/admin">
                       <Shield className="w-3.5 h-3.5 mr-2" />
                       <span>Admin</span>
@@ -395,7 +406,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
                   </DropdownMenuItem>
                 ) : null}
                 <DropdownMenuItem
-                  className="cursor-pointer text-xs md:hidden"
+                  className="cursor-pointer text-sm md:hidden"
                   onClick={openPublish}
                 >
                   <Globe className="w-3.5 h-3.5 mr-2" />
@@ -403,7 +414,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
                 </DropdownMenuItem>
                 <ThemeSwitcherMenu />
                 <DropdownMenuItem
-                  className="cursor-pointer text-xs"
+                  className="cursor-pointer text-sm"
                   onClick={() => setIsSocialOpen(true)}
                 >
                   <Send className="w-3.5 h-3.5 mr-2 text-sky-500" />
@@ -411,7 +422,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="cursor-pointer text-xs text-destructive focus:text-destructive"
+                  className="cursor-pointer text-sm text-destructive focus:text-destructive"
                   onClick={() => signOut({ callbackUrl: "/" })}
                 >
                   <LogOut className="w-3.5 h-3.5 mr-2" />

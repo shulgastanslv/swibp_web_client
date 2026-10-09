@@ -180,7 +180,7 @@ export function SidebarIcons() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search IconScout..."
-            className="h-8 w-full min-w-0 rounded-lg bg-muted/30 pl-8 pr-8 text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:bg-muted/45"
+            className="h-8 w-full min-w-0 rounded-lg bg-muted/30 pl-8 pr-8 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:bg-muted/45"
           />
           {query ? (
             <button
@@ -202,7 +202,7 @@ export function SidebarIcons() {
         />
       </div>
 
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {recent.length > 0 ? (
         <GallerySection
@@ -224,8 +224,8 @@ export function SidebarIcons() {
 
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-muted-foreground/80">Results</span>
-          <span className="inline-flex items-center gap-1 tabular-nums text-xs text-muted-foreground/40">
+          <span className="text-sm font-medium text-muted-foreground/80">Results</span>
+          <span className="inline-flex items-center gap-1 tabular-nums text-sm text-muted-foreground/40">
             {paging ? <Loader2 className="size-3 animate-spin" /> : null}
             {searching ? `${items.length}${total > items.length ? ` / ${total}` : ""}` : recent.length}
           </span>
@@ -237,10 +237,10 @@ export function SidebarIcons() {
           </div>
         ) : !searching ? (
           recent.length === 0 ? (
-            <p className="py-12 text-center text-xs text-muted-foreground">Search icons, illustrations, or 3D.</p>
+            <p className="py-12 text-center text-sm text-muted-foreground">Search icons, illustrations, or 3D.</p>
           ) : null
         ) : items.length === 0 ? (
-          <p className="py-12 text-center text-xs text-muted-foreground">Nothing matched.</p>
+          <p className="py-12 text-center text-sm text-muted-foreground">Nothing matched.</p>
         ) : (
           <div className="grid min-w-0 grid-cols-3 gap-2">
             {items.map((item) => (

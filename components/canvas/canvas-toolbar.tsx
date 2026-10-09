@@ -59,7 +59,7 @@ export function CanvasToolbar() {
   return (
     <div className="h-11 w-full flex items-center justify-between px-4 bg-background/60 backdrop-blur-md border-b border-border/40 z-10 select-none shrink-0">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider pl-1">
+        <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider pl-1">
           Aspect Ratio
         </span>
 
@@ -71,7 +71,7 @@ export function CanvasToolbar() {
                 key={ratio}
                 type="button"
                 onClick={() => handleRatioChange(ratio)}
-                className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-full transition-all duration-150 ${
+                className={`flex items-center gap-1.5 px-3 py-1 text-sm rounded-full transition-all duration-150 ${
                   isActive
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-medium"
@@ -113,7 +113,7 @@ export function CanvasToolbar() {
             variant="ghost"
             size="sm"
             onClick={toggleAutoFlow}
-            className={`h-8 px-2 text-xs gap-1 rounded-full transition-colors ${
+            className={`h-8 px-2 text-sm gap-1 rounded-full transition-colors ${
               autoFlowEnabled
                 ? "bg-background text-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-background/50"
@@ -125,7 +125,7 @@ export function CanvasToolbar() {
             }
           >
             <Workflow className="w-3.5 h-3.5" />
-            <span className="hidden md:inline text-xs font-medium">
+            <span className="hidden md:inline text-sm font-medium">
               Auto Flow
             </span>
           </Button>
@@ -137,7 +137,7 @@ export function CanvasToolbar() {
           variant="ghost"
           size="sm"
           onClick={handleCopyJSON}
-          className="h-8 px-2.5 text-xs font-medium gap-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
+          className="h-8 px-2.5 text-sm font-medium gap-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
           title="Copy current slide as JSON"
         >
           {copied ? (

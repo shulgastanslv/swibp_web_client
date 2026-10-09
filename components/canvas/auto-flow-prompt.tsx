@@ -131,14 +131,14 @@ export function AutoFlowPrompt() {
     <div className="pointer-events-none absolute bottom-20 left-1/2 z-30 -translate-x-1/2 px-3">
       <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-border/60 bg-background/95 px-3 py-2 shadow-lg backdrop-blur-md">
         <Layers className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <p className="max-w-[280px] text-xs text-foreground">
+        <p className="max-w-[280px] text-sm text-foreground">
           {continuing
             ? "This text runs past the slide. Continue it on the next slide?"
             : "This object runs past the slide edge. Create the next slide and move it?"}
         </p>
         <Button
           size="sm"
-          className="h-7 shrink-0 rounded-xl px-2.5 text-xs"
+          className="h-7 shrink-0 rounded-xl px-2.5 text-sm"
           onClick={() => void accept()}
         >
           {continuing ? "Continue" : "Create"}

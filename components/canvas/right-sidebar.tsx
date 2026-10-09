@@ -194,7 +194,7 @@ function ColorField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-sm text-muted-foreground">{label}</span>
       <div className={`${fieldShell} h-9 gap-2 px-2`}>
         <input
           type="color"
@@ -217,7 +217,7 @@ function ColorField({
           }}
           placeholder="#000000"
           spellCheck={false}
-          className="h-7 flex-1 border-0 bg-transparent px-1 font-mono text-xs uppercase shadow-none focus-visible:ring-0 dark:bg-transparent"
+          className="h-7 flex-1 border-0 bg-transparent px-1 font-mono text-sm uppercase shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
         {trailing}
       </div>
@@ -269,7 +269,7 @@ function NumberField({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-sm text-muted-foreground">{label}</span>
         <div className={`${fieldShell} h-8 w-[4.75rem] px-2`}>
           <Input
             type="text"
@@ -280,10 +280,10 @@ function NumberField({
             onKeyDown={(e) => {
               if (e.key === "Enter") e.currentTarget.blur();
             }}
-            className="h-7 flex-1 border-0 bg-transparent px-0.5 text-right font-mono text-xs tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
+            className="h-7 flex-1 border-0 bg-transparent px-0.5 text-right font-mono text-sm tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
           />
           {unit ? (
-            <span className="shrink-0 pl-0.5 text-xs text-muted-foreground">
+            <span className="shrink-0 pl-0.5 text-sm text-muted-foreground">
               {unit}
             </span>
           ) : null}
@@ -332,7 +332,7 @@ function DimInput({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-sm text-muted-foreground">{label}</span>
       <div className={`${fieldShell} h-9 px-3`}>
         <Input
           type="text"
@@ -343,9 +343,9 @@ function DimInput({
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
           }}
-          className="h-7 flex-1 border-0 bg-transparent px-0.5 font-mono text-xs tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
+          className="h-7 flex-1 border-0 bg-transparent px-0.5 font-mono text-sm tabular-nums shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
-        <span className="shrink-0 text-xs text-muted-foreground">{unit}</span>
+        <span className="shrink-0 text-sm text-muted-foreground">{unit}</span>
       </div>
     </div>
   );
@@ -909,7 +909,7 @@ export function RightSidebar({
         }`}
       >
         <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-3.5">
-          <span className="truncate text-xs font-semibold text-foreground">
+          <span className="truncate text-sm font-semibold text-foreground">
             {isMulti
               ? "Selection"
               : formValues
@@ -921,7 +921,7 @@ export function RightSidebar({
         <ScrollArea className="flex-1">
           {isMulti ? (
             <div className="flex flex-col gap-3 px-3 py-3">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {selectedCount} objects selected
               </p>
               <div className="grid grid-cols-4 gap-1">
@@ -955,7 +955,7 @@ export function RightSidebar({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  className={`h-8 flex-1 text-sm ${btnRound}`}
                   onClick={groupSelected}
                 >
                   Group
@@ -964,7 +964,7 @@ export function RightSidebar({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  className={`h-8 flex-1 text-sm ${btnRound}`}
                   onClick={copyStyle}
                 >
                   Copy style
@@ -973,7 +973,7 @@ export function RightSidebar({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  className={`h-8 flex-1 text-sm ${btnRound}`}
                   disabled={!copiedStyle}
                   onClick={pasteStyle}
                 >
@@ -1075,7 +1075,7 @@ export function RightSidebar({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className={`h-8 flex-1 text-xs ${btnRound}`}
+                    className={`h-8 flex-1 text-sm ${btnRound}`}
                     onClick={ungroupSelected}
                   >
                     Ungroup
@@ -1085,7 +1085,7 @@ export function RightSidebar({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  className={`h-8 flex-1 text-sm ${btnRound}`}
                   onClick={copyStyle}
                 >
                   Copy style
@@ -1094,7 +1094,7 @@ export function RightSidebar({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className={`h-8 flex-1 text-xs ${btnRound}`}
+                  className={`h-8 flex-1 text-sm ${btnRound}`}
                   disabled={!copiedStyle}
                   onClick={pasteStyle}
                 >
@@ -1129,7 +1129,7 @@ export function RightSidebar({
                 <CollapsibleGroup id="rs-image" title="Image">
                   {cropping ? (
                     <>
-                      <p className="text-xs leading-snug text-muted-foreground">
+                      <p className="text-sm leading-snug text-muted-foreground">
                         Drag the picture to move it inside the frame.
                       </p>
                       <NumberField
@@ -1233,12 +1233,12 @@ export function RightSidebar({
                     {bgRemoving ? "Removing background…" : "Remove background"}
                   </Button>
                   {bgProgress && (
-                    <p className="text-xs text-muted-foreground leading-snug">
+                    <p className="text-sm text-muted-foreground leading-snug">
                       {bgProgress}
                     </p>
                   )}
                   {bgError && (
-                    <p className="text-xs text-destructive leading-snug">
+                    <p className="text-sm text-destructive leading-snug">
                       {bgError}
                     </p>
                   )}
@@ -1248,7 +1248,7 @@ export function RightSidebar({
               {isText && (
                 <CollapsibleGroup id="rs-text" title="Text">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                       Content
                     </span>
                     <textarea
@@ -1258,7 +1258,7 @@ export function RightSidebar({
                       className="resize-none rounded-2xl border border-border bg-transparent p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                     />
                     <p
-                      className={`text-xs leading-snug ${
+                      className={`text-sm leading-snug ${
                         textLengthStatus("Instagram", (formValues.text ?? "").trim().length).tooLong
                           ? "text-destructive"
                           : "text-muted-foreground"
@@ -1269,7 +1269,7 @@ export function RightSidebar({
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-xs text-muted-foreground">Style</span>
+                    <span className="text-sm text-muted-foreground">Style</span>
                     <div className="flex gap-1.5">
                       <Button
                         type="button"
@@ -1304,13 +1304,13 @@ export function RightSidebar({
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-xs text-muted-foreground">List</span>
+                    <span className="text-sm text-muted-foreground">List</span>
                     <div className="flex gap-1.5">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        className={`h-8 flex-1 gap-1.5 text-xs ${btnRound}`}
+                        className={`h-8 flex-1 gap-1.5 text-sm ${btnRound}`}
                         onClick={() => applyTextList("bullet")}
                       >
                         <List className="size-3.5" />
@@ -1320,7 +1320,7 @@ export function RightSidebar({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className={`h-8 flex-1 gap-1.5 text-xs ${btnRound}`}
+                        className={`h-8 flex-1 gap-1.5 text-sm ${btnRound}`}
                         onClick={() => applyTextList("number")}
                       >
                         <ListOrdered className="size-3.5" />
@@ -1345,14 +1345,14 @@ export function RightSidebar({
 
                   {fontOffer && (
                     <div className="flex flex-col gap-2 rounded-2xl bg-muted/40 p-2.5">
-                      <p className="text-xs leading-snug text-foreground">
+                      <p className="text-sm leading-snug text-foreground">
                         Use {fontOffer} on which slides?
                       </p>
                       <div className="flex gap-1">
                         <Button
                           type="button"
                           size="sm"
-                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          className={`h-7 flex-1 text-sm ${btnRound}`}
                           onClick={() => {
                             applyCarouselFont(fontOffer, manager);
                             setFontOffer(null);
@@ -1364,7 +1364,7 @@ export function RightSidebar({
                           type="button"
                           variant="outline"
                           size="sm"
-                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          className={`h-7 flex-1 text-sm ${btnRound}`}
                           disabled={markedSlideIds.length === 0}
                           title={
                             markedSlideIds.length === 0
@@ -1382,7 +1382,7 @@ export function RightSidebar({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          className={`h-7 flex-1 text-sm ${btnRound}`}
                           onClick={() => setFontOffer(null)}
                         >
                           This
@@ -1424,7 +1424,7 @@ export function RightSidebar({
 
                   {styleOffer && (
                     <div className="flex flex-col gap-2 rounded-2xl bg-muted/40 p-2.5">
-                      <p className="text-xs leading-snug text-foreground">
+                      <p className="text-sm leading-snug text-foreground">
                         Update every{" "}
                         {TEXT_STYLES.find((style) => style.id === styleOffer)?.label.toLowerCase()}{" "}
                         on which slides?
@@ -1433,7 +1433,7 @@ export function RightSidebar({
                         <Button
                           type="button"
                           size="sm"
-                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          className={`h-7 flex-1 text-sm ${btnRound}`}
                           onClick={applyStyleToCarousel}
                         >
                           All
@@ -1442,7 +1442,7 @@ export function RightSidebar({
                           type="button"
                           variant="outline"
                           size="sm"
-                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          className={`h-7 flex-1 text-sm ${btnRound}`}
                           disabled={markedSlideIds.length === 0}
                           title={
                             markedSlideIds.length === 0
@@ -1457,7 +1457,7 @@ export function RightSidebar({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className={`h-7 flex-1 text-xs ${btnRound}`}
+                          className={`h-7 flex-1 text-sm ${btnRound}`}
                           onClick={() => setStyleOffer(null)}
                         >
                           This
@@ -1467,7 +1467,7 @@ export function RightSidebar({
                   )}
 
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                       Alignment
                     </span>
                     <div className="flex rounded-full border border-border bg-transparent p-1">
@@ -1523,7 +1523,7 @@ export function RightSidebar({
                       <button
                         type="button"
                         onClick={clearGradient}
-                        className={`flex h-7 flex-1 items-center justify-center rounded-full text-xs transition-colors ${
+                        className={`flex h-7 flex-1 items-center justify-center rounded-full text-sm transition-colors ${
                           formValues.gradientFrom
                             ? "text-muted-foreground hover:text-foreground"
                             : "bg-muted text-foreground"
@@ -1539,7 +1539,7 @@ export function RightSidebar({
                             formValues.gradientTo || "#ffffff",
                           )
                         }
-                        className={`flex h-7 flex-1 items-center justify-center rounded-full text-xs transition-colors ${
+                        className={`flex h-7 flex-1 items-center justify-center rounded-full text-sm transition-colors ${
                           formValues.gradientFrom
                             ? "bg-muted text-foreground"
                             : "text-muted-foreground hover:text-foreground"
@@ -1576,7 +1576,7 @@ export function RightSidebar({
                     )}
                   </>
                 ) : (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     The image has no fill — replace the file in the section above.
                   </p>
                 )}
@@ -1594,7 +1594,7 @@ export function RightSidebar({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className={`h-7 px-2 text-xs ${btnRound}`}
+                        className={`h-7 px-2 text-sm ${btnRound}`}
                         onClick={() =>
                           updateProp("backgroundColor", "transparent")
                         }
@@ -1624,7 +1624,7 @@ export function RightSidebar({
 
               <CollapsibleGroup id="rs-appearance" title="Appearance">
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-xs text-muted-foreground">Blend</span>
+                  <span className="text-sm text-muted-foreground">Blend</span>
                   <select
                     value={
                       BLEND_MODES.some((mode) => mode.id === formValues.blendMode)
@@ -1632,7 +1632,7 @@ export function RightSidebar({
                         : "source-over"
                     }
                     onChange={(e) => updateProp("blendMode", e.target.value, "globalCompositeOperation")}
-                    className="h-9 w-full rounded-full bg-muted/40 px-3 text-xs text-foreground outline-none"
+                    className="h-9 w-full rounded-full bg-muted/40 px-3 text-sm text-foreground outline-none"
                   >
                     {BLEND_MODES.map((mode) => (
                       <option key={mode.id} value={mode.id}>
@@ -1642,7 +1642,7 @@ export function RightSidebar({
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-xs text-muted-foreground">Mask</span>
+                  <span className="text-sm text-muted-foreground">Mask</span>
                   <div className="flex rounded-full border border-border bg-transparent p-1">
                     {(
                       [
@@ -1655,7 +1655,7 @@ export function RightSidebar({
                         key={kind}
                         type="button"
                         onClick={() => setMask(kind)}
-                        className={`flex h-7 flex-1 items-center justify-center rounded-full text-xs transition-colors ${
+                        className={`flex h-7 flex-1 items-center justify-center rounded-full text-sm transition-colors ${
                           (formValues.mask ?? "none") === kind
                             ? "bg-muted text-foreground"
                             : "text-muted-foreground hover:text-foreground"
@@ -1733,7 +1733,7 @@ export function RightSidebar({
                     />
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Enable the switch on the right to add a shadow.
                   </p>
                 )}

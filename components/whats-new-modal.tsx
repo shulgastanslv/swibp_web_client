@@ -49,15 +49,15 @@ export function WhatsNewModal({ open, onOpenChange }: WhatsNewModalProps) {
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
             </div>
           ) : news.length === 0 ? (
-            <p className="py-6 text-center text-xs text-muted-foreground">Nothing new yet.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">Nothing new yet.</p>
           ) : (
             news.map((item) => (
               <article key={item.id} className="space-y-1.5">
-                <div className="flex items-baseline justify-between gap-3 text-xs">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
                   <h3 className="font-medium text-foreground">{item.title}</h3>
                   <time className="shrink-0 text-muted-foreground">{formatWhen(item.createdAt)}</time>
                 </div>
-                <p className="border-l border-border/50 pl-2 text-xs whitespace-pre-wrap text-muted-foreground">
+                <p className="border-l border-border/50 pl-2 text-sm whitespace-pre-wrap text-muted-foreground">
                   {item.body}
                 </p>
                 {item.authorName ? (

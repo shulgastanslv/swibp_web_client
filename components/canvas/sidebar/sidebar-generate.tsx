@@ -139,7 +139,7 @@ export function SidebarGenerate() {
   };
 
   return (
-    <div className="flex flex-col gap-3 px-1 py-1 text-xs text-foreground">
+    <div className="flex flex-col gap-3 px-1 py-1 text-sm text-foreground">
 
       <div className="flex gap-1.5">
         <button
@@ -147,7 +147,7 @@ export function SidebarGenerate() {
           disabled={ideasLoading || busy}
           onClick={() => void fetchIdeas()}
           className={cn(
-            "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full bg-muted px-2.5 text-xs transition-colors",
+            "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full bg-muted px-2.5 text-sm transition-colors",
             "hover:bg-muted/80 disabled:opacity-40",
           )}
         >
@@ -162,7 +162,7 @@ export function SidebarGenerate() {
           type="button"
           disabled={ideasLoading || busy}
           onClick={surpriseTheme}
-          className="flex h-8 items-center justify-center gap-1.5 rounded-full bg-muted px-3 text-xs transition-colors hover:bg-muted/80 disabled:opacity-40"
+          className="flex h-8 items-center justify-center gap-1.5 rounded-full bg-muted px-3 text-sm transition-colors hover:bg-muted/80 disabled:opacity-40"
           title="Surprise theme"
         >
           <Dices className="size-3.5" />
@@ -227,7 +227,7 @@ export function SidebarGenerate() {
           placeholder="Seed a niche, or paste a full carousel brief…"
           rows={3}
           disabled={busy}
-          className="w-full resize-none rounded-xl bg-muted/30 px-3 py-2 text-xs leading-relaxed outline-none placeholder:text-muted-foreground focus:bg-muted/50 disabled:opacity-50"
+          className="w-full resize-none rounded-xl bg-muted/30 px-3 py-2 text-sm leading-relaxed outline-none placeholder:text-muted-foreground focus:bg-muted/50 disabled:opacity-50"
         />
       </label>
 
@@ -291,7 +291,7 @@ export function SidebarGenerate() {
             if (!Number.isFinite(next)) return;
             setSlides(Math.min(20, Math.max(1, Math.round(next))));
           }}
-          className="h-8 w-full rounded-full bg-muted/30 px-3 text-xs outline-none focus:bg-muted/50 disabled:opacity-50"
+          className="h-8 w-full rounded-full bg-muted/30 px-3 text-sm outline-none focus:bg-muted/50 disabled:opacity-50"
         />
       </label>
 
@@ -303,7 +303,7 @@ export function SidebarGenerate() {
           disabled={theme.trim().length < 2 || !manager || !slidesController || busy}
           onClick={() => void generate()}
           className={cn(
-            "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground px-2.5 text-xs text-background transition-opacity",
+            "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground px-2.5 text-sm text-background transition-opacity",
             "disabled:opacity-40",
           )}
         >
@@ -314,7 +314,7 @@ export function SidebarGenerate() {
           <button
             type="button"
             onClick={cancel}
-            className="h-8 rounded-full bg-muted px-3 text-xs text-foreground transition-colors hover:bg-muted/80"
+            className="h-8 rounded-full bg-muted px-3 text-sm text-foreground transition-colors hover:bg-muted/80"
           >
             Stop
           </button>

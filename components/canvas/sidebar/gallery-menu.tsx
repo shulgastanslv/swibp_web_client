@@ -111,9 +111,9 @@ export function GalleryMenu({
               />
             </form>
           ) : (
-            <p className="text-xs leading-snug font-semibold tracking-tight text-foreground">{title}</p>
+            <p className="text-sm leading-snug font-semibold tracking-tight text-foreground">{title}</p>
           )}
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {createdBy ? `View more by ${createdBy}` : "View more by Swibp"}
           </p>
           {visible.length > 0 ? (
@@ -121,7 +121,7 @@ export function GalleryMenu({
               {visible.map((keyword, index) => (
                 <span
                   key={`${keyword}-${index}`}
-                  className="rounded-full border border-border/80 px-2 py-1 text-xs text-foreground"
+                  className="rounded-full border border-border/80 px-2 py-1 text-sm text-foreground"
                 >
                   {keyword}
                 </span>
@@ -131,7 +131,7 @@ export function GalleryMenu({
           {hidden > 0 ? (
             <button
               type="button"
-              className="mt-2 text-xs text-violet-600 hover:underline dark:text-violet-300"
+              className="mt-2 text-sm text-violet-600 hover:underline dark:text-violet-300"
               onClick={() => setShowAllKeywords(true)}
             >
               Show all keywords
@@ -143,7 +143,7 @@ export function GalleryMenu({
        
         {canRename && onRename ? (
           <DropdownMenuItem
-            className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-xs"
+            className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-sm"
             onSelect={(event) => {
               event.preventDefault();
               setDraft(title);
@@ -155,7 +155,7 @@ export function GalleryMenu({
           </DropdownMenuItem>
         ) : null}
         {onDuplicate ? (
-          <DropdownMenuItem className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-xs" onClick={onDuplicate}>
+          <DropdownMenuItem className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-sm" onClick={onDuplicate}>
             <Copy className="size-4" />
             Duplicate
           </DropdownMenuItem>
@@ -163,7 +163,7 @@ export function GalleryMenu({
         {onDelete ? (
           <DropdownMenuItem
             variant="destructive"
-            className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-xs"
+            className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-sm"
             onClick={onDelete}
           >
             <Trash2 className="size-4" />

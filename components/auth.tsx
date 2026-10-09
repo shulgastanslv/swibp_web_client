@@ -257,12 +257,12 @@ export function AuthModal({
 
           {/* Error banner */}
           {errorMessage && (
-            <div className="mb-4 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive text-center">
+            <div className="mb-4 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive text-center">
               {errorMessage}
               {unverifiedEmail && (
                 <button
                   type="button"
-                  className="mt-2 block w-full text-xs font-medium text-foreground underline-offset-4 hover:underline"
+                  className="mt-2 block w-full text-sm font-medium text-foreground underline-offset-4 hover:underline"
                   onClick={() => {
                     setIsLoading(true);
                     void sendVerificationEmail(unverifiedEmail).then((res) => {
@@ -284,7 +284,7 @@ export function AuthModal({
           )}
 
           {infoMessage && (
-            <div className="mb-4 rounded-xl bg-muted px-3 py-3 text-center text-xs text-foreground">
+            <div className="mb-4 rounded-xl bg-muted px-3 py-3 text-center text-sm text-foreground">
               {infoMessage}
             </div>
           )}
@@ -296,7 +296,7 @@ export function AuthModal({
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
                   Welcome back
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-sm text-muted-foreground">
                   Sign in and pick up right where you left off.
                 </DialogDescription>
               </DialogHeader>
@@ -304,7 +304,7 @@ export function AuthModal({
               <Button
                 variant="outline"
                 type="button"
-                className="w-full h-10 rounded-full text-xs font-medium transition-all mb-6 flex items-center justify-center gap-2 border-input bg-muted/50 hover:bg-accent"
+                className="w-full h-10 rounded-full text-sm font-medium transition-all mb-6 flex items-center justify-center gap-2 border-input bg-muted/50 hover:bg-accent"
                 onClick={handleGoogleSignIn}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -320,7 +320,7 @@ export function AuthModal({
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
                     Email
                   </label>
                   <Input
@@ -334,13 +334,13 @@ export function AuthModal({
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-medium text-foreground">
+                    <label className="text-sm font-medium text-foreground">
                       Password
                     </label>
                     <button
                       type="button"
                       onClick={() => handleSwitchView("forgot-password")}
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors bg-transparent p-0"
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors bg-transparent p-0"
                     >
                       Forgot password?
                     </button>
@@ -358,13 +358,13 @@ export function AuthModal({
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold mt-2"
+                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold mt-2"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign in"}
                 </Button>
               </form>
 
-              <div className="text-center mt-6 text-xs text-muted-foreground">
+              <div className="text-center mt-6 text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}
                 <button
                   type="button"
@@ -384,7 +384,7 @@ export function AuthModal({
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
                   Create an account
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-sm text-muted-foreground">
                   Sign up to get started and create carousels.
                 </DialogDescription>
               </DialogHeader>
@@ -392,7 +392,7 @@ export function AuthModal({
               <Button
                 variant="outline"
                 type="button"
-                className="w-full h-10 rounded-full text-xs font-medium transition-all mb-6 flex items-center justify-center gap-2 border-input bg-muted/50 hover:bg-accent"
+                className="w-full h-10 rounded-full text-sm font-medium transition-all mb-6 flex items-center justify-center gap-2 border-input bg-muted/50 hover:bg-accent"
                 onClick={handleGoogleSignIn}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -408,7 +408,7 @@ export function AuthModal({
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
                     Full Name
                   </label>
                   <Input
@@ -421,7 +421,7 @@ export function AuthModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
                     Email
                   </label>
                   <Input
@@ -434,7 +434,7 @@ export function AuthModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
                     Password
                   </label>
                   <Input
@@ -450,13 +450,13 @@ export function AuthModal({
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold mt-2"
+                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold mt-2"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create account"}
                 </Button>
               </form>
 
-              <div className="text-center mt-6 text-xs text-muted-foreground">
+              <div className="text-center mt-6 text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <button
                   type="button"
@@ -476,14 +476,14 @@ export function AuthModal({
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
                   Reset password
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-sm text-muted-foreground">
                   Enter your email and we&apos;ll send you a link to reset your password.
                 </DialogDescription>
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div>
-                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
                     Email
                   </label>
                   <Input
@@ -499,13 +499,13 @@ export function AuthModal({
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold mt-2"
+                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold mt-2"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send reset link"}
                 </Button>
               </form>
 
-              <div className="text-center mt-6 text-xs text-muted-foreground">
+              <div className="text-center mt-6 text-sm text-muted-foreground">
                 Remember your password?{" "}
                 <button
                   type="button"
@@ -524,14 +524,14 @@ export function AuthModal({
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
                   Choose a new password
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-sm text-muted-foreground">
                   This link works once and expires in one hour.
                 </DialogDescription>
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div>
-                  <label className="block text-xs font-medium text-foreground mb-1.5">
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
                     New password
                   </label>
                   <Input
@@ -548,7 +548,7 @@ export function AuthModal({
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold mt-2"
+                  className="w-full h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold mt-2"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update password"}
                 </Button>
@@ -562,7 +562,7 @@ export function AuthModal({
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
                   Check your email
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-sm text-muted-foreground">
                   {checkKind === "verify"
                     ? "Open the confirmation link, then come back and sign in."
                     : "Open the reset link in the message to choose a new password."}
@@ -572,7 +572,7 @@ export function AuthModal({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-10 rounded-full text-xs"
+                className="w-full h-10 rounded-full text-sm"
                 onClick={() => handleSwitchView("login")}
               >
                 Back to Sign in
@@ -591,7 +591,7 @@ const Divider = ({ text }: { text: string }) => (
     <div className="absolute inset-0 flex items-center">
       <div className="w-full border-t border-border" />
     </div>
-    <span className="relative px-3 text-xs tracking-wider uppercase text-muted-foreground font-semibold bg-background">
+    <span className="relative px-3 text-sm tracking-wider uppercase text-muted-foreground font-semibold bg-background">
       {text}
     </span>
   </div>

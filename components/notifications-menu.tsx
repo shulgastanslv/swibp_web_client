@@ -52,11 +52,11 @@ export function NotificationsMenu() {
           ) : null}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-72 p-2 text-xs">
-        <DropdownMenuLabel className="text-xs font-semibold">Notifications</DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="w-72 p-2 text-sm">
+        <DropdownMenuLabel className="text-sm font-semibold">Notifications</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {items.length === 0 ? (
-          <div className="py-4 text-center text-xs text-muted-foreground">No new notifications</div>
+          <div className="py-4 text-center text-sm text-muted-foreground">No new notifications</div>
         ) : (
           <ul className="max-h-80 space-y-2 overflow-y-auto">
             {items.map((item) => (

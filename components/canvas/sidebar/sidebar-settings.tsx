@@ -14,7 +14,7 @@ export function SidebarSettings({ showDotGrid, setShowDotGrid }: SidebarSettings
   const setAutoSave = useCanvasStore((state) => state.setAutoSave);
 
   return (
-    <div className="flex flex-col gap-3 text-xs">
+    <div className="flex flex-col gap-3 text-sm">
       <span className="text-muted-foreground font-medium">Canvas Preferences</span>
       <label className="flex items-center justify-between bg-muted/30 p-2.5 rounded-xl border border-border/40 cursor-pointer">
         <span>Show dot grid background</span>

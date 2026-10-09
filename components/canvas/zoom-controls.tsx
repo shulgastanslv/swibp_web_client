@@ -44,7 +44,7 @@ export function ZoomControls() {
       </Button>
       <button
         type="button"
-        className="w-12 text-center font-mono text-xs text-foreground hover:text-primary"
+        className="w-12 text-center font-mono text-sm text-foreground hover:text-primary"
         onClick={() => setZoom(100)}
         title="Reset zoom. Ctrl + scroll also zooms"
       >

@@ -177,7 +177,7 @@ export function PublishTemplateDialog({
           <DialogTitle className="text-base font-semibold tracking-tight">
             Publish
           </DialogTitle>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {slides.length} slide{slides.length === 1 ? "" : "s"} · {currentRatio}
           </p>
         </DialogHeader>
@@ -204,12 +204,12 @@ export function PublishTemplateDialog({
                       className="max-h-36 max-w-full object-contain"
                     />
                   ) : (
-                    <p className="px-4 text-center text-xs text-muted-foreground">
+                    <p className="px-4 text-center text-sm text-muted-foreground">
                       First slide preview unavailable
                     </p>
                   )}
                 </div>
-                <p className="px-3 py-2 text-xs text-muted-foreground">
+                <p className="px-3 py-2 text-sm text-muted-foreground">
                   Preview is the first slide
                 </p>
               </div>
@@ -230,7 +230,7 @@ export function PublishTemplateDialog({
                     disabled={loading}
                     onClick={() => setCategory(item.id)}
                     className={cn(
-                      "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs transition-colors",
+                      "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm transition-colors",
                       category === item.id
                         ? "bg-foreground text-background"
                         : "bg-muted/50 text-muted-foreground hover:text-foreground",
@@ -243,7 +243,7 @@ export function PublishTemplateDialog({
               </div>
             </div>
 
-            {error && <p className="text-xs text-destructive">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button
               type="button"

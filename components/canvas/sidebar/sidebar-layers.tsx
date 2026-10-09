@@ -226,9 +226,9 @@ export function SidebarLayers() {
   };
 
   return (
-    <div className="flex flex-col gap-0.5 text-xs">
+    <div className="flex flex-col gap-0.5 text-sm">
       {rows.length === 0 && (
-        <p className="px-2 py-6 text-center text-xs text-muted-foreground">
+        <p className="px-2 py-6 text-center text-sm text-muted-foreground">
           No objects yet. Add elements from the Elements tab.
         </p>
       )}
@@ -316,7 +316,7 @@ export function SidebarLayers() {
                     }
                   }}
                   placeholder={layerLabel(obj)}
-                  className="h-5 min-w-0 flex-1 rounded-md bg-background px-1 text-xs text-foreground outline-none ring-1 ring-border"
+                  className="h-5 min-w-0 flex-1 rounded-md bg-background px-1 text-sm text-foreground outline-none ring-1 ring-border"
                 />
               ) : (
                 <span className="min-w-0 flex-1 truncate max-w-40">{layerLabel(obj)}</span>

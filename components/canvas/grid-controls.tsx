@@ -29,7 +29,7 @@ function CountField({
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-sm text-muted-foreground">{label}</span>
       <Input
         type="number"
         min={min}
@@ -39,7 +39,7 @@ function CountField({
           const n = Number(e.target.value);
           if (Number.isFinite(n)) onChange(n);
         }}
-        className="h-8 w-16 rounded-full text-xs text-center px-2 bg-muted/40 border-0 shadow-none tabular-nums"
+        className="h-8 w-16 rounded-full text-sm text-center px-2 bg-muted/40 border-0 shadow-none tabular-nums"
       />
     </div>
   );
@@ -128,10 +128,10 @@ export function GridControls({ menuSide = "bottom" }: { menuSide?: "bottom" | "r
           <div className="px-3.5 py-3 border-b border-border/40">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold text-foreground">
+                <p className="text-sm font-semibold text-foreground">
                   Layout grid
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   Columns, rows, margin
                 </p>
               </div>
@@ -164,8 +164,8 @@ export function GridControls({ menuSide = "bottom" }: { menuSide?: "bottom" | "r
 
             <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 px-3 py-2.5">
               <div className="min-w-0">
-                <p className="text-xs font-medium text-foreground">Snap</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm font-medium text-foreground">Snap</p>
+                <p className="text-sm text-muted-foreground">
                   Snap to grid lines
                 </p>
               </div>

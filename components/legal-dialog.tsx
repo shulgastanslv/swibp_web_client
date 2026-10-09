@@ -175,14 +175,14 @@ export function LegalDialog({ kind, open, onOpenChange }: LegalDialogProps) {
       <DialogContent className="gap-0 overflow-hidden rounded-2xl border-border/70 p-0 sm:max-w-lg">
         <DialogHeader className="border-b border-border/40 px-5 pt-4 pb-3 text-left">
           <DialogTitle className="text-sm font-semibold tracking-tight">{copy.title}</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">{copy.intro}</DialogDescription>
+          <DialogDescription className="text-sm text-muted-foreground">{copy.intro}</DialogDescription>
         </DialogHeader>
         <div className="max-h-[min(70vh,560px)] space-y-4 overflow-y-auto px-5 py-4">
           {copy.sections.map((section) => (
             <section key={section.heading} className="space-y-1.5">
-              <h3 className="text-xs font-medium text-foreground">{section.heading}</h3>
+              <h3 className="text-sm font-medium text-foreground">{section.heading}</h3>
               {section.paragraphs.map((paragraph) => (
-                <p key={paragraph} className="text-xs leading-relaxed text-muted-foreground">
+                <p key={paragraph} className="text-sm leading-relaxed text-muted-foreground">
                   {paragraph}
                 </p>
               ))}

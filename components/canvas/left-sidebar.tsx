@@ -130,7 +130,7 @@ export function LeftSidebar({
                 <Button
                   variant={activeNav === id ? "secondary" : "ghost"}
                   size="icon"
-                  className="w-8 h-8 rounded-lg text-xs font-medium tracking-tight"
+                  className="w-8 h-8 rounded-lg text-sm font-medium tracking-tight"
                   aria-label={label}
                   onClick={() => {
                     setActiveNav(id);
@@ -184,7 +184,7 @@ export function LeftSidebar({
           isLeftCollapsed ? "w-0 opacity-0" : "w-72 opacity-100"
         }`}
       >
-        <div className="h-8 flex items-center px-4 text-xs font-semibold tracking-tight text-foreground border-b border-border/40 shrink-0">
+        <div className="h-8 flex items-center px-4 text-sm font-semibold tracking-tight text-foreground border-b border-border/40 shrink-0">
           {PANEL_TITLES[activeNav] ?? activeNav}
         </div>
 
@@ -207,7 +207,7 @@ export function LeftSidebar({
           {activeNav === "tools" && <SidebarTools />}
           {activeNav === "generate" && <SidebarGenerate />}
         </ScrollArea>
-        <div className="px-4 py-2 border-t border-border/40 shrink-0 flex items-center justify-start gap-2 text-xs text-muted-foreground">
+        <div className="px-4 py-2 border-t border-border/40 shrink-0 flex items-center justify-start gap-2 text-sm text-muted-foreground">
           <button
             type="button"
             onClick={() => setLegal("terms")}

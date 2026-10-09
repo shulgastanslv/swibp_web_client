@@ -7,9 +7,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Swibp — ИИ собирает карусели",
-  description:
-    "Опишите тему, и ИИ создаст карусель: обложка, середина и финал в одном стиле.",
+  title: "Swibp — карусели из одной идеи",
+  description: "Тема → карусель. Обложка, середина, финал. Правки в студии.",
 };
 
 export default function MarketingLayout({

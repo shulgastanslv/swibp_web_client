@@ -185,7 +185,7 @@ export function SidebarBackground() {
   };
 
   return (
-    <div className="flex min-w-0 flex-col overflow-hidden text-xs text-foreground">
+    <div className="flex min-w-0 flex-col overflow-hidden text-sm text-foreground">
       <CollapsibleGroup id="background-split" title="Screen split">
         <ScreenSplit />
       </CollapsibleGroup>
@@ -197,7 +197,7 @@ export function SidebarBackground() {
             <TabsTrigger
               key={item.id}
               value={item.id}
-              className="rounded-full text-xs shadow-none data-active:border-transparent dark:data-active:border-transparent"
+              className="rounded-full text-sm shadow-none data-active:border-transparent dark:data-active:border-transparent"
             >
               {item.label}
             </TabsTrigger>
@@ -291,7 +291,7 @@ export function SidebarBackground() {
             >
               <UploadCloud className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Upload</span>
-              <span className="text-xs text-muted-foreground">Drop or click</span>
+              <span className="text-sm text-muted-foreground">Drop or click</span>
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5">
@@ -314,7 +314,7 @@ export function SidebarBackground() {
                       void applyImageFromUrl();
                     }
                   }}
-                  className="h-8 text-xs"
+                  className="h-8 text-sm"
                 />
                 <Button
                   type="button"
@@ -330,7 +330,7 @@ export function SidebarBackground() {
                   )}
                 </Button>
               </div>
-              {urlError && <p className="text-xs text-destructive">{urlError}</p>}
+              {urlError && <p className="text-sm text-destructive">{urlError}</p>}
             </div>
           </div>
         </TabsContent>
@@ -358,7 +358,7 @@ export function SidebarBackground() {
                 setSlidePalette(id === "slide" ? useCanvasStore.getState().palette : null);
               }}
               className={cn(
-                "h-7 flex-1 rounded-full text-xs transition-colors",
+                "h-7 flex-1 rounded-full text-sm transition-colors",
                 paletteScope === id ? "bg-background text-foreground shadow-xs" : "text-muted-foreground",
               )}
             >

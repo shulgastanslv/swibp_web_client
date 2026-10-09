@@ -47,7 +47,7 @@ function Segmented<T extends string | number>({
           disabled={disabled}
           onClick={() => onChange(opt.value)}
           className={cn(
-            "h-8 flex-1 rounded-full text-xs transition-colors",
+            "h-8 flex-1 rounded-full text-sm transition-colors",
             value === opt.value
               ? "bg-background text-foreground shadow-xs font-medium"
               : "text-muted-foreground hover:text-foreground",
@@ -157,7 +157,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           <DialogTitle className="text-base font-semibold tracking-tight">
             Export
           </DialogTitle>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {scope === "marked"
               ? `${exportSlides.length} of ${slides.length} marked`
               : `${slides.length} slide${slides.length === 1 ? "" : "s"}`}
@@ -207,7 +207,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
             ]}
           />
           {scope === "marked" && exportSlides.length === 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Mark slides with the corner check on the strip.
             </p>
           )}
@@ -215,7 +215,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
         {(exporting || done) && (
           <div className="space-y-1.5">
-            <div className="flex justify-between text-xs text-muted-foreground">
+            <div className="flex justify-between text-sm text-muted-foreground">
               <span>{done ? "Done" : "Rendering…"}</span>
               <span className="tabular-nums">{progress}%</span>
             </div>
@@ -228,7 +228,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           </div>
         )}
 
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button
           type="button"

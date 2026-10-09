@@ -25,7 +25,7 @@ const AUDIENCES: Audience[] = [
     handle: "релиз",
     avatar: "/landing/slide-mid.jpg",
     post: "Карусель про выкладку: что проверить и чем закончить.",
-    text: "Релиз, разбор и настройка окружения ложатся в кадры. Читатель идёт по шагам, а не по простыне.",
+    text: "Один шаг — один кадр.",
     panel: "#e4ebff",
     slides: [
       {
@@ -52,7 +52,7 @@ const AUDIENCES: Audience[] = [
     handle: "лента",
     avatar: "/landing/slide-cover.jpg",
     post: "Рубрика на шесть кадров. Обложка, объяснение, финал.",
-    text: "Рубрика собирается сразу: крючок на обложке, пояснение в середине и следующий шаг в конце.",
+    text: "Рубрика за минуты, не за вечер.",
     panel: "#ffe4ef",
     slides: [
       {
@@ -79,7 +79,7 @@ const AUDIENCES: Audience[] = [
     handle: "запуск",
     avatar: "/landing/slide-end.jpg",
     post: "Запуск в одной карусели: кому, зачем и что дальше.",
-    text: "Запуск объясняется одной каруселью. Обещание, аудитория и следующий шаг звучат одним голосом.",
+    text: "Запуск в одной ленте.",
     panel: "#fff4cc",
     slides: [
       {
@@ -106,7 +106,7 @@ const AUDIENCES: Audience[] = [
     handle: "редакция",
     avatar: "/landing/slide-cover.jpg",
     post: "Один тезис на слайд. Карусель держит ритм колонки.",
-    text: "Колонка становится каруселью: один тезис на кадр, тон не прыгает, финал не размазывает мысль.",
+    text: "Один тезис на кадр.",
     panel: "#efe7ff",
     slides: [
       {
@@ -133,7 +133,7 @@ const AUDIENCES: Audience[] = [
     handle: "продукт",
     avatar: "/landing/slide-end.jpg",
     post: "Зачем продукт, как устроен и куда идти дальше.",
-    text: "Продукт объясняется с обложки. Середина показывает, как это устроено, финал говорит, что сделать.",
+    text: "Продукт без питч-дека.",
     panel: "#e5f6ea",
     slides: [
       {
@@ -185,74 +185,65 @@ export function AudienceBlock() {
 
   return (
     <section id="audiences" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-8 sm:px-6">
-      <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
-        <div>
-          <h2 className="max-w-xl text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Как этим пользуются
-          </h2>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {AUDIENCES.map((item, index) => {
-              const active = index === audience;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => pick(index)}
-                  className={
-                    active
-                      ? "h-11 rounded-full bg-[#14151c] px-4 text-sm font-semibold text-white"
-                      : "h-11 rounded-full bg-white px-4 text-sm font-semibold text-[#14151c]"
-                  }
-                >
-                  {item.name}
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-6 max-w-md text-base leading-relaxed text-[#5c6170]">{role.text}</p>
-          <p className="mt-4 text-sm font-semibold text-[#14151c]">
-            {role.app === "instagram" ? "Instagram" : "Threads"}
-          </p>
-        </div>
+      <div className="mb-6">
+        <p className="text-sm font-bold tracking-wide text-[#2f5bff]">Для кого</p>
+        <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+          Одна студия — разные ленты
+        </h2>
+      </div>
 
-        <div
-          className="flex min-h-[520px] items-center justify-center rounded-[2rem] px-6 py-8 transition-colors duration-500"
-          style={{ background: role.panel }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={role.id}
-              className="w-[230px] sm:w-[250px]"
-              initial={reduce ? false : { opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? undefined : { opacity: 0, y: -12 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <PhoneFrame>
-                {role.app === "instagram" ? (
-                  <InstagramFeed
-                    slides={role.slides}
-                    index={slide}
-                    handle={role.handle}
-                    avatar={role.avatar}
-                  />
-                ) : (
-                  <ThreadsFeed
-                    slides={role.slides}
-                    index={slide}
-                    handle={role.handle}
-                    post={role.post}
-                    avatar={role.avatar}
-                  />
-                )}
-              </PhoneFrame>
-              <p className="mt-3 text-center text-xs font-semibold text-[#14151c]/70">
-                {role.app === "instagram" ? "Instagram" : "Threads"} · {slide + 1}/
-                {role.slides.length}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+      <div
+        className="overflow-hidden rounded-[2rem] px-6 py-10 transition-colors duration-500 sm:rounded-[2.4rem] sm:px-10 sm:py-12"
+        style={{ background: role.panel }}
+      >
+        <div className="grid items-center gap-8 lg:grid-cols-[1fr_0.9fr]">
+          <div>
+            <h3 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+              {role.name}
+            </h3>
+            <p className="mt-3 text-base font-medium text-[#5c6170]">{role.text}</p>
+            <div className="mt-8 flex flex-wrap gap-2">
+              {AUDIENCES.map((item, index) => {
+                const active = index === audience;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => pick(index)}
+                    className={
+                      active
+                        ? "h-10 rounded-full bg-[#14151c] px-4 text-sm font-semibold text-white"
+                        : "h-10 rounded-full bg-white/70 px-4 text-sm font-semibold text-[#14151c]"
+                    }
+                  >
+                    {item.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="relative mx-auto flex min-h-[420px] w-full max-w-[280px] items-end justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={role.id}
+                className="relative z-10 w-[230px] sm:w-[250px]"
+                initial={reduce ? false : { opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduce ? undefined : { opacity: 0, y: -12 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <PhoneFrame className="h-[460px] w-[230px] border-[7px] sm:h-[500px] sm:w-[250px]">
+                  {role.app === "instagram" ? (
+                    <InstagramFeed slides={role.slides} index={slide} />
+                  ) : (
+                    <ThreadsFeed slides={role.slides} index={slide} />
+                  )}
+                </PhoneFrame>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </section>

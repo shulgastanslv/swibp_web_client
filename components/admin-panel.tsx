@@ -44,7 +44,7 @@ function DeskForm({
     >
       <div>
         <h2 className="text-sm font-semibold">{title}</h2>
-        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
       </div>
       <Input
         value={heading}
@@ -65,7 +65,7 @@ function DeskForm({
         <Button type="submit" disabled={busy} className="rounded-full">
           {busy ? <Loader2 className="size-3.5 animate-spin" /> : submitLabel}
         </Button>
-        {message ? <span className="text-xs text-muted-foreground">{message}</span> : null}
+        {message ? <span className="text-sm text-muted-foreground">{message}</span> : null}
       </div>
     </form>
   );
@@ -89,11 +89,11 @@ export function AdminPanel({ email }: { email: string }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Admin</h1>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Signed in as {email}. News goes on the record. Notifications reach every account.
           </p>
         </div>
-        <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
           Back to the studio
         </Link>
       </div>
@@ -123,7 +123,7 @@ export function AdminPanel({ email }: { email: string }) {
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold">News</h2>
         {news.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nothing published yet.</p>
+          <p className="text-sm text-muted-foreground">Nothing published yet.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {news.map((item) => (
@@ -134,7 +134,7 @@ export function AdminPanel({ email }: { email: string }) {
                     {new Date(item.createdAt).toLocaleString()}
                   </time>
                 </div>
-                <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{item.body}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{item.body}</p>
                 {item.authorName ? (
                   <p className="mt-2 text-[10px] text-muted-foreground">{item.authorName}</p>
                 ) : null}

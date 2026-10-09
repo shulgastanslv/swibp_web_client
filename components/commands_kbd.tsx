@@ -108,7 +108,7 @@ export function CommandsKbd() {
             {group.rows.map((row) => (
               <DropdownMenuItem
                 key={`${group.title}-${row.label}-${row.keys}`}
-                className="text-xs"
+                className="text-sm"
                 onSelect={(event) => event.preventDefault()}
               >
                 <span>{row.label}</span>

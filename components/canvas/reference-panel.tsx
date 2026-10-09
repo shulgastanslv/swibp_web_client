@@ -30,7 +30,7 @@ export function ReferencePanel() {
       )}
     >
       <div className="flex h-10 items-center justify-between px-3 border-b border-border/40">
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
           Image
         </span>
         <Button
@@ -69,7 +69,7 @@ export function ReferencePanel() {
               <Button
                 size="sm"
                 variant="secondary"
-                className="h-7 text-xs rounded-full"
+                className="h-7 text-sm rounded-full"
                 onClick={() => fileRef.current?.click()}
                 title="Replace"
               >
@@ -78,7 +78,7 @@ export function ReferencePanel() {
               <Button
                 size="sm"
                 variant="secondary"
-                className="h-7 text-xs rounded-full"
+                className="h-7 text-sm rounded-full"
                 onClick={() => {
                   if (imageUrl.startsWith("blob:")) URL.revokeObjectURL(imageUrl);
                   setImageUrl(null);
@@ -105,7 +105,7 @@ export function ReferencePanel() {
               <UploadCloud className="size-4 text-muted-foreground" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Drag and drop an image or select a file
               </p>
             </div>
