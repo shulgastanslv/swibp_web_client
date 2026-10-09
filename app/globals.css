@@ -156,3 +156,10 @@
         @apply font-sans;
     }
 }
+
+@media (max-width: 767px) {
+    .landing-reveal {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
