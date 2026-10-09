@@ -50,7 +50,7 @@ export function CoverHook({ className }: { className?: string }) {
         <span>01 / 06</span>
       </div>
       <div>
-        <p className="text-sm font-semibold">ИИ собрал серию</p>
+        <p className="text-sm font-semibold">ИИ создал карусель</p>
         <h3 className="mt-2 text-3xl leading-[0.95] font-extrabold sm:text-4xl">
           Карусель
           <br />
@@ -99,14 +99,14 @@ export function CoverClose({ className }: { className?: string }) {
         <span>06 / 06</span>
       </div>
       <div>
-        <p className="text-sm font-semibold">Сохрани серию</p>
+        <p className="text-sm font-semibold">Карусель готова</p>
         <h3 className="mt-2 text-4xl leading-[0.95] font-extrabold">
           Забери
           <br />
-          карусель
+          кадры
         </h3>
         <div className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#14151c]">
-          14 млн иконок
+          6 слайдов
         </div>
       </div>
       <Dots active={5} />

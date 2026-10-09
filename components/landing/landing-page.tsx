@@ -88,7 +88,7 @@ const PLATFORMS = [
   "Pinterest",
   "Карусели",
   "Обложки",
-  "Серии",
+  "Создание каруселей",
 ];
 
 const ICON_SET = [
@@ -109,23 +109,23 @@ const ICON_SET = [
 const CARE = [
   {
     value: "prompt",
-    title: "Серия из описания",
-    body: "Пишете тему и тон. ИИ собирает обложку, середину и финал так, чтобы кадры читались как одна карусель.",
+    title: "Тема, тон и адресат",
+    body: "Пары предложений достаточно: о чём карусель, кому она и как звучит. Макет описывать не нужно.",
   },
   {
-    value: "presets",
-    title: "Библиотека шаблонов",
-    body: "Редакционные пресеты с бейджем, заголовком и плашкой. Берёте каркас и меняете слова.",
+    value: "hook",
+    title: "Обложка с крючком",
+    body: "Первый кадр останавливает ленту. Обещание короткое, его хочется открыть.",
   },
   {
-    value: "layers",
-    title: "Слои без путаницы",
-    body: "Порядок, z-index и подписи объектов живут в боковой панели. Текст, фото и фигуры не теряются друг под другом.",
+    value: "middle",
+    title: "Середина объясняет",
+    body: "Следующие слайды раскрывают мысль по шагам. Нумерация и ритм уже стоят на месте.",
   },
   {
-    value: "icons",
-    title: "14 млн иконок",
-    body: "Поиск по библиотеке рядом с холстом. Знак встаёт на слайд и держит тот же ритм, что и серия.",
+    value: "close",
+    title: "Финал оставляет действие",
+    body: "Последний кадр не повторяет обложку. Он говорит, что сделать дальше.",
   },
 ];
 
@@ -139,14 +139,14 @@ const STORIES = [
   },
   {
     quote:
-      "Раньше карусель разъезжалась между файлами. Теперь серия рождается сразу: обложка, список, финал — один стиль.",
+      "Раньше карусель разъезжалась между файлами. Теперь она создаётся сразу: обложка, список, финал — один стиль.",
     name: "Илья Сергеев",
     role: "Основатель",
     cover: <CoverList />,
   },
   {
     quote:
-      "ИИ закрывает черновик серии. Иконку и формулировку ставлю сам и не собираю кадры с нуля.",
+      "ИИ закрывает черновик карусели. Формулировку ставлю сам и не собираю кадры с нуля.",
     name: "Марина Коваль",
     role: "Дизайнер",
     cover: <CoverClose />,
@@ -167,11 +167,8 @@ export function LandingPage() {
         <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="white" />
         <BackgroundBeams className="opacity-60" />
         <div className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link href="/" className="flex items-center gap-2" aria-label="Swibp">
-            <span className="grid size-9 place-items-center overflow-hidden rounded-xl bg-white">
-              <Logo width={36} height={36} />
-            </span>
-            <span className="text-lg font-extrabold tracking-tight">swibp</span>
+          <Link href="/" className="grid size-9 place-items-center overflow-hidden rounded-xl bg-white" aria-label="Swibp">
+            <Logo width={36} height={36} />
           </Link>
 
           <nav className="hidden items-center gap-7 text-sm font-medium text-white/85 md:flex">
@@ -250,14 +247,14 @@ export function LandingPage() {
               из одной мысли.
             </h1>
             <TextGenerateEffect
-              words="Опишите тему. ИИ соберёт серию слайдов."
+              words="Опишите тему. ИИ создаст карусель."
               duration={0.35}
               className="text-lg font-medium text-white/90 sm:text-2xl"
               spanClassName="text-white/90"
             />
             <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">
-              Обложка, аргументы и финал появляются в одном ритме. Вы правите
-              формулировки, а не собираете каждый кадр с нуля.
+              Модель сама решает, что стоит на обложке, чем объяснять середину и чем
+              закончить. Вы правите формулировки, а не собираете каждый кадр с нуля.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button
@@ -265,7 +262,7 @@ export function LandingPage() {
                 className="h-11 rounded-full bg-white px-5 text-[#1a2f86] hover:bg-white/90"
               >
                 <Link href="/studio">
-                  Сгенерировать серию
+                  Создать карусель
                   <ArrowUpRight />
                 </Link>
               </Button>
@@ -287,27 +284,36 @@ export function LandingPage() {
             Генерация
           </p>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
-            Серия собирается из описания
+            Карусель создаётся из описания
           </h2>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-[#5c6170]">
-            Тема, тон и длина. ИИ раскладывает мысль по кадрам карусели и
-            держит одну типографику от обложки до финала.
+            Тема, тон и адресат. ИИ раскладывает мысль по кадрам и держит один голос от обложки до финала.
           </p>
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-[#f4f2fb] p-4">
-              <p className="text-3xl font-extrabold tracking-tight">14 млн</p>
-              <p className="mt-1 text-xs text-[#5c6170]">иконок в студии</p>
+          <div className="mt-6 rounded-2xl bg-[#f4f2fb] px-4 py-3">
+            <p className="text-[11px] font-semibold tracking-wide text-[#6d4aff]">Промпт</p>
+            <p className="mt-1 text-sm leading-snug">
+              «Объясни карусель за шесть кадров. Спокойно, для редакторов, без жаргона.»
+            </p>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+            <div className="rounded-xl bg-[#f4efe6] p-3">
+              <p className="font-extrabold">01</p>
+              <p className="mt-1 text-[#5c6170]">Крючок</p>
             </div>
-            <div className="rounded-2xl bg-[#f4f2fb] p-4">
-              <p className="text-3xl font-extrabold tracking-tight">1</p>
-              <p className="mt-1 text-xs text-[#5c6170]">мысль на всю серию</p>
+            <div className="rounded-xl bg-[#14151c] p-3 text-white">
+              <p className="font-extrabold">02–05</p>
+              <p className="mt-1 text-white/70">Аргументы</p>
+            </div>
+            <div className="rounded-xl bg-[#e7deff] p-3">
+              <p className="font-extrabold">06</p>
+              <p className="mt-1 text-[#5c6170]">Действие</p>
             </div>
           </div>
           <Link
             href="/studio"
             className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-[#2f5bff]"
           >
-            Собрать серию
+            Создать карусель
             <IconArrowRight className="size-4" />
           </Link>
         </article>
@@ -315,7 +321,7 @@ export function LandingPage() {
         <article className="relative overflow-hidden rounded-[1.7rem] bg-[#17181f] p-6 text-white shadow-[0_20px_60px_rgba(28,32,58,0.12)] sm:p-8">
           <div className="absolute -top-16 -right-10 size-56 rounded-full bg-[#6d4aff]/40 blur-3xl" />
           <p className="relative text-xs font-semibold tracking-wide text-[#c9b6ff]">
-            Серия
+            Карусель
           </p>
           <h2 className="relative mt-2 max-w-xs text-2xl font-extrabold tracking-tight sm:text-3xl">
             Один стиль на все слайды
@@ -342,7 +348,7 @@ export function LandingPage() {
 
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         <p className="text-center text-sm font-medium text-[#6b7080]">
-          Серии, которые уезжают в ленту
+          Карусели, которые уезжают в ленту
         </p>
         <div className="relative mt-6 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
           <div className="flex w-max animate-marquee gap-10 pr-10">
@@ -369,30 +375,23 @@ export function LandingPage() {
           <BentoGridItem
             className="md:col-span-2 bg-white"
             icon={<IconSparkles className="size-5 text-[#2f5bff]" />}
-            title="ИИ собирает слайды"
-            description="Один текст на входе. На выходе обложка, поясняющие кадры и финал с общим ритмом."
+            title="Из одного текста"
+            description="Промпт превращается в план кадров. ИИ сам назначает обложке крючок, середине аргументы, финалу действие."
             header={<PromptHeader />}
           />
           <BentoGridItem
             className="bg-white"
             icon={<IconLayersSubtract className="size-5 text-[#6d4aff]" />}
-            title="Слои"
-            description="Сгенерированную серию можно разобрать: текст, плашка и порядок кадров остаются под рукой."
-            header={<LayersHeader />}
+            title="Один голос"
+            description="Тон, обращение и сила обещания не прыгают от слайда к слайду."
+            header={<ToneHeader />}
           />
           <BentoGridItem
-            className="md:col-span-2 bg-white"
+            className="md:col-span-3 bg-white"
             icon={<IconPhoto className="size-5 text-[#6d4aff]" />}
-            title="Один ритм"
-            description="Обложка, середина и финал читаются как одна карусель, а не набор отдельных картинок."
+            title="Крючок, объяснение, действие"
+            description="Генерация не отдаёт один постер. Карусель читается по порядку: первый кадр останавливает ленту, середина раскрывает мысль, финал оставляет следующий шаг."
             header={<SeriesHeader />}
-          />
-          <BentoGridItem
-            className="bg-white"
-            icon={<Shapes className="size-5 text-[#2f5bff]" />}
-            title="14 млн иконок"
-            description="Библиотека открыта в студии. Знак ищется и встаёт на кадр."
-            header={<IconsHeader />}
           />
         </BentoGrid>
       </section>
@@ -409,7 +408,7 @@ export function LandingPage() {
               </h2>
               <p className="mt-3 text-lg font-medium text-white/85">иконок в студии</p>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-white/60">
-                Поиск открыт рядом с холстом. Знак встаёт на слайд и остаётся в том же ритме, что и серия.
+                Поиск открыт рядом с холстом. Знак встаёт на кадр и остаётся в том же ритме, что и карусель.
               </p>
               <Link
                 href="/studio"
@@ -435,13 +434,12 @@ export function LandingPage() {
 
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2">
         <div>
-          <p className="text-sm font-semibold text-[#6d4aff]">Черновик</p>
+          <p className="text-sm font-semibold text-[#6d4aff]">Генерация</p>
           <h2 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
-            ИИ закрывает черновик серии
+            Как ИИ создаёт карусель
           </h2>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-[#5c6170] sm:text-base">
-            Вы приносите тему. Swibp раскладывает её по слайдам карусели и
-            оставляет кадры, которые можно поправить.
+            Вы приносите тему. Модель раскладывает её по кадрам и оставляет текст, который можно поправить.
           </p>
           <Accordion
             type="single"
@@ -475,17 +473,17 @@ export function LandingPage() {
               {
                 n: "01",
                 title: "Опишите тему",
-                text: "Пара предложений: о чём серия, для кого и какой тон. Этого достаточно, чтобы начать.",
+                text: "Пара предложений: о чём карусель, для кого и какой тон. Этого достаточно, чтобы начать.",
               },
               {
                 n: "02",
-                title: "ИИ собирает слайды",
-                text: "Появляются обложка, поясняющие кадры и финал. Нумерация и ритм уже стоят на месте.",
+                title: "ИИ раскладывает мысль",
+                text: "Обложка получает крючок, середина — аргументы, финал — действие. Голос на всех кадрах один.",
               },
               {
                 n: "03",
                 title: "Поправьте и заберите",
-                text: "Уточните формулировки и поставьте иконку из библиотеки.",
+                text: "Уточните формулировки. Карусель уже собрана, кадры не нужно собирать заново.",
               },
             ].map((step) => (
               <li
@@ -507,19 +505,19 @@ export function LandingPage() {
             className="flex h-full flex-col justify-between py-10"
           >
             <div>
-              <p className="text-sm font-semibold text-white/80">Генерация открыта</p>
+              <p className="text-sm font-semibold text-white/80">Пример промпта</p>
               <p className="mt-3 max-w-xs text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-                Опишите тему и получите серию
+                «Спокойно объясни, зачем нужна карусель»
               </p>
               <p className="mt-3 max-w-sm text-sm text-white/80">
-                Черновик карусели появляется в студии. Аккаунт нужен, чтобы сохранить проект.
+                ИИ отдаёт шесть кадров одним голосом: крючок, аргументы и финал. Проект сохраняется в аккаунте.
               </p>
             </div>
             <Link
               href="/studio"
               className="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#3a2a78]"
             >
-              Сгенерировать
+              Создать карусель
               <ArrowUpRight className="size-4" />
             </Link>
           </WobbleCard>
@@ -534,12 +532,11 @@ export function LandingPage() {
               Обложка, середина и финал
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#5c6170] sm:text-base">
-              Генерация не отдаёт один постер. Это карусель: первый кадр
-              цепляет, следующие объясняют, последний оставляет действие.
+              Так выглядит созданная карусель. Обложка останавливает, середина объясняет, финал оставляет действие.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <StatPill value="14 млн" label="иконок" />
-              <StatPill value="ИИ" label="черновик серии" />
+              <StatPill value="1 промпт" label="на всю карусель" />
+              <StatPill value="6 кадров" label="крючок, аргументы, финал" />
             </div>
           </div>
           <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-5 sm:grid-cols-3">
@@ -621,14 +618,14 @@ export function LandingPage() {
             Опишите тему. Заберите карусель.
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-sm text-[#3c345c] sm:text-base">
-            ИИ соберёт слайды серии. Вы поправите текст и скачаете кадры.
+            ИИ создаст карусель. Вы поправите текст и скачаете кадры.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/studio"
               className="inline-flex h-11 items-center rounded-full bg-[#14151c] px-5 text-sm font-semibold text-white"
             >
-              Сгенерировать серию
+              Создать карусель
             </Link>
             <button
               type="button"
@@ -638,28 +635,6 @@ export function LandingPage() {
               Войти
             </button>
           </div>
-        </div>
-      </section>
-
-      <section id="partner" className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-col gap-8 border-y border-black/10 py-14 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-xl">
-            <p className="text-xs font-semibold tracking-[0.22em] text-[#6d4aff] uppercase">
-              Сотрудничество
-            </p>
-            <h2 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
-              Сотрудничать с нами
-            </h2>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-[#5c6170] sm:text-base">
-              Брендам, редакциям и студиям. Напишите, если хотите собирать карусели вместе.
-            </p>
-          </div>
-          <a
-            href="mailto:hello@swibp.app"
-            className="inline-flex h-11 w-fit items-center rounded-full bg-[#14151c] px-5 text-sm font-semibold text-white"
-          >
-            hello@swibp.app
-          </a>
         </div>
       </section>
 
@@ -677,9 +652,6 @@ export function LandingPage() {
             </a>
             <a href="#how" className="hover:text-[#14151c]">
               Как это работает
-            </a>
-            <a href="#partner" className="hover:text-[#14151c]">
-              Сотрудничество
             </a>
           </nav>
           <p className="text-xs text-[#8b90a0]">© {new Date().getFullYear()}</p>
@@ -700,29 +672,36 @@ function StatPill({ value, label }: { value: string; label: string }) {
 
 function PromptHeader() {
   return (
-    <div className="flex h-full min-h-36 flex-col justify-between rounded-xl bg-[#f4f2fb] p-4">
-      <p className="rounded-xl bg-white px-3 py-2 text-sm text-[#14151c]">
-        «Как объяснить карусель за 6 слайдов»
+    <div className="flex h-full min-h-36 flex-col justify-between rounded-xl bg-[#14151c] p-4 text-white">
+      <p className="text-[11px] font-semibold tracking-wide text-white/45">Промпт</p>
+      <p className="text-sm leading-snug">
+        Объясни карусель за 6 кадров. Спокойно, для редакторов, без жаргона.
       </p>
-      <div className="mt-3 flex gap-2">
-        <span className="rounded-lg bg-[#f4efe6] px-2 py-1 text-[11px] font-semibold">01 обложка</span>
-        <span className="rounded-lg bg-[#14151c] px-2 py-1 text-[11px] font-semibold text-white">02 список</span>
-        <span className="rounded-lg bg-[#e7deff] px-2 py-1 text-[11px] font-semibold">06 финал</span>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <span className="rounded-lg bg-white/10 px-2 py-1 text-[11px] font-semibold">обложка</span>
+        <span className="rounded-lg bg-[#2f5bff] px-2 py-1 text-[11px] font-semibold">аргументы</span>
+        <span className="rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-[#14151c]">финал</span>
       </div>
     </div>
   );
 }
 
-function LayersHeader() {
+function ToneHeader() {
+  const rows = [
+    ["Тон", "спокойный"],
+    ["Для кого", "редакция"],
+    ["Голос", "один на все кадры"],
+  ];
+
   return (
     <div className="flex h-full min-h-28 flex-col justify-center gap-2 rounded-xl bg-[#f4f2fb] p-4">
-      {["Заголовок", "Фото", "Плашка"].map((layer, index) => (
+      {rows.map(([label, value]) => (
         <div
-          key={layer}
+          key={label}
           className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-xs"
         >
-          <span>{layer}</span>
-          <span className="text-[#8b90a0]">{index + 1}</span>
+          <span className="text-[#8b90a0]">{label}</span>
+          <span className="font-semibold">{value}</span>
         </div>
       ))}
     </div>
@@ -730,25 +709,21 @@ function LayersHeader() {
 }
 
 function SeriesHeader() {
-  return (
-    <div className="flex h-full min-h-28 items-end gap-3 rounded-xl bg-[#f4f2fb] p-4">
-      <span className="rounded-xl bg-[#f4efe6] px-3 py-2 text-xs font-semibold">01 обложка</span>
-      <span className="rounded-xl bg-[#14151c] px-3 py-2 text-xs font-semibold text-white">02 середина</span>
-      <span className="rounded-xl bg-[#e7deff] px-3 py-2 text-xs font-semibold">06 финал</span>
-    </div>
-  );
-}
+  const beats = [
+    ["01", "Крючок", "Обещание, которое хочется открыть", "bg-[#f4efe6]"],
+    ["02–05", "Объяснение", "Мысль по шагам, один ритм", "bg-white"],
+    ["06", "Действие", "Что сделать после последнего кадра", "bg-[#e7deff]"],
+  ];
 
-function IconsHeader() {
   return (
-    <div className="flex h-full min-h-28 flex-col justify-between rounded-xl bg-[#14151c] p-4 text-white">
-      <p className="text-3xl font-extrabold tracking-tight">14 млн</p>
-      <div className="flex gap-2 text-white/80">
-        <IconSparkles className="size-4" />
-        <IconHeart className="size-4" />
-        <IconStar className="size-4" />
-        <IconBolt className="size-4" />
-      </div>
+    <div className="grid h-full min-h-28 gap-2 rounded-xl bg-[#f4f2fb] p-3 sm:grid-cols-3">
+      {beats.map(([n, title, text, tone]) => (
+        <div key={n} className={`rounded-xl p-3 ${tone}`}>
+          <p className="text-[11px] font-semibold text-[#6d4aff]">{n}</p>
+          <p className="mt-1 text-sm font-bold">{title}</p>
+          <p className="mt-1 text-xs leading-relaxed text-[#5c6170]">{text}</p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -761,13 +736,13 @@ function CareVisual() {
         <CoverHook />
       </div>
       <div className="absolute top-8 right-0 rounded-2xl bg-white px-3 py-2 text-xs font-semibold shadow-lg">
-        Превью ленты
+        Тон: спокойный
       </div>
       <div className="absolute bottom-10 left-0 rounded-2xl bg-[#14151c] px-3 py-2 text-xs font-semibold text-white shadow-lg">
-        Слой: заголовок
+        Кадр 01 · крючок
       </div>
       <div className="absolute right-4 bottom-6 rounded-full bg-[#2f5bff] px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg">
-        Экспорт
+        Черновик
       </div>
     </div>
   );
