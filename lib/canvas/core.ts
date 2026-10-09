@@ -1,4 +1,5 @@
 import { Canvas } from "fabric";
+import "./fabric-props";
 
 export class CanvasCore {
   public canvas: Canvas;
@@ -23,11 +24,20 @@ export class CanvasCore {
    * nativeW/nativeH are the logical canvas dimensions (e.g. 1080×1080).
    */
   setZoom(scale: number, nativeW: number, nativeH: number) {
+    const width = Math.max(1, Math.round(nativeW * scale));
+    const height = Math.max(1, Math.round(nativeH * scale));
+    if (
+      this.canvas.width === width &&
+      this.canvas.height === height &&
+      Math.abs(this.canvas.getZoom() - scale) < 1e-4
+    ) {
+      return;
+    }
     this.canvas.setZoom(scale);
-    this.canvas.setDimensions({
-      width: Math.round(nativeW * scale),
-      height: Math.round(nativeH * scale),
-    });
+    // setDimensions clears the bitmap and only schedules a paint.
+    // Draw in this turn so the cleared frame never reaches the screen.
+    this.canvas.setDimensions({ width, height });
+    this.canvas.renderAll();
   }
 
   clear() {

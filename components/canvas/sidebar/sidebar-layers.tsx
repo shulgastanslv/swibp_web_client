@@ -1,123 +1,433 @@
 "use client";
 
-import React, { useState } from "react";
-import { Eye, X, GripVertical } from "lucide-react";
-import { Object as FabricObject } from "fabric";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  ChevronsDown,
+  ChevronsUp,
+  Copy,
+  Eye,
+  EyeOff,
+  Folder,
+  Image as ImageIcon,
+  Lock,
+  MoreHorizontal,
+  Pencil,
+  Square,
+  Trash2,
+  Type,
+  Unlock,
+  Ungroup,
+} from "lucide-react";
+import { ActiveSelection, type FabricObject } from "fabric";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { useCanvasManager } from "@/context/canvas-manager";
+import { useCanvasObjects } from "@/hooks/use-canvas-objects";
+import { ungroupSelection } from "@/lib/canvas/group";
+import {
+  ensureLayerId,
+  isInside,
+  isLayerGroup,
+  isLayerLocked,
+  isUserLayer,
+  layerLabel,
+  layerParent,
+  moveLayerStep,
+  placeLayer,
+  prepareGroups,
+  removeLayer,
+  setLayerLocked,
+  setLayerName,
+  setLayerVisible,
+  type LayerObject,
+} from "@/lib/canvas/layers";
 
-interface SidebarLayersProps {
-  canvasObjects: FabricObject[];
-  selectObject: (obj: FabricObject) => void;
-  deleteObject: (obj: FabricObject) => void;
-  getObjectLabel: (obj: FabricObject) => string;
-  reorderObjects: (fromIndex: number, toIndex: number) => void;
+type DropEdge = "before" | "after" | "inside";
+
+type DropMark = {
+  id: string;
+  edge: DropEdge;
+};
+
+function layerGlyph(obj: FabricObject) {
+  const type = obj.type;
+  if (type === "group") return Folder;
+  if (type === "image") return ImageIcon;
+  if (type === "text" || type === "i-text" || type === "textbox") return Type;
+  return Square;
 }
 
-export function SidebarLayers({
-  canvasObjects,
-  selectObject,
-  deleteObject,
-  getObjectLabel,
-  reorderObjects,
-}: SidebarLayersProps) {
+function flatten(objects: FabricObject[], collapsed: Set<string>, depth = 0): { obj: FabricObject; depth: number }[] {
+  const rows: { obj: FabricObject; depth: number }[] = [];
+  for (const obj of objects.filter(isUserLayer).slice().reverse()) {
+    rows.push({ obj, depth });
+    const id = (obj as LayerObject).swibpId;
+    if (isLayerGroup(obj) && obj.getObjects().some(isUserLayer) && !(id && collapsed.has(id))) {
+      rows.push(...flatten(obj.getObjects(), collapsed, depth + 1));
+    }
+  }
+  return rows;
+}
 
-  const displayItems = [...canvasObjects].reverse();
-  const total = displayItems.length;
+function isRowSelected(active: FabricObject | null, obj: FabricObject) {
+  if (!active) return false;
+  if (active === obj) return true;
+  if (active.type === "activeselection") return (active as ActiveSelection).getObjects().includes(obj);
+  return false;
+}
 
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dropIndicator, setDropIndicator] = useState<number | null>(null);
+export function SidebarLayers() {
+  const manager = useCanvasManager();
+  const objects = useCanvasObjects();
+  const [selected, setSelected] = useState<FabricObject | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [drop, setDrop] = useState<DropMark | null>(null);
+  const dragging = useRef<FabricObject | null>(null);
 
-  const handleDragStart = (e: React.DragEvent, displayIdx: number) => {
-    setDragIndex(displayIdx);
-    e.dataTransfer.effectAllowed = "move";
+  useEffect(() => {
+    if (!manager) return;
+    setSelected(manager.getActiveObject());
+    return manager.on("selection", (object) => setSelected(object));
+  }, [manager]);
+
+  useEffect(() => {
+    prepareGroups(objects);
+  }, [objects]);
+
+  const rows = flatten(objects, collapsed);
+
+  const run = (work: () => boolean | void) => {
+    manager?.transact(work);
   };
 
-  const handleDragOver = (e: React.DragEvent, displayIdx: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const mid = rect.top + rect.height / 2;
-    setDropIndicator(e.clientY < mid ? displayIdx : displayIdx + 1);
+  const select = (obj: FabricObject, shift: boolean) => {
+    if (!manager) return;
+    const canvas = manager.canvas;
+    const current = canvas.getActiveObject();
+    if (
+      shift &&
+      current &&
+      current !== obj &&
+      layerParent(current) === layerParent(obj) &&
+      current.type !== "activeselection"
+    ) {
+      canvas.discardActiveObject();
+      canvas.setActiveObject(new ActiveSelection([current, obj], { canvas }));
+    } else if (shift && current?.type === "activeselection" && layerParent(obj) === null) {
+      const members = (current as ActiveSelection).getObjects().filter((item) => layerParent(item) === null);
+      if (!members.includes(obj)) {
+        canvas.discardActiveObject();
+        canvas.setActiveObject(new ActiveSelection([...members, obj], { canvas }));
+      }
+    } else {
+      canvas.setActiveObject(obj);
+    }
+    canvas.requestRenderAll();
   };
 
-  const handleDragLeave = () => {
+  const commitName = (obj: FabricObject) => {
+    const id = (obj as LayerObject).swibpId;
+    if (renamingId && id === renamingId) {
+      const prev = ((obj as LayerObject).swibpName ?? "").trim();
+      const next = draft.trim();
+      if (next !== prev) run(() => setLayerName(obj, next));
+    }
+    setRenamingId(null);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (dragIndex === null || dropIndicator === null) return;
+  const startRename = (obj: FabricObject) => {
+    const id = ensureLayerId(obj);
+    setDraft((obj as LayerObject).swibpName ?? "");
+    setRenamingId(id);
+    manager?.selectObject(obj);
+  };
 
-    const fromCanvasIdx = total - 1 - dragIndex;
-    const toDisplayIdx = dropIndicator > dragIndex ? dropIndicator - 1 : dropIndicator;
-    const toCanvasIdx = total - 1 - toDisplayIdx;
+  const duplicate = (obj: FabricObject) => {
+    if (!manager) return;
+    void obj.clone().then((cloned: FabricObject) => {
+      (cloned as LayerObject).swibpId = globalThis.crypto.randomUUID();
+      run(() => {
+        const parent = layerParent(obj);
+        const list = parent ? parent.getObjects() : manager.canvas.getObjects();
+        const index = list.indexOf(obj);
+        cloned.set({
+          left: (obj.left ?? 0) + 16,
+          top: (obj.top ?? 0) + 16,
+        });
+        if (parent) parent.insertAt(Math.max(0, index) + 1, cloned);
+        else manager.canvas.insertAt(Math.max(0, index) + 1, cloned);
+        manager.canvas.setActiveObject(cloned);
+      });
+    });
+  };
 
-    if (fromCanvasIdx !== toCanvasIdx) {
-      reorderObjects(fromCanvasIdx, toCanvasIdx);
+  const onDragStart = (event: React.DragEvent, obj: FabricObject) => {
+    dragging.current = obj;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", ensureLayerId(obj));
+  };
+
+  const onDragOver = (event: React.DragEvent, obj: FabricObject) => {
+    event.preventDefault();
+    const source = dragging.current;
+    if (!source || source === obj || isInside(source, obj)) {
+      setDrop(null);
+      return;
+    }
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const ratio = (event.clientY - rect.top) / rect.height;
+    const edge: DropEdge =
+      isLayerGroup(obj) && ratio > 0.28 && ratio < 0.72 ? "inside" : ratio < 0.5 ? "before" : "after";
+    setDrop({ id: ensureLayerId(obj), edge });
+  };
+
+  const onDrop = (event: React.DragEvent, obj: FabricObject) => {
+    event.preventDefault();
+    const source = dragging.current;
+    const mark = drop;
+    dragging.current = null;
+    setDrop(null);
+    if (!manager || !source || !mark || mark.id !== ensureLayerId(obj)) return;
+    if (source === obj || isInside(source, obj)) return;
+
+    if (mark.edge === "inside" && isLayerGroup(obj)) {
+      run(() => placeLayer(manager.canvas, source, obj, obj.getObjects().length));
+      setCollapsed((current) => {
+        const next = new Set(current);
+        next.delete(ensureLayerId(obj));
+        return next;
+      });
+      return;
     }
 
-    setDragIndex(null);
-    setDropIndicator(null);
+    const parent = layerParent(obj);
+    const list = parent ? parent.getObjects() : manager.canvas.getObjects();
+    const index = list.indexOf(obj);
+    if (index < 0) return;
+    const destIndex = mark.edge === "before" ? index + 1 : index;
+    run(() => placeLayer(manager.canvas, source, parent, destIndex));
   };
 
-  const handleDragEnd = () => {
-    setDragIndex(null);
-    setDropIndicator(null);
+  const endDrag = () => {
+    dragging.current = null;
+    setDrop(null);
   };
 
   return (
-    <div className="flex flex-col gap-1 text-xs p-2">
-      <span className="text-muted-foreground text-[11px] font-medium mb-1">
-        Objects on canvas ({canvasObjects.length})
-      </span>
-
-      {canvasObjects.length === 0 && (
-        <p className="text-muted-foreground text-[11px] py-6 text-center">
+    <div className="flex flex-col gap-0.5 text-xs">
+      {rows.length === 0 && (
+        <p className="px-2 py-6 text-center text-xs text-muted-foreground">
           No objects yet. Add elements from the Elements tab.
         </p>
       )}
 
-      <div onDragLeave={handleDragLeave} onDrop={handleDrop}>
-        {displayItems.map((obj, displayIdx) => (
-          <div key={displayIdx}>
-            {/* Drop indicator line above this item */}
-            {dropIndicator === displayIdx && (
-              <div className="h-0.5 bg-primary rounded-full mx-1 my-0.5" />
-            )}
+      {rows.map(({ obj, depth }) => {
+        const id = ensureLayerId(obj);
+        const uniqueId = `${id}-${depth}-${Math.random()}`;
+        const children = isLayerGroup(obj) ? obj.getObjects().some(isUserLayer) : false;
+        const open = !collapsed.has(id);
+        const hidden = obj.visible === false;
+        const locked = isLayerLocked(obj);
+        const active = isRowSelected(selected, obj);
+        const renaming = renamingId === id;
+        const Icon = layerGlyph(obj);
+        const mark = drop?.id === id ? drop.edge : null;
 
+        return (
+          <div key={uniqueId} className="relative" style={{ paddingLeft: depth * 12 }}>
+            {mark === "before" && <div className="absolute inset-x-1 top-0 z-10 h-0.5 rounded-full bg-foreground" />}
+            {mark === "after" && <div className="absolute inset-x-1 bottom-0 z-10 h-0.5 rounded-full bg-foreground" />}
             <div
-              draggable
-              onDragStart={(e) => handleDragStart(e, displayIdx)}
-              onDragOver={(e) => handleDragOver(e, displayIdx)}
-              onDragEnd={handleDragEnd}
-              className={`p-2 rounded-xl border flex items-center justify-between group cursor-pointer transition-all ${
-                dragIndex === displayIdx
-                  ? "opacity-40 bg-muted/30 border-border/30"
-                  : "bg-background hover:bg-muted/50 border-border/50"
-              }`}
-              onClick={() => selectObject(obj)}
+              onDragOver={(event) => onDragOver(event, obj)}
+              onDrop={(event) => onDrop(event, obj)}
+              onDragEnd={endDrag}
+              onClick={(event) => select(obj, event.shiftKey)}
+              className={cn(
+                "group/row flex h-7 cursor-pointer items-center gap-1 rounded-lg pr-1 transition-colors",
+                active ? "bg-muted text-foreground" : "hover:bg-muted/60",
+                hidden && "opacity-50",
+                mark === "inside" && "ring-1 ring-foreground",
+              )}
             >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <GripVertical className="w-3 h-3 text-muted-foreground/40 shrink-0 cursor-grab active:cursor-grabbing" />
-                <Eye className="w-3 h-3 text-muted-foreground shrink-0" />
-                <span className="truncate font-mono text-[11px] text-wrap max-w-52 line-clamp-1">{getObjectLabel(obj)}</span>
-              </div>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteObject(obj);
+                type="button"
+                aria-label={open ? "Collapse" : "Expand"}
+                disabled={!children}
+                onDoubleClick={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!children) return;
+                  setCollapsed((current) => {
+                    const next = new Set(current);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                  });
                 }}
-                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity ml-1 shrink-0"
+                className={cn(
+                  "flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground",
+                  children && "hover:bg-background/80 hover:text-foreground",
+                  !children && "invisible",
+                )}
               >
-                <X className="w-3.5 h-3.5" />
+                <ChevronRight className={cn("size-3 transition-transform", open && "rotate-90")} />
               </button>
+
+              <div
+                draggable={!renaming}
+                onDragStart={(event) => onDragStart(event, obj)}
+                onDoubleClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  startRename(obj);
+                }}
+                className="flex min-w-0 flex-1 items-center gap-1"
+              >
+              <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+
+              {renaming ? (
+                <input
+                  autoFocus
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onClick={(event) => event.stopPropagation()}
+                  onDoubleClick={(event) => event.stopPropagation()}
+                  onBlur={() => commitName(obj)}
+                  onKeyDown={(event) => {
+                    event.stopPropagation();
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitName(obj);
+                    } else if (event.key === "Escape") {
+                      event.preventDefault();
+                      setRenamingId(null);
+                    }
+                  }}
+                  placeholder={layerLabel(obj)}
+                  className="h-5 min-w-0 flex-1 rounded-md bg-background px-1 text-xs text-foreground outline-none ring-1 ring-border"
+                />
+              ) : (
+                <span className="min-w-0 flex-1 truncate max-w-40">{layerLabel(obj)}</span>
+              )}
+              </div>
+
+              <div className={cn("flex shrink-0 items-center", !hidden && !locked && "opacity-0 group-hover/row:opacity-100")}>
+                <button
+                  type="button"
+                  aria-label={hidden ? "Show" : "Hide"}
+                  title={hidden ? "Show" : "Hide"}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    run(() => setLayerVisible(obj, hidden));
+                  }}
+                  className={cn(
+                    "flex size-5 items-center justify-center rounded-md text-muted-foreground hover:text-foreground",
+                    !hidden && "opacity-0 group-hover/row:opacity-100",
+                  )}
+                >
+                  {hidden ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+                </button>
+                <button
+                  type="button"
+                  aria-label={locked ? "Unlock" : "Lock"}
+                  title={locked ? "Unlock" : "Lock"}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    run(() => setLayerLocked(obj, !locked));
+                  }}
+                  className={cn(
+                    "flex size-5 items-center justify-center rounded-md text-muted-foreground hover:text-foreground",
+                    !locked && "opacity-0 group-hover/row:opacity-100",
+                  )}
+                >
+                  {locked ? <Lock className="size-3" /> : <Unlock className="size-3" />}
+                </button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Layer actions"
+                      onClick={(event) => event.stopPropagation()}
+                      onPointerDown={(event) => event.stopPropagation()}
+                      className="flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 hover:text-foreground group-hover/row:opacity-100 data-[state=open]:opacity-100"
+                    >
+                      <MoreHorizontal className="size-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" side="right" className="w-48">
+                    <DropdownMenuItem onSelect={() => startRename(obj)}>
+                      <Pencil />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => duplicate(obj)}>
+                      <Copy />
+                      Duplicate
+                      <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => run(() => moveLayerStep(manager!.canvas, obj, "front"))}>
+                      <ChevronsUp />
+                      Bring to front
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => run(() => moveLayerStep(manager!.canvas, obj, "forward"))}>
+                      <ChevronUp />
+                      Bring forward
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => run(() => moveLayerStep(manager!.canvas, obj, "backward"))}>
+                      <ChevronDown />
+                      Send backward
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => run(() => moveLayerStep(manager!.canvas, obj, "back"))}>
+                      <ChevronsDown />
+                      Send to back
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => run(() => setLayerVisible(obj, hidden))}>
+                      {hidden ? <Eye /> : <EyeOff />}
+                      {hidden ? "Show" : "Hide"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => run(() => setLayerLocked(obj, !locked))}>
+                      {locked ? <Unlock /> : <Lock />}
+                      {locked ? "Unlock" : "Lock"}
+                    </DropdownMenuItem>
+                    {isLayerGroup(obj) && (
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          if (!manager) return;
+                          manager.selectObject(obj);
+                          manager.transact(() => ungroupSelection(manager.canvas));
+                        }}
+                      >
+                        <Ungroup />
+                        Ungroup
+                        <DropdownMenuShortcut>⇧⌘G</DropdownMenuShortcut>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" onSelect={() => run(() => removeLayer(manager!.canvas, obj))}>
+                      <Trash2 />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
-        ))}
-
-        {/* Drop indicator at the very bottom */}
-        {dropIndicator === total && (
-          <div className="h-0.5 bg-primary rounded-full mx-1 my-0.5" />
-        )}
-      </div>
+        );
+      })}
     </div>
   );
 }

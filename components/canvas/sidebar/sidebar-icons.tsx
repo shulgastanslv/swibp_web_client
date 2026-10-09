@@ -1,192 +1,257 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Search, Clock, Loader2, Sparkles } from "lucide-react";
-import { useCanvas } from "@/hooks/useCanvas";
-import { util, loadSVGFromString } from "fabric";
-import { fetchIconifySvg } from "@/actions/icons";
-import { Input } from "@/components/ui/input";
-import { useCanvasManager } from "@/context/canvas-manager";
+import { useEffect, useState } from "react";
+import { Loader2, LayoutGrid, Search, X } from "lucide-react";
 
-interface IconItem {
-  id: string;
-  name: string;
+import { loadIconScoutImage, loadIconScoutSvg, searchIconScout } from "@/actions/iconscout";
+import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
+import { GallerySection } from "@/components/canvas/sidebar/gallery-card";
+import { useCanvasManager } from "@/context/canvas-manager";
+import type { IconScoutHit } from "@/lib/iconscout";
+import {
+  RECENT_PREVIEW,
+  RECENT_STORAGE_KEY,
+  readRecentIcons,
+  rememberIcon,
+  type RecentIcon,
+} from "@/lib/iconscout-recent";
+import { cn } from "@/lib/utils";
+
+const ASSETS = [
+  { id: "icon", label: "Icons" },
+  { id: "illustration", label: "Illustrations" },
+  { id: "3d", label: "3D" },
+] as const;
+
+type AssetId = (typeof ASSETS)[number]["id"];
+
+/** IconScout serves at most 1500 results, 200 per page. */
+const MAX_PAGES = 8;
+
+function IconTile({
+  item,
+  busy,
+  disabled,
+  onClick,
+}: {
+  item: IconScoutHit;
+  busy: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={item.name}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "flex aspect-square min-w-0 items-center justify-center rounded-xl bg-muted/25 p-2 transition-colors",
+        "hover:bg-muted/55 disabled:opacity-50",
+      )}
+    >
+      {busy ? (
+        <Loader2 className="size-4 animate-spin text-muted-foreground/50" />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={item.previewUrl} alt={item.name} className="size-full object-contain" draggable={false} loading="lazy" />
+      )}
+    </button>
+  );
 }
 
-const DEFAULT_RECENT: IconItem[] = [
-  { id: "solar:rocket-2-bold-duotone", name: "Ракета" },
-  { id: "solar:fire-bold-duotone", name: "Огонь" },
-  { id: "solar:star-bold-duotone", name: "Звезда" },
-  { id: "solar:chart-2-bold-duotone", name: "График" },
-  { id: "solar:heart-bold-duotone", name: "Лайк" },
-  { id: "solar:magic-stick-3-bold-duotone", name: "Магия" },
-  { id: "solar:lightbulb-bolt-bold-duotone", name: "Идея" },
-  { id: "solar:chat-round-dots-bold-duotone", name: "Чат" },
-];
-
 export function SidebarIcons() {
-  const { manager } = useCanvasManager();
-  const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<IconItem[]>([]);
-  const [recentIcons, setRecentIcons] = useState<IconItem[]>(DEFAULT_RECENT);
-  const [isSearching, setIsSearching] = useState(false);
-  const [loadingIconId, setLoadingIconId] = useState<string | null>(null);
+  const manager = useCanvasManager();
+  const [query, setQuery] = useState("");
+  const [asset, setAsset] = useState<AssetId>("icon");
+  const [items, setItems] = useState<IconScoutHit[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [paging, setPaging] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [recent, setRecent] = useState<RecentIcon[]>([]);
+  const [showAllRecent, setShowAllRecent] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("canvas_recent_iconify");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) setRecentIcons(parsed);
-      }
-    } catch {}
+    setRecent(readRecentIcons(window.localStorage.getItem(RECENT_STORAGE_KEY)));
   }, []);
 
   useEffect(() => {
-    const trimmed = search.trim();
-    if (!trimmed) {
-      setSearchResults([]);
-      setIsSearching(false);
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setItems([]);
+      setTotal(0);
+      setLoading(false);
+      setPaging(false);
+      setError(null);
       return;
     }
 
-    setIsSearching(true);
-    const timeout = setTimeout(async () => {
-      try {
-        // Ограничиваем поиск красивыми коллекциями (solar, lucide, tabler, flat-color-icons)
-        const prefixes = "solar,lucide,tabler,fluent-emoji-flat";
-        const url = `https://api.iconify.design/search?query=${encodeURIComponent(
-          trimmed
-        )}&prefixes=${prefixes}&limit=64`;
+    let cancelled = false;
+    setLoading(true);
+    setPaging(false);
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const first = await searchIconScout({ query: trimmed, asset, page: 1 });
+        if (cancelled) return;
+        if (!first.ok) {
+          setItems([]);
+          setTotal(0);
+          setError("Failed to search IconScout");
+          setLoading(false);
+          return;
+        }
+        setItems(first.items);
+        setTotal(first.total);
+        setError(null);
+        setLoading(false);
 
-        const res = await fetch(url);
-        const data = await res.json();
+        const lastPage = Math.min(first.lastPage, MAX_PAGES);
+        if (lastPage < 2) return;
+        setPaging(true);
+        for (let page = 2; page <= lastPage; page += 1) {
+          const next = await searchIconScout({ query: trimmed, asset, page });
+          if (cancelled) return;
+          if (!next.ok) break;
+          setItems((current) => {
+            const seen = new Set(current.map((item) => item.id));
+            return [...current, ...next.items.filter((item) => !seen.has(item.id))];
+          });
+        }
+        if (!cancelled) setPaging(false);
+      })();
+    }, 280);
 
-        const parsedIcons: IconItem[] = (data.icons || []).map((fullId: string) => {
-          const parts = fullId.split(":");
-          const rawName = parts[1] || fullId;
-          return {
-            id: fullId,
-            name: rawName.replace(/-/g, " "),
-          };
-        });
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [query, asset]);
 
-        setSearchResults(parsedIcons);
-      } catch (error) {
-        console.error("Ошибка поиска иконок:", error);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 350);
+  const remember = (hit: RecentIcon) => {
+    setRecent((current) => {
+      const next = rememberIcon(current, hit);
+      window.localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
-    return () => clearTimeout(timeout);
-  }, [search]);
-
-  const handleSelectIcon = async (icon: IconItem) => {
-    if (!manager) return;
-    setLoadingIconId(icon.id);
-
+  const addHit = async (hit: IconScoutHit, kind: AssetId) => {
+    if (!manager || loadingId) return;
+    setLoadingId(hit.id);
+    setError(null);
     try {
-      const updatedRecent = [icon, ...recentIcons.filter((i) => i.id !== icon.id)].slice(0, 8);
-      setRecentIcons(updatedRecent);
-      try {
-        localStorage.setItem("canvas_recent_iconify", JSON.stringify(updatedRecent));
-      } catch {}
-
-      const svgString = await fetchIconifySvg(icon.id);
-      if (!svgString) return;
-
-      const canvas = manager.getCanvas();
-
-      const { objects, options } = await loadSVGFromString(svgString);
-      const validObjects = objects.filter((o): o is NonNullable<typeof o> => o !== null);
-
-      if (validObjects.length === 0) return;
-
-      // 4. Группируем элементы и центрируем
-      const svgGroup = util.groupSVGElements(validObjects, options);
-      svgGroup.scaleToWidth(120);
-      canvas.centerObject(svgGroup);
-
-      canvas.add(svgGroup);
-      canvas.setActiveObject(svgGroup);
-      canvas.renderAll();
-    } catch (error) {
-      console.error("Не удалось добавить иконку на холст:", error);
+      if (kind === "icon") {
+        const res = await loadIconScoutSvg(hit.id);
+        if (res.ok === false) {
+          setError(res.error);
+          return;
+        }
+        await manager.objects.addSvgIcon(res.svg, { maxSize: 280 });
+      } else {
+        const res = await loadIconScoutImage(hit.previewUrl);
+        if (!res.ok) {
+          setError("Failed to load IconScout image");
+          return;
+        }
+        await manager.objects.addImage(res.dataUrl, { maxSize: 280 });
+      }
+      manager.commit();
+      remember({ ...hit, asset: kind });
+    } catch (err) {
+      console.error(err);
+      setError("Couldn't add that image");
     } finally {
-      setLoadingIconId(null);
+      setLoadingId(null);
     }
   };
 
-  const isSearchActive = search.trim().length > 0;
-  const currentList = isSearchActive ? searchResults : recentIcons;
+  const visibleRecent = showAllRecent ? recent : recent.slice(0, RECENT_PREVIEW);
+  const searching = query.trim().length >= 2;
 
   return (
-    <div className="flex flex-col gap-4 text-xs p-2">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-        <Input
-          type="text"
-          placeholder="Поиск иконок…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-8 pl-8 text-xs rounded-full bg-muted/30 border-border/60"
+    <div className="flex min-w-0 flex-col gap-4 overflow-hidden p-1.5">
+      <div className="flex min-w-0 items-center gap-1.5">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/70" />
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search IconScout..."
+            className="h-8 w-full min-w-0 rounded-lg bg-muted/30 pl-8 pr-8 text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:bg-muted/45"
+          />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          ) : null}
+        </div>
+        <FilterMenu
+          icon={LayoutGrid}
+          value={asset}
+          onChange={(id) => {
+            if (ASSETS.some((item) => item.id === id)) setAsset(id as AssetId);
+          }}
+          groups={[{ label: "Type", options: ASSETS.map((item) => ({ id: item.id, label: item.label })) }]}
         />
-
-        {isSearching && (
-          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground animate-spin pointer-events-none" />
-        )}
       </div>
 
-      <div className="flex flex-col gap-2">
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+
+      {recent.length > 0 ? (
+        <GallerySection
+          title="Recently used"
+          action={recent.length > RECENT_PREVIEW ? (showAllRecent ? "Show less" : "See all") : undefined}
+          onAction={() => setShowAllRecent((open) => !open)}
+        >
+          {visibleRecent.map((item) => (
+            <IconTile
+              key={item.id}
+              item={item}
+              busy={loadingId === item.id}
+              disabled={loadingId !== null}
+              onClick={() => void addHit(item, item.asset)}
+            />
+          ))}
+        </GallerySection>
+      ) : null}
+
+      <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{isSearchActive ? "Результаты поиска" : "Недавно использованные"}</span>
-          </div>
-          <span className="text-[10px] font-mono text-muted-foreground/50">
-            {currentList.length}
+          <span className="text-xs font-medium text-muted-foreground/80">Results</span>
+          <span className="inline-flex items-center gap-1 tabular-nums text-xs text-muted-foreground/40">
+            {paging ? <Loader2 className="size-3 animate-spin" /> : null}
+            {searching ? `${items.length}${total > items.length ? ` / ${total}` : ""}` : recent.length}
           </span>
         </div>
 
-        {!isSearching && currentList.length === 0 ? (
-          <p className="text-center text-[11px] text-muted-foreground py-6">
-            Иконки не найдены
-          </p>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : !searching ? (
+          recent.length === 0 ? (
+            <p className="py-12 text-center text-xs text-muted-foreground">Search icons, illustrations, or 3D.</p>
+          ) : null
+        ) : items.length === 0 ? (
+          <p className="py-12 text-center text-xs text-muted-foreground">Nothing matched.</p>
         ) : (
-          <div className="grid grid-cols-4 gap-2 max-h-[52vh] overflow-y-auto pr-0.5">
-            {currentList.map((item) => {
-              const [prefix, iconName] = item.id.split(":");
-              const previewUrl = `https://api.iconify.design/${prefix}/${iconName}.svg`;
-              const isLoading = loadingIconId === item.id;
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleSelectIcon(item)}
-                  className="group relative flex flex-col items-center justify-center gap-1 h-16 rounded-xl bg-muted/20 hover:bg-muted/60 border border-border/40 hover:border-border transition-all active:scale-95 p-1"
-                  title={item.id}
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  ) : (
-                    <>
-                      <img
-                        src={previewUrl}
-                        alt={item.name}
-                        className="w-7 h-7 object-contain group-hover:scale-110 transition-transform dark:brightness-110"
-                        loading="lazy"
-                      />
-                      <span className="text-[9px] font-mono text-muted-foreground group-hover:text-foreground truncate max-w-[48px] capitalize">
-                        {item.name}
-                      </span>
-                    </>
-                  )}
-                </button>
-              );
-            })}
+          <div className="grid min-w-0 grid-cols-3 gap-2">
+            {items.map((item) => (
+              <IconTile
+                key={item.id}
+                item={item}
+                busy={loadingId === item.id}
+                disabled={loadingId !== null}
+                onClick={() => void addHit(item, asset)}
+              />
+            ))}
           </div>
         )}
       </div>

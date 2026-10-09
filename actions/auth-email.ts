@@ -1,0 +1,129 @@
+"use server";
+
+import bcrypt from "bcryptjs";
+
+import { consumeAuthToken, issueAuthToken } from "@/lib/auth-tokens";
+import { appBaseUrl, isValidEmail, normalizeEmail, sendAuthEmail } from "@/lib/email";
+import { prisma } from "@/lib/prisma";
+
+function mailFailure(reason: "unconfigured" | "failed"): string | null {
+  if (reason === "unconfigured" && process.env.NODE_ENV !== "production") return null;
+  if (reason === "unconfigured") return "Email delivery is not configured";
+  return "Couldn't send the email. Try again.";
+}
+
+async function sendLinkEmail(input: {
+  to: string;
+  subject: string;
+  intro: string;
+  url: string;
+  action: string;
+}): Promise<{ ok: true } | { ok: false; reason: "unconfigured" | "failed" }> {
+  return sendAuthEmail({
+    to: input.to,
+    subject: input.subject,
+    text: `${input.intro}\n\n${input.url}\n\nIf you didn't ask for this, you can ignore this email.`,
+    html: `<p>${input.intro}</p><p><a href="${input.url}">${input.action}</a></p><p>If you didn't ask for this, you can ignore this email.</p>`,
+  });
+}
+
+export async function sendVerificationEmail(email: string) {
+  const normalized = normalizeEmail(email);
+  if (!isValidEmail(normalized)) return { error: "Enter a valid email" };
+
+  const user = await prisma.user.findUnique({ where: { email: normalized } });
+  if (!user || !user.password || user.emailVerified) {
+    return { success: true as const, delivered: true };
+  }
+
+  const token = await issueAuthToken(normalized, "verify", user.id);
+  const url = `${appBaseUrl()}/?verify=${token}`;
+  const sent = await sendLinkEmail({
+    to: normalized,
+    subject: "Confirm your email",
+    intro: "Confirm your email to finish creating your account.",
+    url,
+    action: "Confirm email",
+  });
+
+  if (sent.ok === false) {
+    const error = mailFailure(sent.reason);
+    if (error) return { error };
+    return { success: true as const, delivered: false };
+  }
+
+  return { success: true as const, delivered: true };
+}
+
+export async function verifyEmail(token: string) {
+  const consumed = await consumeAuthToken(token, "verify");
+  if (!consumed) return { error: "This link is invalid or has expired" };
+
+  await prisma.user.update({
+    where: { email: consumed.email },
+    data: { emailVerified: new Date() },
+  });
+
+  return { success: true as const };
+}
+
+export async function requestPasswordReset(email: string) {
+  const normalized = normalizeEmail(email);
+  if (!isValidEmail(normalized)) return { error: "Enter a valid email" };
+
+  const user = await prisma.user.findUnique({ where: { email: normalized } });
+  if (user) {
+    const token = await issueAuthToken(normalized, "reset", user.id);
+    const url = `${appBaseUrl()}/?reset=${token}`;
+    const sent = await sendLinkEmail({
+      to: normalized,
+      subject: "Reset your password",
+      intro: "Use this link to choose a new password. It expires in one hour.",
+      url,
+      action: "Reset password",
+    });
+
+    if (sent.ok === false) {
+      const error = mailFailure(sent.reason);
+      if (error) return { error };
+      return { success: true as const, delivered: false };
+    }
+  }
+
+  return { success: true as const, delivered: true };
+}
+
+export async function resetPassword(token: string, password: string) {
+  if (!password || password.length < 6) {
+    return { error: "Password must be at least 6 characters" };
+  }
+
+  const consumed = await consumeAuthToken(token, "reset");
+  if (!consumed) return { error: "This link is invalid or has expired" };
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  await prisma.user.update({
+    where: { email: consumed.email },
+    data: { password: hashedPassword, emailVerified: new Date() },
+  });
+
+  return { success: true as const };
+}
+
+export async function checkCredentials(email: string, password: string) {
+  const normalized = normalizeEmail(email);
+  if (!isValidEmail(normalized) || !password) {
+    return { error: "Incorrect email or password" };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: normalized } });
+  if (!user?.password) return { error: "Incorrect email or password" };
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return { error: "Incorrect email or password" };
+  if (!user.emailVerified) {
+    return { error: "Confirm your email before signing in", code: "unverified" as const };
+  }
+
+  return { ok: true as const };
+}
