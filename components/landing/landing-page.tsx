@@ -32,9 +32,21 @@ import { CoverClose, CoverHook, CoverList } from "@/components/landing/covers";
 
 const NAV = [
   { name: "Возможности", link: "#features" },
+  { name: "Редактор", link: "#editor" },
   { name: "Иконки", link: "#icons" },
   { name: "Как это работает", link: "#how" },
   { name: "Отзывы", link: "#stories" },
+];
+
+const PALETTE = [
+  "#0a0a0a",
+  "#f5f1ea",
+  "#1e3a5f",
+  "#4c1d95",
+  "#2563eb",
+  "#0d9488",
+  "#db2777",
+  "#fde68a",
 ];
 
 const PLATFORMS = [
@@ -295,6 +307,57 @@ export function LandingPage() {
         </div>
       </section>
 
+      <section id="editor" className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <article className="rounded-[1.7rem] bg-white p-8 sm:p-10 lg:col-span-2">
+            <h2 className="max-w-2xl text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Удобный редактор
+            </h2>
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-[#5c6170]">
+              Черновик открывается на холсте. Текст, фото и плашки правятся в том же кадре, карусель не разъезжается по файлам.
+            </p>
+          </article>
+
+          <article className="rounded-[1.7rem] bg-[#f6f1e8] p-8 sm:p-10">
+            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Шаблоны</h2>
+            <ul className="mt-8 space-y-3 text-2xl font-semibold tracking-tight">
+              <li>Журнальная обложка</li>
+              <li>Сетка с материалами</li>
+              <li>Мудборд</li>
+            </ul>
+            <p className="mt-8 max-w-sm text-base leading-relaxed text-[#5c6170]">
+              Каркас уже стоит. Меняете слова, ритм слайда остаётся.
+            </p>
+          </article>
+
+          <article className="rounded-[1.7rem] bg-white p-8 sm:p-10">
+            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Палитры</h2>
+            <div className="mt-8 flex flex-wrap gap-2">
+              {PALETTE.map((color) => (
+                <span
+                  key={color}
+                  className="size-11 rounded-full border border-black/10"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div
+                className="h-16 rounded-2xl"
+                style={{ background: "linear-gradient(135deg, #f8f7f4, #c9b79c)" }}
+              />
+              <div
+                className="h-16 rounded-2xl"
+                style={{ background: "radial-gradient(circle at center, #e0e7ff, #1e1b4b)" }}
+              />
+            </div>
+            <p className="mt-6 max-w-sm text-base leading-relaxed text-[#5c6170]">
+              Сплошной цвет, линейный и радиальный градиент или свой оттенок на весь слайд.
+            </p>
+          </article>
+        </div>
+      </section>
+
       <section id="icons" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         <div className="rounded-[2rem] bg-[#14151c] px-6 py-12 text-white sm:px-12 sm:py-16">
           <h2 className="text-6xl leading-none font-extrabold tracking-tighter sm:text-8xl">
@@ -503,6 +566,9 @@ export function LandingPage() {
           <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#5c6170]">
             <a href="#features" className="hover:text-[#14151c]">
               Возможности
+            </a>
+            <a href="#editor" className="hover:text-[#14151c]">
+              Редактор
             </a>
             <a href="#icons" className="hover:text-[#14151c]">
               Иконки
