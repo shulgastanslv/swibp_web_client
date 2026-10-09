@@ -6,10 +6,23 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
+  FolderKanban,
+  GalleryHorizontal,
+  Grid3x3,
+  Image as ImageIcon,
+  Layers,
+  LayoutTemplate,
   Menu,
   PenLine,
+  Redo2,
+  Shapes,
+  SlidersHorizontal,
+  Smartphone,
   Sparkles,
+  Square,
   SwatchBook,
+  Undo2,
+  ZoomIn,
 } from "lucide-react";
 import {
   IconArrowRight,
@@ -40,7 +53,6 @@ import { Spotlight } from "@/components/ui/spotlight";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { FloatingNav } from "@/components/ui/floating-navbar";
 import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
-import { HoverEffect } from "@/components/ui/card-hover-effect";
 import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 import { Highlight } from "@/components/ui/hero-highlight";
 import { WobbleCard } from "@/components/ui/wobble-card";
@@ -53,6 +65,11 @@ const NAV = [
     name: "Возможности",
     link: "#features",
     icon: <SwatchBook className="size-4" />,
+  },
+  {
+    name: "Студия",
+    link: "#studio",
+    icon: <LayoutTemplate className="size-4" />,
   },
   {
     name: "Как это работает",
@@ -77,6 +94,49 @@ const PLATFORMS = [
   "Серии",
 ];
 
+const TOOLS: { icon: typeof Sparkles; title: string; text: string }[] = [
+  {
+    icon: Sparkles,
+    title: "Генерация серии",
+    text: "Описываете тему, и ИИ раскладывает её на обложку, середину и финал.",
+  },
+  {
+    icon: LayoutTemplate,
+    title: "Шаблоны",
+    text: "Готовые обложки и внутренние слайды. Меняете текст, каркас остаётся.",
+  },
+  {
+    icon: Layers,
+    title: "Слои",
+    text: "Порядок, подписи и z-index. Текст, фото и плашки не теряются друг под другом.",
+  },
+  {
+    icon: Square,
+    title: "Элементы",
+    text: "Фигуры и текстовые блоки на холсте, чтобы добрать кадр после генерации.",
+  },
+  {
+    icon: ImageIcon,
+    title: "Фоны",
+    text: "Сплошной цвет, градиент или своё изображение на весь слайд.",
+  },
+  {
+    icon: SlidersHorizontal,
+    title: "Фильтры",
+    text: "Обработка фото прямо в студии, без отдельного редактора.",
+  },
+  {
+    icon: Shapes,
+    title: "Иконки",
+    text: "Знаки и плашки рядом с холстом, чтобы отметить шаг или акцент.",
+  },
+  {
+    icon: FolderKanban,
+    title: "Проекты",
+    text: "Серии сохраняются в аккаунте: можно вернуться, а не держать один файл.",
+  },
+];
+
 const CARE = [
   {
     value: "prompt",
@@ -85,8 +145,8 @@ const CARE = [
   },
   {
     value: "presets",
-    title: "Редакционные пресеты",
-    body: "У генерации уже есть каркас: бейдж, заголовок, плашка, воздух. Вы правите слова, а не сетку.",
+    title: "Библиотека шаблонов",
+    body: "Редакционные пресеты с бейджем, заголовком и плашкой. Берёте каркас и меняете слова.",
   },
   {
     value: "layers",
@@ -100,8 +160,8 @@ const CARE = [
   },
   {
     value: "export",
-    title: "PNG и JSON",
-    body: "Рендер без потери резкости и копия структуры слайда в буфер — если серию нужно повторить или отдать.",
+    title: "PNG, PDF и JSON",
+    body: "Архив PNG для ленты, многостраничный PDF и копия структуры слайда. Рендер не мылит текст.",
   },
 ];
 
@@ -360,40 +420,151 @@ export function LandingPage() {
             className="md:col-span-2 bg-white"
             icon={<IconPhoto className="size-5 text-[#6d4aff]" />}
             title="Превью и экспорт"
-            description="Пролистайте кадры и заберите PNG без мыла или JSON структуры слайда."
+            description="Пролистайте кадры как в ленте. Заберите ZIP с PNG, PDF или JSON структуры слайда."
             header={<ExportHeader />}
+          />
+          <BentoGridItem
+            className="bg-white"
+            icon={<Smartphone className="size-5 text-[#2f5bff]" />}
+            title="Форматы кадра"
+            description="4:5, квадрат, сторис и широкий кадр. Серия переключается без нового макета."
+            header={<RatioHeader />}
           />
         </BentoGrid>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <HoverEffect
-          items={[
+      <section id="studio" className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        <div className="max-w-2xl">
+          <p className="text-sm font-semibold text-[#6d4aff]">Студия</p>
+          <h2 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Чем собирается кадр
+          </h2>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#5c6170] sm:text-base">
+            Генерация даёт черновик. Дальше серия живёт в редакторе: шаблоны, слои, фон, иконки и проекты.
+          </p>
+        </div>
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {TOOLS.map((tool) => (
+            <article
+              key={tool.title}
+              className="rounded-[1.4rem] bg-white p-5 shadow-[0_10px_40px_rgba(28,32,58,0.05)]"
+            >
+              <span className="grid size-10 place-items-center rounded-2xl bg-[#f4f2fb] text-[#2f5bff]">
+                <tool.icon className="size-5" />
+              </span>
+              <h3 className="mt-4 text-base font-bold">{tool.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-[#5c6170]">{tool.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="formats" className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <article className="rounded-[1.7rem] bg-[#14151c] p-6 text-white sm:p-8">
+            <p className="text-xs font-semibold tracking-wide text-[#c9b6ff]">Кадр</p>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Четыре пропорции</h2>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/70">
+              Одна серия под ленту, квадрат, сторис или широкий пост. Размер холста меняется прямо в тулбаре.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                ["4:5", "1080×1350", "Лента"],
+                ["1:1", "1080×1080", "Квадрат"],
+                ["9:16", "1080×1920", "Сторис"],
+                ["16:9", "1920×1080", "Широкий"],
+              ].map(([ratio, size, label]) => (
+                <div key={ratio} className="rounded-2xl bg-white/10 p-3">
+                  <p className="text-lg font-extrabold">{ratio}</p>
+                  <p className="mt-1 text-[11px] text-white/60">{size}</p>
+                  <p className="mt-2 text-xs text-white/80">{label}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="rounded-[1.7rem] bg-white p-6 shadow-[0_10px_40px_rgba(28,32,58,0.05)] sm:p-8">
+            <p className="text-xs font-semibold tracking-wide text-[#6d4aff]">Выгрузка</p>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Забрать серию целиком</h2>
+            <ul className="mt-6 space-y-3">
+              {[
+                ["PNG .zip", "Отдельные кадры для Instagram и LinkedIn, без мыла на тексте."],
+                ["PDF", "Многостраничный файл, если карусель уходит документом."],
+                ["JSON", "Структура слайда в буфер, чтобы повторить вёрстку."],
+                ["Превью", "Листание кадров до экспорта, как их увидят в ленте."],
+              ].map(([title, text]) => (
+                <li key={title} className="rounded-2xl bg-[#f4f2fb] px-4 py-3">
+                  <p className="text-sm font-bold">{title}</p>
+                  <p className="mt-1 text-sm text-[#5c6170]">{text}</p>
+                </li>
+              ))}
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
             {
-              title: "Промпт вместо макета",
-              description:
-                "Не нужно собирать обложку вручную. Описываете мысль, и серия появляется кадрами.",
-              link: "#prompt",
+              icon: Smartphone,
+              title: "Для ленты",
+              text: "SMM собирает серию под пост: обложка, тезисы и призыв в одном стиле.",
             },
             {
-              title: "Один стиль на всю ленту",
-              description:
-                "Обложка, список и финал не выглядят как три случайные картинки из разных файлов.",
-              link: "#series",
+              icon: PenLine,
+              title: "Для редакции",
+              text: "Шаблоны держат типографику. Текст меняется, сетка слайдов нет.",
             },
             {
-              title: "Серия остаётся вашей",
-              description:
-                "Черновик можно поправить по слоям, сохранить в аккаунте и забрать файлами.",
-              link: "#export",
+              icon: Undo2,
+              title: "Для правок",
+              text: "Отмена, слои и превью. Черновик ИИ можно поправить, не начиная заново.",
             },
-          ]}
-        />
+          ].map((item) => (
+            <article
+              key={item.title}
+              className="rounded-[1.6rem] border border-black/5 bg-[#efeaff] p-6"
+            >
+              <item.icon className="size-5 text-[#6d4aff]" />
+              <h3 className="mt-4 text-xl font-extrabold tracking-tight">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-[#3c345c]">{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <div className="rounded-[1.7rem] bg-white p-6 shadow-[0_10px_40px_rgba(28,32,58,0.05)] sm:p-8">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold tracking-wide text-[#6d4aff]">Холст</p>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Правки остаются на серии</h2>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#5c6170] sm:text-base">
+              Черновик ИИ не застывает. Слайды листаются, кадр масштабируется, шаг отменяется.
+            </p>
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              { icon: Undo2, title: "Отмена", text: "Ctrl+Z" },
+              { icon: Redo2, title: "Повтор", text: "Ctrl+Y" },
+              { icon: ZoomIn, title: "Масштаб", text: "Крупнее и сброс" },
+              { icon: Grid3x3, title: "Сетка", text: "Ровная вёрстка" },
+              { icon: Smartphone, title: "Превью", text: "Как в телефоне" },
+              { icon: GalleryHorizontal, title: "Слайды", text: "Порядок серии" },
+            ].map((item) => (
+              <div key={item.title} className="rounded-2xl bg-[#f4f2fb] p-4">
+                <item.icon className="size-5 text-[#2f5bff]" />
+                <p className="mt-3 text-sm font-bold">{item.title}</p>
+                <p className="mt-1 text-xs text-[#5c6170]">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2">
         <div>
-          <p className="text-sm font-semibold text-[#6d4aff]">Студия</p>
+          <p className="text-sm font-semibold text-[#6d4aff]">Черновик</p>
           <h2 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
             ИИ закрывает черновик серии
           </h2>
@@ -443,7 +614,7 @@ export function LandingPage() {
               {
                 n: "03",
                 title: "Поправьте и заберите",
-                text: "Уточните формулировки, пролистайте превью и экспортируйте PNG.",
+                text: "Уточните формулировки, пролистайте превью и заберите PNG, PDF или JSON.",
               },
             ].map((step) => (
               <li
@@ -622,6 +793,16 @@ export function LandingPage() {
                 </a>
               </li>
               <li>
+                <a href="#studio" className="text-white/80 hover:text-white">
+                  Студия
+                </a>
+              </li>
+              <li>
+                <a href="#formats" className="text-white/80 hover:text-white">
+                  Форматы
+                </a>
+              </li>
+              <li>
                 <a href="#how" className="text-white/80 hover:text-white">
                   Как это работает
                 </a>
@@ -697,6 +878,26 @@ function LayersHeader() {
         >
           <span>{layer}</span>
           <span className="text-[#8b90a0]">{index + 1}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RatioHeader() {
+  const frames = [
+    { label: "4:5", box: "h-16 w-[3.2rem]" },
+    { label: "1:1", box: "size-12" },
+    { label: "9:16", box: "h-20 w-9" },
+    { label: "16:9", box: "h-8 w-16" },
+  ];
+
+  return (
+    <div className="flex h-full min-h-28 items-end justify-center gap-3 rounded-xl bg-[#f4f2fb] px-4 pt-5 pb-4">
+      {frames.map((frame) => (
+        <div key={frame.label} className="flex flex-col items-center gap-1.5">
+          <div className={`${frame.box} rounded-md bg-white shadow-sm ring-1 ring-black/5`} />
+          <span className="text-[10px] font-semibold text-[#5c6170]">{frame.label}</span>
         </div>
       ))}
     </div>
