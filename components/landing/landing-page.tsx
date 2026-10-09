@@ -28,6 +28,7 @@ import { FloatingNav } from "@/components/ui/floating-navbar";
 import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 import { Highlight } from "@/components/ui/hero-highlight";
 import { HeroStage, PhoneFrame } from "@/components/landing/hero-stage";
+import { AudienceBlock } from "@/components/landing/audience-block";
 import { Reveal } from "@/components/landing/reveal";
 import { CoverClose, CoverHook, CoverList } from "@/components/landing/covers";
 
@@ -307,6 +308,8 @@ export function LandingPage() {
         </div>
         </Reveal>
       </section>
+
+      <AudienceBlock />
 
       <section id="editor" className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <Reveal>
