@@ -1,185 +1,417 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import { UploadCloud, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { UploadCloud, Loader2, Plus, ImageIcon } from "lucide-react";
 import {
   SOLID_PRESETS,
   GRADIENT_PRESETS,
-  RADIAL_PRESETS,
+  SUGGESTED_SETS,
+  type SuggestedSet,
 } from "@/lib/presets/backgrounds";
+import {
+  PALETTE_SLOTS,
+  paintSlide,
+  type PaletteSlot,
+  type ProjectPalette,
+} from "@/lib/canvas/document";
+import { paintSlotOnCanvas } from "@/lib/canvas/paint-live";
+import { useCanvasStore } from "@/store/useCanvasStore";
 import { cn } from "@/lib/utils";
+import { fileToDataUrl } from "@/lib/image/file-to-data-url";
 import { useCanvasManager } from "@/context/canvas-manager";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScreenSplit } from "@/components/canvas/sidebar/screen-split";
+import { BackgroundPattern } from "@/components/canvas/sidebar/background-pattern";
+import { CollapsibleGroup } from "@/components/ui/collapsible-group";
+import { BackgroundSlideSets } from "@/components/canvas/sidebar/background-slide-sets";
+
+type Tab = "color" | "gradient" | "image";
+
+const SET_SWATCHES: { key: keyof Pick<SuggestedSet, "background" | "text" | "accent" | "card">; label: string }[] = [
+  { key: "background", label: "Background" },
+  { key: "text", label: "Text" },
+  { key: "accent", label: "Accent" },
+  { key: "card", label: "Card" },
+];
+
+function SuggestedSetRow({
+  set,
+  onFillSlide,
+  onApply,
+}: {
+  set: SuggestedSet;
+  onFillSlide: () => void;
+  onApply: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-full py-1 pr-1 pl-1 hover:bg-muted/40">
+      <button
+        type="button"
+        title={`Fill this slide with ${set.background}`}
+        onClick={onFillSlide}
+        className="h-7 w-7 shrink-0 rounded-full border border-border/40 transition-transform hover:scale-105 active:scale-95"
+        style={{ backgroundColor: set.background }}
+      />
+      <div className="flex min-w-0 flex-1 items-center gap-1">
+        {SET_SWATCHES.slice(1).map((swatch) => (
+          <span
+            key={swatch.key}
+            title={`${swatch.label} ${set[swatch.key]}`}
+            className="h-3.5 w-3.5 rounded-full border border-border/40"
+            style={{ backgroundColor: set[swatch.key] }}
+          />
+        ))}
+        <span className="truncate text-foreground">{set.label}</span>
+      </div>
+      <Button type="button" size="xs" variant="secondary" className="rounded-full" onClick={onApply}>
+        Apply
+      </Button>
+    </div>
+  );
+}
+
+const FILL_TABS: { id: Tab; label: string }[] = [
+  { id: "color", label: "Color" },
+  { id: "gradient", label: "Gradient" },
+  { id: "image", label: "Image" },
+];
 
 export function SidebarBackground() {
-  const { manager } = useCanvasManager();
+  const manager = useCanvasManager();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState<Tab>("color");
   const [isDragging, setIsDragging] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [urlLoading, setUrlLoading] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  const projectPalette = useCanvasStore((s) => s.palette);
+  const markedSlideIds = useCanvasStore((s) => s.markedSlideIds);
+  const currentSlideId = useCanvasStore((s) => s.currentSlideId);
+  const [paletteScope, setPaletteScope] = useState<"all" | "marked" | "slide">("all");
+  const [slidePalette, setSlidePalette] = useState<ProjectPalette | null>(null);
+
+  useEffect(() => {
+    setSlidePalette((current) => (current ? useCanvasStore.getState().palette : current));
+  }, [currentSlideId]);
+
+  const shownPalette = paletteScope === "slide" && slidePalette ? slidePalette : projectPalette;
+
+  const applyProjectPalette = (next: ProjectPalette) => {
+    const store = useCanvasStore.getState();
+    const ids =
+      paletteScope === "slide"
+        ? new Set([store.currentSlideId])
+        : paletteScope === "marked"
+          ? new Set(store.markedSlideIds)
+          : null;
+    if (ids && ids.size === 0) return;
+
+    const before = paletteScope === "slide" && slidePalette ? slidePalette : store.palette;
+    const slots = Object.keys(next) as PaletteSlot[];
+    if (slots.every((slot) => next[slot] === before[slot])) return;
+
+    const changed = slots.filter((slot) => next[slot] !== before[slot]);
+    const slides = store.slides.map((slide) => {
+      if (ids && !ids.has(slide.id)) return slide;
+      let canvasJSON = slide.canvasJSON;
+      for (const slot of changed) canvasJSON = paintSlide(canvasJSON, slot, next[slot]);
+      return { ...slide, canvasJSON };
+    });
+
+    if (paletteScope === "slide") setSlidePalette(next);
+    else store.setPalette(next);
+    store.setSlides(slides);
+    store.setDirty(true);
+
+    const paintsCurrent = !ids || ids.has(store.currentSlideId);
+    if (paintsCurrent && manager) {
+      for (const slot of changed) paintSlotOnCanvas(manager.canvas, slot, next[slot]);
+      if (changed.includes("background")) {
+        void manager.setBackground({ type: "solid", color: next.background });
+      } else {
+        manager.commit();
+      }
+    }
+  };
+
+  const setProjectSlot = (slot: PaletteSlot, color: string) => {
+    applyProjectPalette({ ...shownPalette, [slot]: color });
+  };
+
+  const applySolid = (color: string) => {
+    void manager?.setBackground({ type: "solid", color });
+  };
+
+  const applyGradient = (colors: [string, string]) => {
+    void manager?.setBackground({ type: "gradient", colors });
+  };
 
   const applyImageFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
-    const url = URL.createObjectURL(file);
-    manager.setBackground({
-      type: "image",
-      url,
-    });
+    void fileToDataUrl(file)
+      .then((dataUrl) => manager?.setBackground({ type: "image", url: dataUrl }))
+      .catch(console.error);
   };
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      applyImageFile(file);
+  const applyImageFromUrl = async () => {
+    const trimmed = imageUrl.trim();
+    if (!trimmed) return;
+
+    let parsed: URL;
+    try {
+      parsed = new URL(trimmed);
+      if (!/^https?:$/i.test(parsed.protocol)) {
+        setUrlError("Need http(s) URL");
+        return;
+      }
+    } catch {
+      setUrlError("Invalid URL");
+      return;
     }
-    e.target.value = "";
-  };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      applyImageFile(file);
+    setUrlError(null);
+    setUrlLoading(true);
+    try {
+      await manager?.setBackground({ type: "image", url: parsed.toString() });
+    } catch (err) {
+      console.error(err);
+      setUrlError("Couldn't load image (CORS?)");
+    } finally {
+      setUrlLoading(false);
     }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
   };
 
   return (
-    <div className="flex flex-col gap-5 p-2 text-xs">
+    <div className="flex min-w-0 flex-col overflow-hidden text-xs text-foreground">
+      <CollapsibleGroup id="background-split" title="Screen split">
+        <ScreenSplit />
+      </CollapsibleGroup>
 
-      <section>
-        <p className="mb-2 text-[11px] font-medium text-muted-foreground">
-          Изображение
-        </p>
-
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleImageFileChange}
-          accept="image/*"
-          className="hidden"
-        />
-
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => fileInputRef.current?.click()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              fileInputRef.current?.click();
-            }
-          }}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={cn(
-            "group relative flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed p-4 text-center cursor-pointer transition-all",
-            isDragging
-              ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-              : "border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40"
-          )}
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background shadow-xs border border-border/50 group-hover:scale-105 transition-transform">
-            <UploadCloud className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] font-medium text-foreground">
-              Загрузить фон
-            </span>
-            <span className="text-[10px] text-muted-foreground">
-              Перетащите файл или нажмите для выбора
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <p className="mb-2 text-[11px] font-medium text-muted-foreground">
-          Сплошные цвета
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {SOLID_PRESETS.map((p) => (
-            <button
-              key={p.color}
-              type="button"
-              onClick={() => manager.setBackground({ type: "solid", color: p.color })}
-              style={{ backgroundColor: p.color }}
-              className="h-7 w-7 rounded-full border border-border/40 shadow-xs hover:scale-110 hover:ring-2 hover:ring-primary/40 transition-all shrink-0 cursor-pointer focus-visible:outline-hidden"
-              aria-label={`Выбрать цвет ${p.color}`}
-            />
+      <CollapsibleGroup id="background-fill" title="Fill">
+        <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)} className="gap-2">
+        <TabsList className="grid h-8 w-full grid-cols-3 rounded-full">
+          {FILL_TABS.map((item) => (
+            <TabsTrigger
+              key={item.id}
+              value={item.id}
+              className="rounded-full text-xs shadow-none data-active:border-transparent dark:data-active:border-transparent"
+            >
+              {item.label}
+            </TabsTrigger>
           ))}
+        </TabsList>
 
-          <label className="relative flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/30 shadow-xs hover:scale-110 hover:border-border transition-all shrink-0 cursor-pointer">
+        <TabsContent value="color">
+          <div className="grid grid-cols-8 gap-1.5">
+            {SOLID_PRESETS.map((p) => (
+              <button
+                key={p.color}
+                type="button"
+                title={p.color}
+                onClick={() => applySolid(p.color)}
+                style={{ backgroundColor: p.color }}
+                className="aspect-square rounded-full border border-border/40 transition-transform hover:scale-110 active:scale-95"
+              />
+            ))}
+            <label
+              title="Custom color"
+              className="relative flex aspect-square cursor-pointer items-center justify-center rounded-full border border-dashed border-border/80 bg-muted/30 transition-transform hover:scale-110"
+            >
+              <input
+                type="color"
+                className="absolute inset-0 cursor-pointer opacity-0"
+                onChange={(e) => applySolid(e.target.value)}
+              />
+              <Plus className="h-3 w-3 text-muted-foreground" />
+            </label>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="gradient">
+          <div className="grid grid-cols-8 gap-1.5">
+            {GRADIENT_PRESETS.map((g, i) => (
+              <button
+                key={`${g.colors[0]}-${g.colors[1]}-${i}`}
+                type="button"
+                onClick={() => applyGradient(g.colors)}
+                className="aspect-square rounded-full border border-border/30 transition-transform hover:scale-[1.04] active:scale-95"
+                style={{
+                  background: `linear-gradient(135deg, ${g.colors[0]}, ${g.colors[1]})`,
+                }}
+                aria-label={`Gradient ${i + 1}`}
+              />
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="image">
+          <div className="flex min-w-0 flex-col gap-2.5">
             <input
-              type="color"
-              className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
-              onChange={(e) =>
-                manager.setBackground({ type: "solid", color: e.target.value })
-              }
-            />
-            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="sr-only">Выбрать произвольный цвет</span>
-          </label>
-        </div>
-      </section>
-
-      <section>
-        <p className="mb-2 text-[11px] font-medium text-muted-foreground">
-          Линейные градиенты
-        </p>
-        <div className="grid grid-cols-6 gap-1.5">
-          {GRADIENT_PRESETS.map((g, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() =>
-                manager.setBackground({
-                  type: "gradient",
-                  colors: g.colors as [string, string],
-                })
-              }
-              className="aspect-square rounded-full border border-border/30 shadow-xs hover:scale-105 hover:ring-2 hover:ring-primary/40 transition-all cursor-pointer focus-visible:outline-hidden"
-              style={{
-                background: `linear-gradient(135deg, ${g.colors[0]}, ${g.colors[1]})`,
+              type="file"
+              ref={fileInputRef}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) applyImageFile(file);
+                e.target.value = "";
               }}
-              aria-label={`Градиент ${i + 1}`}
+              accept="image/*"
+              className="hidden"
+            />
+
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) applyImageFile(file);
+              }}
+              className={cn(
+                "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-sm border border-dashed p-4 text-center transition-colors",
+                isDragging
+                  ? "border-foreground/40 bg-muted/40"
+                  : "border-border/80 bg-muted/20 hover:bg-muted/35",
+              )}
+            >
+              <UploadCloud className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Upload</span>
+              <span className="text-xs text-muted-foreground">Drop or click</span>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <p className="flex items-center gap-1 font-medium text-muted-foreground">
+                <ImageIcon className="h-3 w-3" />
+                Or paste a link
+              </p>
+              <div className="flex gap-1.5">
+                <Input
+                  type="url"
+                  placeholder="https://…"
+                  value={imageUrl}
+                  onChange={(e) => {
+                    setImageUrl(e.target.value);
+                    setUrlError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void applyImageFromUrl();
+                    }
+                  }}
+                  className="h-8 text-xs"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={urlLoading || !imageUrl.trim()}
+                  onClick={() => void applyImageFromUrl()}
+                  className="rounded-full"
+                >
+                  {urlLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    "Apply"
+                  )}
+                </Button>
+              </div>
+              {urlError && <p className="text-xs text-destructive">{urlError}</p>}
+            </div>
+          </div>
+        </TabsContent>
+        </Tabs>
+      </CollapsibleGroup>
+
+      <CollapsibleGroup id="background-pattern" title="Pattern">
+        <BackgroundPattern />
+      </CollapsibleGroup>
+
+      <CollapsibleGroup id="background-palette" title="Palette">
+        <div className="flex rounded-full bg-muted/50 p-0.5">
+          {(
+            [
+              ["all", "All"],
+              ["marked", markedSlideIds.length > 0 ? `Marked ${markedSlideIds.length}` : "Marked"],
+              ["slide", "This slide"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                setPaletteScope(id);
+                setSlidePalette(id === "slide" ? useCanvasStore.getState().palette : null);
+              }}
+              className={cn(
+                "h-7 flex-1 rounded-full text-xs transition-colors",
+                paletteScope === id ? "bg-background text-foreground shadow-xs" : "text-muted-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          {paletteScope === "slide"
+            ? "Colors land on this slide only. The carousel default stays as it is."
+            : paletteScope === "marked"
+              ? "Colors land on marked slides. Mark them with the corner check."
+              : "Text, accent, and cards use these colors on the whole carousel."}
+        </p>
+        <div className="flex flex-col">
+          {PALETTE_SLOTS.map((slot) => (
+            <label
+              key={slot.id}
+              className="flex cursor-pointer items-center gap-2.5 rounded-full px-2 py-2 hover:bg-muted/30"
+            >
+              <input
+                type="color"
+                value={shownPalette[slot.id]}
+                onChange={(e) => setProjectSlot(slot.id, e.target.value)}
+                aria-label={slot.label}
+                className="size-7 shrink-0 cursor-pointer rounded-full border border-border/50 bg-transparent p-0"
+              />
+              <span className="flex-1 text-foreground">{slot.label}</span>
+              <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                {shownPalette[slot.id]}
+              </span>
+            </label>
+          ))}
+        </div>
+      </CollapsibleGroup>
+
+      <BackgroundSlideSets />
+
+      <CollapsibleGroup id="background-sets" title="Suggest a set">
+        <div className="flex flex-col gap-1">
+          {SUGGESTED_SETS.map((set) => (
+            <SuggestedSetRow
+              key={set.id}
+              set={set}
+              onFillSlide={() => applySolid(set.background)}
+              onApply={() => applyProjectPalette(set)}
             />
           ))}
         </div>
-      </section>
-
-      <section>
-        <p className="mb-2 text-[11px] font-medium text-muted-foreground">
-          Радиальные градиенты
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          The large swatch fills this slide. Apply follows All, Marked, or This slide.
         </p>
-        <div className="grid grid-cols-6 gap-1.5">
-          {RADIAL_PRESETS.map((r, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() =>
-                manager.setBackground({
-                  type: "gradient",
-                  colors: r.colors as [string, string],
-                })
-              }
-              className="aspect-square rounded-full border border-border/30 shadow-xs hover:scale-105 hover:ring-2 hover:ring-primary/40 transition-all cursor-pointer focus-visible:outline-hidden"
-              style={{
-                background: `radial-gradient(circle at center, ${r.colors[0]}, ${r.colors[1]})`,
-              }}
-              aria-label={`Радиальный градиент ${i + 1}`}
-            />
-          ))}
-        </div>
-      </section>
+      </CollapsibleGroup>
     </div>
   );
 }

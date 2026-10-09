@@ -1,5 +1,3 @@
-import { Canvas } from "fabric";
-
 export type BackgroundType = "solid" | "gradient" | "image";
 
 export interface BackgroundConfig {
@@ -18,7 +16,13 @@ export const CANVAS_RATIOS: Record<RatioKey, { width: number; height: number }> 
   "16:9": { width: 1920, height: 1080 },
 };
 
-export type FabricCanvasJSON = ReturnType<InstanceType<typeof Canvas>['toJSON']>;
+// Fabric types `Canvas.toJSON()` as `any`, so the shape is declared explicitly.
+export interface FabricCanvasJSON {
+  version: string;
+  objects: Record<string, unknown>[];
+  background?: string;
+  [key: string]: unknown;
+}
 
 export interface SlideItem {
   id: number;
@@ -33,13 +37,17 @@ export interface ProjectState {
   width: number;
   height: number;
   slides: SlideItem[];
-  currentSlideId: string | null;
+  currentSlideId: number;
 }
 
 export interface EditorUIState {
   selectedObjectId: string | null;
   zoom: number;
   isGridVisible: boolean;
-  gridSize: number;
+  gridColumns: number;
+  gridRows: number;
+  gridMargin: number;
   gridColor: string;
+  gridOpacity: number;
+  snapToGrid: boolean;
 }

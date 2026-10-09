@@ -1,51 +1,64 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Search, Bookmark, Loader2 } from "lucide-react";
+import { Search, Bookmark, Loader2, X, Library, Ratio } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import {
   getUserProjects,
   toggleSaveProject,
   deleteProject,
-  getProjectById,
+  updateProjectTitle,
+  duplicateProject,
   type ProjectListItem,
 } from "@/actions/projects";
+import { useProject } from "@/hooks/use-project";
 import { useCanvasStore } from "@/store/useCanvasStore";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ProjectActionsDropdown } from "./project_actions_dropdown";
+import { GalleryMenu } from "@/components/canvas/sidebar/gallery-menu";
+import { Input } from "@/components/ui/input";
+import { GalleryCard, GallerySection, carouselMeta, splitGallery } from "@/components/canvas/sidebar/gallery-card";
+import { FilterMenu } from "@/components/canvas/sidebar/filter-menu";
 
 type Filter = "all" | "saved";
+
+const RATIOS = ["4:5", "1:1", "9:16", "16:9"] as const;
 
 export function SidebarProjects() {
   const { data: session } = useSession();
   const [filter, setFilter] = useState<Filter>("all");
+  const [ratio, setRatio] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
-  const { currentProjectId } = useCanvasStore();
-  const userId = (session?.user as { id?: string })?.id;
+  const currentProjectId = useCanvasStore((s) => s.currentProjectId);
+  const { loadProject } = useProject();
+  const userId = session?.user?.id;
 
   const fetchProjects = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     try {
-      const res = await getUserProjects(userId);
-      if (res.success && res.projects) {
-        setProjects(res.projects);
-      }
+      const res = await getUserProjects();
+      if (res.success) setProjects(res.projects);
     } finally {
       setLoading(false);
     }
   }, [userId]);
 
   useEffect(() => {
-    if (userId) {
-      fetchProjects();
-    }
+    if (userId) void fetchProjects();
+  }, [userId, fetchProjects]);
+
+  useEffect(() => {
+    const onChanged = () => {
+      if (userId) void fetchProjects();
+    };
+    window.addEventListener("core:projects-changed", onChanged);
+    return () => window.removeEventListener("core:projects-changed", onChanged);
   }, [userId, fetchProjects]);
 
   const handleToggleSave = async (e: React.MouseEvent, projectId: string) => {
@@ -53,122 +66,236 @@ export function SidebarProjects() {
     if (!userId) return;
 
     setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, isSaved: !p.isSaved } : p))
+      prev.map((p) => (p.id === projectId ? { ...p, isSaved: !p.isSaved } : p)),
     );
 
-    await toggleSaveProject(userId, projectId);
+    const res = await toggleSaveProject(projectId);
+    if (!res.success) {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, isSaved: !p.isSaved } : p)),
+      );
+    }
   };
 
   const handleSelectProject = async (id: string) => {
-    if (id === currentProjectId) return;
-    const res = await getProjectById(id);
-    if (res?.project) {
-      // Инициализация выбранного проекта
+    if (id === currentProjectId || loadingId) return;
+    setLoadingId(id);
+    try {
+      const res = await loadProject(id);
+      if (!res.success) {
+        console.error("loadProject failed:", res.error);
+      }
+    } finally {
+      setLoadingId(null);
     }
+  };
+
+  const handleRename = async (id: string, title: string) => {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, title } : p)));
+    const res = await updateProjectTitle(id, title);
+    if (!res.success) {
+      void fetchProjects();
+      return;
+    }
+    if (id === currentProjectId) useCanvasStore.getState().setProjectTitle(title);
+  };
+
+  const handleDuplicate = async (id: string) => {
+    const res = await duplicateProject(id);
+    if (res.success) void fetchProjects();
   };
 
   const handleDelete = async (id: string) => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
-    await deleteProject(id);
+    const res = await deleteProject(id);
+    if (!res.success) {
+      void fetchProjects();
+      return;
+    }
+    if (id === currentProjectId) {
+      useCanvasStore.getState().resetToBlankProject();
+    }
   };
 
   const visibleProjects = useMemo(() => {
     const query = search.trim().toLowerCase();
     return projects.filter((p) => {
       const matchesFilter = filter === "all" || p.isSaved;
+      const matchesRatio = ratio === "all" || p.aspectRatio === ratio;
       const matchesSearch = !query || p.title.toLowerCase().includes(query);
-      return matchesFilter && matchesSearch;
+      return matchesFilter && matchesRatio && matchesSearch;
     });
-  }, [projects, filter, search]);
+  }, [projects, filter, ratio, search]);
+
+  const filtering = search.trim().length > 0 || filter !== "all" || ratio !== "all";
+  const { recent, more } = splitGallery(visibleProjects, showAll || filtering);
 
   if (!userId) {
     return (
       <div className="p-4 text-center text-xs text-muted-foreground">
-        Войдите в аккаунт, чтобы сохранять и управлять проектами.
+        Sign in to save and manage projects.
       </div>
     );
   }
 
+
   return (
-    <div className="flex flex-col gap-2.5 text-xs p-2">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+    <div className="flex flex-col gap-4 p-1">
+
+      <div className="relative flex items-center px-2 gap-2">
+        <Search className="absolute left-6 size-4 text-muted-foreground pointer-events-none" />
         <Input
-          type="text"
-          placeholder="Поиск проектов…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-8 pl-8 text-xs rounded-full bg-muted/30 border-border/60"
+          placeholder="Search projects..."
+          className="w-full h-8 pl-10 pr-10 text-xs bg-muted/50 rounded-full placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
         />
-      </div>
-      <div className="bg-muted/50 p-0.5 rounded-full border border-border/40 w-fit flex gap-0.5">
-        {(["all", "saved"] as const).map((tab) => (
+        {search && (
           <button
-            key={tab}
             type="button"
-            onClick={() => setFilter(tab)}
-            className={cn(
-              "px-3 py-0.5 rounded-full text-[11px] transition-all",
-              filter === tab
-                ? "bg-background text-foreground shadow-xs font-medium"
-                : "text-muted-foreground hover:text-foreground"
-            )}
+            onClick={() => setSearch("")}
+            className="text-muted-foreground hover:text-foreground"
           >
-            {tab === "all" ? "Все" : "Сохранённые"}
+            <X className="h-3.5 w-3.5" />
           </button>
-        ))}
+        )}
+        <div className="flex flex-row justify-between">
+          <FilterMenu
+            icon={Library}
+            value={filter}
+            onChange={(id) => setFilter(id as Filter)}
+            groups={[
+              {
+                label: "Library",
+                options: [
+                  { id: "all", label: "All" },
+                  { id: "saved", label: "Saved" },
+                ],
+              },
+            ]}
+          />
+          <FilterMenu
+            icon={Ratio}
+            value={ratio}
+            onChange={setRatio}
+            groups={[
+              {
+                label: "Ratio",
+                options: [
+                  { id: "all", label: "All ratios" },
+                  ...RATIOS.map((item) => ({ id: item, label: item })),
+                ],
+              },
+            ]}
+          />
+        </div>
       </div>
-      {loading ? (
-        <div className="flex items-center justify-center py-6">
+
+
+      {loading && projects.length === 0 ? (
+        <div className="flex items-center justify-center py-10">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       ) : visibleProjects.length === 0 ? (
-        <p className="text-center text-[11px] text-muted-foreground py-6">
-          Проектов не найдено
+        <p className="text-center text-xs text-muted-foreground py-6">
+          No projects found
         </p>
       ) : (
-        <div className="flex flex-col gap-1">
-          {visibleProjects.map((p) => {
-            const isActive = p.id === currentProjectId;
-
-            return (
-              <div
+        <div className="flex flex-col gap-4">
+          <GallerySection
+            title={filtering ? "Projects" : "Recently used"}
+            action={!filtering && more.length > 0 ? (showAll ? "Show less" : "See all") : undefined}
+            onAction={() => setShowAll((open) => !open)}
+          >
+            {recent.map((p) => (
+              <ProjectCard
                 key={p.id}
-                onClick={() => handleSelectProject(p.id)}
-                className={cn(
-                  "group flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl cursor-pointer transition-colors",
-                  isActive
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "hover:bg-muted/50 text-foreground"
-                )}
-              >
-                <button
-                  type="button"
-                  onClick={(e) => handleToggleSave(e, p.id)}
-                  className="shrink-0 transition-transform active:scale-90"
-                >
-                  <Bookmark
-                    className={cn(
-                      "h-3.5 w-3.5 transition-colors",
-                      p.isSaved
-                        ? "fill-primary text-primary"
-                        : "text-muted-foreground/40 hover:text-muted-foreground"
-                    )}
-                  />
-                </button>
-
-                <span className="flex-1 truncate text-xs">{p.title}</span>
-
-                <span className="text-[10px] text-muted-foreground font-mono shrink-0 group-hover:hidden">
-                  {p.slideCount} сл.
-                </span>
-
-                <ProjectActionsDropdown onDelete={() => handleDelete(p.id)} />
-              </div>
-            );
-          })}
+                project={p}
+                active={p.id === currentProjectId}
+                busy={loadingId === p.id}
+                onOpen={() => void handleSelectProject(p.id)}
+                onToggleSave={(e) => void handleToggleSave(e, p.id)}
+                onDelete={() => void handleDelete(p.id)}
+                onRename={(title) => void handleRename(p.id, title)}
+                onDuplicate={() => void handleDuplicate(p.id)}
+              />
+            ))}
+          </GallerySection>
+          {more.length > 0 ? (
+            <GallerySection title="More projects">
+              {more.map((p) => (
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  active={p.id === currentProjectId}
+                  busy={loadingId === p.id}
+                  onOpen={() => void handleSelectProject(p.id)}
+                  onToggleSave={(e) => void handleToggleSave(e, p.id)}
+                  onDelete={() => void handleDelete(p.id)}
+                  onRename={(title) => void handleRename(p.id, title)}
+                  onDuplicate={() => void handleDuplicate(p.id)}
+                />
+              ))}
+            </GallerySection>
+          ) : null}
         </div>
       )}
     </div>
+  );
+}
+
+function ProjectCard({
+  project,
+  active,
+  busy,
+  onOpen,
+  onToggleSave,
+  onDelete,
+  onRename,
+  onDuplicate,
+}: {
+  project: ProjectListItem;
+  active: boolean;
+  busy: boolean;
+  onOpen: () => void;
+  onToggleSave: (event: React.MouseEvent) => void;
+  onDelete: () => void;
+  onRename: (title: string) => void;
+  onDuplicate: () => void;
+}) {
+  return (
+    <GalleryCard
+      title={project.title}
+      meta={carouselMeta(project.slideCount, project.aspectRatio)}
+      previewUrl={project.previewUrl}
+      busy={busy}
+      active={active}
+      onClick={onOpen}
+      menu={
+        <div onClick={(event) => event.stopPropagation()}>
+          <GalleryMenu
+            title={project.title}
+            createdAt={project.createdAt}
+            createdBy={project.authorName}
+            ratio={project.aspectRatio}
+            onRename={onRename}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
+            starred={project.isSaved}
+            onStar={() => onToggleSave({ stopPropagation() {} } as React.MouseEvent)}
+          />
+        </div>
+      }
+      badge={
+        <button
+          type="button"
+          onClick={onToggleSave}
+          title={project.isSaved ? "Remove from saved" : "Save"}
+          className="flex size-5 items-center justify-center rounded-full bg-background text-muted-foreground ring-1 ring-border/60 transition-colors hover:text-foreground"
+        >
+          <Bookmark className={cn("size-3", project.isSaved && "fill-primary text-primary")} />
+        </button>
+      }
+    />
   );
 }
