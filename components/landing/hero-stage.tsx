@@ -1,33 +1,71 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion } from "motion/react";
-import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
+import { cn } from "@/lib/utils";
 import { CoverHook, CoverList } from "@/components/landing/covers";
+
+export function PhoneFrame({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[2.1rem] bg-[#101218] p-[7px] shadow-[0_28px_70px_rgba(8,16,60,0.35)]",
+        className,
+      )}
+    >
+      <div className="relative overflow-hidden rounded-[1.65rem] bg-black">
+        <div className="pointer-events-none absolute top-2 left-1/2 z-10 h-5 w-16 -translate-x-1/2 rounded-full bg-black" />
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export function HeroStage() {
   return (
-    <CardContainer containerClassName="py-0" className="w-full">
-      <CardBody className="relative mx-auto h-[460px] w-full max-w-[520px] sm:h-[520px]">
-        <CardItem translateZ={16} className="absolute top-10 left-0 w-[46%] sm:top-8">
-          <motion.div
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <CoverList />
-          </motion.div>
-        </CardItem>
+    <div className="relative mx-auto h-[460px] w-full max-w-[540px] sm:h-[520px]">
+      <motion.div
+        className="absolute top-14 left-0 w-[48%] -rotate-[10deg]"
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <PhoneFrame>
+          <CoverList />
+        </PhoneFrame>
+      </motion.div>
 
-        <CardItem translateZ={48} className="absolute top-0 right-0 w-[72%]">
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 6.2, repeat: Infinity, ease: "easeInOut" }}
-            className="rounded-[1.85rem] bg-white p-2 shadow-[0_30px_80px_rgba(15,23,70,0.28)]"
-          >
-            <CoverHook />
-          </motion.div>
-        </CardItem>
+      <motion.div
+        className="absolute top-0 right-0 w-[64%] rotate-[7deg]"
+        animate={{ y: [0, 12, 0] }}
+        transition={{ duration: 6.2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <PhoneFrame>
+          <CoverHook />
+        </PhoneFrame>
+      </motion.div>
 
-      </CardBody>
-    </CardContainer>
+      <motion.div
+        className="absolute top-6 left-[34%] z-20 rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-[#14151c] shadow-xl"
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 4.4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        6 слайдов
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-8 left-2 z-20 max-w-[12rem] rounded-2xl bg-white px-3 py-2 text-[#14151c] shadow-xl"
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <p className="text-sm font-semibold">Обложка готова</p>
+        <p className="text-xs text-[#6b7080]">Первый кадр уже собран</p>
+      </motion.div>
+    </div>
   );
 }

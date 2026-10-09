@@ -27,7 +27,7 @@ import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { FloatingNav } from "@/components/ui/floating-navbar";
 import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 import { Highlight } from "@/components/ui/hero-highlight";
-import { HeroStage } from "@/components/landing/hero-stage";
+import { HeroStage, PhoneFrame } from "@/components/landing/hero-stage";
 import { CoverClose, CoverHook, CoverList } from "@/components/landing/covers";
 
 const NAV = [
@@ -281,29 +281,28 @@ export function LandingPage() {
         <h2 className="max-w-3xl text-4xl font-extrabold tracking-tight sm:text-5xl">
           От промпта до готовой карусели
         </h2>
-        <div className="mt-12 divide-y divide-black/10 border-y border-black/10">
-          {[
-            [
-              "Из одного текста",
-              "Промпт становится планом кадров. Обложка получает крючок, середина — аргументы, финал — действие.",
-            ],
-            [
-              "Один голос",
-              "Тон, обращение и сила обещания не прыгают от слайда к слайду.",
-            ],
-            [
-              "Крючок, объяснение, действие",
-              "Первый кадр останавливает ленту, середина раскрывает мысль, финал оставляет следующий шаг.",
-            ],
-          ].map(([title, text]) => (
-            <div
-              key={title}
-              className="grid gap-3 py-8 md:grid-cols-[0.7fr_1.3fr] md:items-baseline md:gap-16"
-            >
-              <h3 className="text-2xl font-extrabold tracking-tight">{title}</h3>
-              <p className="text-base leading-relaxed text-[#5c6170]">{text}</p>
-            </div>
-          ))}
+        <div className="mt-10 overflow-hidden rounded-[1.7rem] bg-white shadow-[0_10px_40px_rgba(28,32,58,0.05)]">
+          <div className="grid divide-y divide-black/10 md:grid-cols-3 md:divide-x md:divide-y-0">
+            {[
+              [
+                "Из одного текста",
+                "Промпт становится планом кадров. Обложка получает крючок, середина — аргументы, финал — действие.",
+              ],
+              [
+                "Один голос",
+                "Тон, обращение и сила обещания не прыгают от слайда к слайду.",
+              ],
+              [
+                "Крючок, объяснение, действие",
+                "Первый кадр останавливает ленту, середина раскрывает мысль, финал оставляет следующий шаг.",
+              ],
+            ].map(([title, text]) => (
+              <div key={title} className="p-6 sm:p-8">
+                <h3 className="text-2xl font-extrabold tracking-tight">{title}</h3>
+                <p className="mt-3 text-base leading-relaxed text-[#5c6170]">{text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -533,27 +532,36 @@ export function LandingPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pt-4 pb-16 sm:px-6">
-        <div className="rounded-[2rem] bg-[#ddd4ff] px-6 py-12 text-center sm:px-12 sm:py-16">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-5xl">
-            Опишите тему. Заберите карусель.
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm text-[#3c345c] sm:text-base">
-            ИИ создаст карусель. Вы поправите текст и скачаете кадры.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/studio"
-              className="inline-flex h-11 items-center rounded-full bg-[#14151c] px-5 text-sm font-semibold text-white"
-            >
-              Создать карусель
-            </Link>
-            <button
-              type="button"
-              onClick={() => setAuthOpen(true)}
-              className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#14151c]"
-            >
-              Войти
-            </button>
+        <div className="grid overflow-hidden rounded-[2rem] bg-[#07111f] text-white lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="px-6 py-12 sm:px-12 sm:py-16">
+            <h2 className="max-w-md text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Опишите тему. Заберите карусель.
+            </h2>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70 sm:text-base">
+              ИИ создаст карусель. Вы поправите текст и скачаете кадры.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href="/studio"
+                className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#14151c]"
+              >
+                Создать карусель
+              </Link>
+              <button
+                type="button"
+                onClick={() => setAuthOpen(true)}
+                className="inline-flex h-11 items-center rounded-full border border-white/20 px-5 text-sm font-semibold text-white"
+              >
+                Войти
+              </button>
+            </div>
+          </div>
+          <div className="flex items-end justify-center bg-[#2f5bff] px-6 pt-10">
+            <div className="w-[240px] translate-y-8 rotate-6 sm:w-[280px]">
+              <PhoneFrame>
+                <CoverClose />
+              </PhoneFrame>
+            </div>
           </div>
         </div>
       </section>
