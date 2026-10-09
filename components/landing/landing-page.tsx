@@ -2,23 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
 import {
+  ArrowLeft,
+  ArrowRight,
   ArrowUpRight,
-  GalleryHorizontalEnd,
-  Layers3,
   Menu,
   PenLine,
-  Share2,
   Sparkles,
   SwatchBook,
 } from "lucide-react";
 import {
   IconArrowRight,
-  IconBrandFigma,
   IconLayersSubtract,
   IconPhoto,
-  IconTemplate,
+  IconSparkles,
 } from "@tabler/icons-react";
 
 import Logo from "@/components/logo";
@@ -45,12 +42,11 @@ import { FloatingNav } from "@/components/ui/floating-navbar";
 import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
 import { HoverEffect } from "@/components/ui/card-hover-effect";
 import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
-import { AnimatedTestimonials } from "@/components/ui/animated-testimonials";
-import { LampContainer } from "@/components/ui/lamp";
 import { Highlight } from "@/components/ui/hero-highlight";
 import { WobbleCard } from "@/components/ui/wobble-card";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { HeroStage } from "@/components/landing/hero-stage";
+import { CoverClose, CoverHook, CoverList } from "@/components/landing/covers";
 
 const NAV = [
   {
@@ -83,19 +79,19 @@ const PLATFORMS = [
 
 const CARE = [
   {
+    value: "prompt",
+    title: "Серия из описания",
+    body: "Пишете тему и тон. ИИ собирает обложку, середину и финал так, чтобы кадры читались как одна карусель.",
+  },
+  {
     value: "presets",
     title: "Редакционные пресеты",
-    body: "Обложки с готовой иерархией: бейдж, заголовок, плашка, воздух. Меняете слова — каркас серии остаётся.",
+    body: "У генерации уже есть каркас: бейдж, заголовок, плашка, воздух. Вы правите слова, а не сетку.",
   },
   {
     value: "layers",
     title: "Слои без путаницы",
     body: "Порядок, z-index и подписи объектов живут в боковой панели. Текст, фото и фигуры не теряются друг под другом.",
-  },
-  {
-    value: "figma",
-    title: "Импорт из Figma",
-    body: "Если макет уже собран в Figma, его можно забрать в студию и довести серию на холсте.",
   },
   {
     value: "preview",
@@ -109,8 +105,34 @@ const CARE = [
   },
 ];
 
+const STORIES = [
+  {
+    quote:
+      "Написала тему в два предложения и получила шесть кадров. Обложка уже держала ритм, я только уточнила формулировки.",
+    name: "Алина Морозова",
+    role: "Редактор",
+    cover: <CoverHook />,
+  },
+  {
+    quote:
+      "Раньше карусель разъезжалась между файлами. Теперь серия рождается сразу: обложка, список, финал — один стиль.",
+    name: "Илья Сергеев",
+    role: "Основатель",
+    cover: <CoverList />,
+  },
+  {
+    quote:
+      "ИИ закрывает черновик серии, а студия оставляет контроль над слоями. Забираю PNG и не пересобираю кадры вручную.",
+    name: "Марина Коваль",
+    role: "Дизайнер",
+    cover: <CoverClose />,
+  },
+];
+
 export function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
+  const [story, setStory] = useState(0);
+  const activeStory = STORIES[story];
 
   return (
     <div className="relative">
@@ -196,22 +218,22 @@ export function LandingPage() {
           <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-wide">
               <Sparkles className="size-3.5" />
-              Студия каруселей
+              ИИ для каруселей
             </p>
             <h1 className="mt-5 max-w-xl text-[2.7rem] leading-[0.95] font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
-              Ваши карусели.
+              Карусель
               <br />
-              Без ручной вёрстки.
+              из одной мысли.
             </h1>
             <TextGenerateEffect
-              words="Пресеты, слои и экспорт в одном холсте."
+              words="Опишите тему. ИИ соберёт серию слайдов."
               duration={0.35}
               className="text-lg font-medium text-white/90 sm:text-2xl"
               spanClassName="text-white/90"
             />
             <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">
-              Собирайте серии для Instagram, LinkedIn и Telegram так, чтобы
-              кадры держали один ритм — от обложки до финала.
+              Обложка, аргументы и финал появляются в одном ритме. Вы правите
+              формулировки, а не собираете каждый кадр с нуля.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button
@@ -219,7 +241,7 @@ export function LandingPage() {
                 className="h-11 rounded-full bg-white px-5 text-[#1a2f86] hover:bg-white/90"
               >
                 <Link href="/studio">
-                  Начать серию
+                  Сгенерировать серию
                   <ArrowUpRight />
                 </Link>
               </Button>
@@ -238,14 +260,14 @@ export function LandingPage() {
       <div className="relative z-20 mx-auto -mt-16 grid max-w-6xl gap-4 px-4 sm:px-6 md:grid-cols-2">
         <article className="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_60px_rgba(28,32,58,0.08)] sm:p-8">
           <p className="text-xs font-semibold tracking-wide text-[#6d4aff]">
-            Холст
+            Генерация
           </p>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
-            Вёрстка, которая не разъезжается
+            Серия собирается из описания
           </h2>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-[#5c6170]">
-            Редакционная типографика уже стоит на слайде. Вы правите смысл, а
-            сетка серии остаётся собранной.
+            Тема, тон и длина. ИИ раскладывает мысль по кадрам карусели и
+            держит одну типографику от обложки до финала.
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-[#f4f2fb] p-4">
@@ -261,7 +283,7 @@ export function LandingPage() {
             href="/studio"
             className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-[#2f5bff]"
           >
-            Открыть холст
+            Собрать серию
             <IconArrowRight className="size-4" />
           </Link>
         </article>
@@ -316,30 +338,23 @@ export function LandingPage() {
         <div className="max-w-2xl">
           <p className="text-sm font-semibold text-[#6d4aff]">Возможности</p>
           <h2 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Всё, из чего собирается серия
+            От промпта до готовой карусели
           </h2>
         </div>
         <BentoGrid className="mt-8 md:auto-rows-[19rem]">
           <BentoGridItem
             className="md:col-span-2 bg-white"
-            icon={<IconTemplate className="size-5 text-[#2f5bff]" />}
-            title="Библиотека пресетов"
-            description="Обложки и внутренние слайды с типографикой, которую не нужно собирать с нуля."
-            header={<PresetHeader />}
+            icon={<IconSparkles className="size-5 text-[#2f5bff]" />}
+            title="ИИ собирает слайды"
+            description="Один текст на входе. На выходе обложка, поясняющие кадры и финал с общим ритмом."
+            header={<PromptHeader />}
           />
           <BentoGridItem
             className="bg-white"
             icon={<IconLayersSubtract className="size-5 text-[#6d4aff]" />}
             title="Слои"
-            description="Порядок объектов, подписи и z-index — в одной панели."
+            description="Сгенерированную серию можно разобрать: текст, плашка и порядок кадров остаются под рукой."
             header={<LayersHeader />}
-          />
-          <BentoGridItem
-            className="bg-white"
-            icon={<IconBrandFigma className="size-5 text-[#2f5bff]" />}
-            title="Импорт из Figma"
-            description="Заберите макет и доведите серию уже в студии."
-            header={<FigmaHeader />}
           />
           <BentoGridItem
             className="md:col-span-2 bg-white"
@@ -355,22 +370,22 @@ export function LandingPage() {
         <HoverEffect
           items={[
             {
-              title: "Иконки и фильтры",
+              title: "Промпт вместо макета",
               description:
-                "Знаки, плашки и обработка фото живут рядом с холстом — не в пяти разных окнах.",
-              link: "#icons",
+                "Не нужно собирать обложку вручную. Описываете мысль, и серия появляется кадрами.",
+              link: "#prompt",
             },
             {
-              title: "Фон и элементы",
+              title: "Один стиль на всю ленту",
               description:
-                "Фигуры, текст и фон собираются в кадр с тем же ритмом, что и обложка.",
-              link: "#elements",
+                "Обложка, список и финал не выглядят как три случайные картинки из разных файлов.",
+              link: "#series",
             },
             {
-              title: "Проекты в аккаунте",
+              title: "Серия остаётся вашей",
               description:
-                "Серии можно сохранять, возвращаться к ним и не держать единственный файл на столе.",
-              link: "#projects",
+                "Черновик можно поправить по слоям, сохранить в аккаунте и забрать файлами.",
+              link: "#export",
             },
           ]}
         />
@@ -380,16 +395,16 @@ export function LandingPage() {
         <div>
           <p className="text-sm font-semibold text-[#6d4aff]">Студия</p>
           <h2 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Рутину заберёт холст
+            ИИ закрывает черновик серии
           </h2>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-[#5c6170] sm:text-base">
-            Swibp не рисует за вас мысль. Он держит сетку, слои и экспорт, чтобы
-            серия выглядела как одна история.
+            Вы приносите тему. Swibp раскладывает её по слайдам карусели и
+            оставляет кадры, которые можно поправить.
           </p>
           <Accordion
             type="single"
             collapsible
-            defaultValue="presets"
+            defaultValue="prompt"
             className="mt-6"
           >
             {CARE.map((item) => (
@@ -417,18 +432,18 @@ export function LandingPage() {
             {[
               {
                 n: "01",
-                title: "Откройте пресет",
-                text: "Возьмите обложку или пустой кадр. Иерархия текста уже стоит.",
+                title: "Опишите тему",
+                text: "Пара предложений: о чём серия, для кого и какой тон. Этого достаточно, чтобы начать.",
               },
               {
                 n: "02",
-                title: "Соберите слайды",
-                text: "Меняйте слова, фото, иконки и порядок слоёв. Серия остаётся в одном стиле.",
+                title: "ИИ собирает слайды",
+                text: "Появляются обложка, поясняющие кадры и финал. Нумерация и ритм уже стоят на месте.",
               },
               {
                 n: "03",
-                title: "Заберите файлы",
-                text: "Превью, PNG без потери резкости и JSON, если структуру нужно сохранить.",
+                title: "Поправьте и заберите",
+                text: "Уточните формулировки, пролистайте превью и экспортируйте PNG.",
               },
             ].map((step) => (
               <li
@@ -450,20 +465,19 @@ export function LandingPage() {
             className="flex h-full flex-col justify-between py-10"
           >
             <div>
-              <p className="text-sm font-semibold text-white/80">Студия открыта</p>
+              <p className="text-sm font-semibold text-white/80">Генерация открыта</p>
               <p className="mt-3 max-w-xs text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-                Начните серию сегодня
+                Опишите тему и получите серию
               </p>
               <p className="mt-3 max-w-sm text-sm text-white/80">
-                Холст, пресеты и экспорт — в одном окне. Аккаунт нужен, только
-                чтобы сохранить проект.
+                Черновик карусели появляется в студии. Аккаунт нужен, чтобы сохранить проект.
               </p>
             </div>
             <Link
               href="/studio"
               className="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#3a2a78]"
             >
-              Открыть студию
+              Сгенерировать
               <ArrowUpRight className="size-4" />
             </Link>
           </WobbleCard>
@@ -472,42 +486,25 @@ export function LandingPage() {
 
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <BackgroundGradient containerClassName="rounded-[2rem]" className="rounded-[1.9rem] bg-[#f7f4ff] p-6 sm:p-10">
-          <div className="grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-            <div>
-              <p className="text-sm font-semibold text-[#6d4aff]">Карусель</p>
-              <h2 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
-                Серия, которую не стыдно листать
-              </h2>
-              <p className="mt-4 max-w-md text-sm leading-relaxed text-[#5c6170] sm:text-base">
-                Обложка задаёт тон, середина держит мысль, финал оставляет
-                действие. Всё это — отдельные слайды одного проекта.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <StatPill value="1080×1350" label="кадр" />
-                <StatPill value="PNG" label="рендер" />
-                <StatPill value="JSON" label="структура" />
-              </div>
+          <div>
+            <p className="text-sm font-semibold text-[#6d4aff]">Карусель</p>
+            <h2 className="mt-2 max-w-xl text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Обложка, середина и финал
+            </h2>
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#5c6170] sm:text-base">
+              Генерация не отдаёт один постер. Это карусель: первый кадр
+              цепляет, следующие объясняют, последний оставляет действие.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <StatPill value="1080×1350" label="кадр" />
+              <StatPill value="PNG" label="рендер" />
+              <StatPill value="JSON" label="структура" />
             </div>
-            <div className="grid grid-cols-[1.1fr_0.9fr] gap-3">
-              <img
-                src="/landing/cover-editorial.svg"
-                alt="Пресет обложки с крупной типографикой"
-                className="h-full rounded-3xl object-cover shadow-lg"
-              />
-              <div className="grid gap-3">
-                <img
-                  src="/landing/cover-list.svg"
-                  alt="Слайд со списком правил обложки"
-                  className="rounded-3xl object-cover shadow-lg"
-                />
-                <div className="rounded-3xl bg-[#14151c] p-4 text-white">
-                  <p className="text-3xl font-extrabold">+ JSON</p>
-                  <p className="mt-1 text-xs text-white/70">
-                    Структура слайда копируется в буфер
-                  </p>
-                </div>
-              </div>
-            </div>
+          </div>
+          <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-5 sm:grid-cols-3">
+            <CoverHook />
+            <CoverList />
+            <CoverClose />
           </div>
         </BackgroundGradient>
       </section>
@@ -523,50 +520,52 @@ export function LandingPage() {
           <h2 className="px-4 text-center text-3xl font-extrabold tracking-tight sm:text-4xl">
             Как это звучит в работе
           </h2>
-          <AnimatedTestimonials
-            autoplay
-            testimonials={[
-              {
-                quote:
-                  "Обложка больше не собирается час. Беру пресет, меняю заголовок и сразу вижу, держит ли кадр ритм.",
-                name: "Алина Морозова",
-                designation: "Редактор",
-                src: "/landing/cover-editorial.svg",
-              },
-              {
-                quote:
-                  "Серия для LinkedIn наконец выглядит как одна история, а не как три случайных картинки из разных файлов.",
-                name: "Илья Сергеев",
-                designation: "Основатель",
-                src: "/landing/cover-list.svg",
-              },
-              {
-                quote:
-                  "Экспорт резкий, а JSON спасает, когда нужно повторить структуру слайда без ручного копирования слоёв.",
-                name: "Марина Коваль",
-                designation: "Дизайнер",
-                src: "/landing/cover-stat.svg",
-              },
-            ]}
-          />
+          <div className="mx-auto mt-10 grid max-w-6xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
+            <div className="mx-auto w-full max-w-[440px]">{activeStory.cover}</div>
+            <div>
+              <p className="text-2xl leading-snug font-semibold tracking-tight text-[#14151c] sm:text-3xl">
+                {activeStory.quote}
+              </p>
+              <p className="mt-6 text-base font-bold">{activeStory.name}</p>
+              <p className="text-sm text-[#5c6170]">{activeStory.role}</p>
+              <div className="mt-8 flex gap-2">
+                <button
+                  type="button"
+                  aria-label="Предыдущий отзыв"
+                  onClick={() => setStory((index) => (index + STORIES.length - 1) % STORIES.length)}
+                  className="grid size-10 place-items-center rounded-full bg-white text-[#14151c] shadow-sm"
+                >
+                  <ArrowLeft className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Следующий отзыв"
+                  onClick={() => setStory((index) => (index + 1) % STORIES.length)}
+                  className="grid size-10 place-items-center rounded-full bg-[#14151c] text-white"
+                >
+                  <ArrowRight className="size-4" />
+                </button>
+              </div>
+            </div>
+          </div>
           <InfiniteMovingCards
             speed="slow"
             items={[
               {
                 quote:
-                  "Слои подписаны, z-index не приходится угадывать. Это и есть нормальная студия, а не доска.",
+                  "Описала рубрику одним абзацем. Вернулась к готовой карусели, а не к пустому холсту.",
                 name: "Кирилл",
                 title: "Арт-директор",
               },
               {
                 quote:
-                  "Превью перед выгрузкой убирает половину правок. Листаешь серию так же, как её увидят.",
+                  "Слайды нумеруются и читаются по порядку. Это именно лента, а не набор отдельных картинок.",
                 name: "Софья",
                 title: "SMM",
               },
               {
                 quote:
-                  "Иконки и фон рядом с холстом. Не ухожу в другой инструмент ради одной плашки.",
+                  "Черновик от ИИ можно разобрать по слоям и поправить заголовок, не ломая остальные кадры.",
                 name: "Денис",
                 title: "Продюсер",
               },
@@ -575,62 +574,28 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pt-4 pb-10 sm:px-6">
-        <LampContainer>
-          <motion.h2
-            initial={{ opacity: 0.5, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-            className="text-center text-4xl font-extrabold tracking-tight text-white sm:text-6xl"
-          >
-            Первая серия — сегодня
-          </motion.h2>
-          <p className="mx-auto mt-4 max-w-md text-center text-sm text-slate-300 sm:text-base">
-            Откройте студию, возьмите пресет и соберите кадры, которые можно
-            сразу ставить в ленту.
+      <section className="mx-auto max-w-6xl px-4 pt-4 pb-16 sm:px-6">
+        <div className="rounded-[2rem] bg-[#ddd4ff] px-6 py-12 text-center sm:px-12 sm:py-16">
+          <h2 className="text-3xl font-extrabold tracking-tight sm:text-5xl">
+            Опишите тему. Заберите карусель.
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-sm text-[#3c345c] sm:text-base">
+            ИИ соберёт слайды серии. Вы поправите текст и скачаете кадры.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/studio"
-              className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-slate-950"
+              className="inline-flex h-11 items-center rounded-full bg-[#14151c] px-5 text-sm font-semibold text-white"
             >
-              Открыть студию
+              Сгенерировать серию
             </Link>
             <button
               type="button"
               onClick={() => setAuthOpen(true)}
-              className="inline-flex h-11 items-center rounded-full border border-white/20 px-5 text-sm font-semibold text-white"
+              className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#14151c]"
             >
               Войти
             </button>
-          </div>
-        </LampContainer>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
-        <div className="rounded-[2rem] bg-[#ddd4ff] px-6 py-12 text-center sm:px-12 sm:py-16">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-5xl">
-            Уже внутри студии
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm text-[#3c345c] sm:text-base">
-            Пресеты с типографикой, резкий рендер и копирование JSON — то, с чем
-            можно работать прямо сейчас.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            {[
-              { href: "#features", label: "Пресеты", icon: GalleryHorizontalEnd },
-              { href: "#how", label: "Слои", icon: Layers3 },
-              { href: "/studio", label: "Холст", icon: Share2 },
-            ].map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className="grid size-14 place-items-center rounded-full bg-white text-[#14151c] shadow-sm"
-                aria-label={item.label}
-              >
-                <item.icon className="size-5" />
-              </a>
-            ))}
           </div>
         </div>
       </section>
@@ -645,7 +610,7 @@ export function LandingPage() {
               <span className="text-lg font-extrabold">swibp</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-white/60">
-              Студия каруселей: пресеты, слои и экспорт в одном холсте.
+              ИИ собирает карусели: обложка, середина и финал из одного описания.
             </p>
           </div>
           <div>
@@ -707,19 +672,16 @@ function StatPill({ value, label }: { value: string; label: string }) {
   );
 }
 
-function PresetHeader() {
+function PromptHeader() {
   return (
-    <div className="flex h-full min-h-28 gap-3 rounded-xl bg-[#f4f2fb] p-3">
-      <div className="flex-1 rounded-lg bg-[#f6f1e8] p-3">
-        <p className="font-serif text-lg leading-none text-[#161513]">Обложка</p>
-        <div className="mt-3 h-6 w-2/3 rounded-md bg-[#2f5bff]" />
-      </div>
-      <div className="flex-1 rounded-lg bg-[#14151c] p-3 text-white">
-        <p className="text-sm font-bold">Слайд</p>
-        <div className="mt-4 space-y-1.5">
-          <div className="h-1.5 rounded-full bg-white/50" />
-          <div className="h-1.5 w-2/3 rounded-full bg-white/30" />
-        </div>
+    <div className="flex h-full min-h-36 flex-col justify-between rounded-xl bg-[#f4f2fb] p-4">
+      <p className="rounded-xl bg-white px-3 py-2 text-sm text-[#14151c]">
+        «Как объяснить карусель за 6 слайдов»
+      </p>
+      <div className="mt-3 flex gap-2">
+        <span className="rounded-lg bg-[#f4efe6] px-2 py-1 text-[11px] font-semibold">01 обложка</span>
+        <span className="rounded-lg bg-[#14151c] px-2 py-1 text-[11px] font-semibold text-white">02 список</span>
+        <span className="rounded-lg bg-[#e7deff] px-2 py-1 text-[11px] font-semibold">06 финал</span>
       </div>
     </div>
   );
@@ -737,16 +699,6 @@ function LayersHeader() {
           <span className="text-[#8b90a0]">{index + 1}</span>
         </div>
       ))}
-    </div>
-  );
-}
-
-function FigmaHeader() {
-  return (
-    <div className="grid h-full min-h-28 place-items-center rounded-xl bg-gradient-to-br from-[#fff1ee] to-[#efe9ff]">
-      <div className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold shadow-sm">
-        Figma → холст
-      </div>
     </div>
   );
 }
@@ -770,12 +722,8 @@ function CareVisual() {
   return (
     <div className="relative mx-auto aspect-square w-full max-w-md">
       <div className="absolute inset-6 rounded-full bg-[#e7deff]" />
-      <div className="absolute inset-0 grid place-items-center">
-        <img
-          src="/landing/cover-editorial.svg"
-          alt="Пример слайда в студии"
-          className="w-[62%] rounded-[1.6rem] shadow-2xl"
-        />
+      <div className="absolute inset-x-[12%] inset-y-[8%]">
+        <CoverHook />
       </div>
       <div className="absolute top-8 right-0 rounded-2xl bg-white px-3 py-2 text-xs font-semibold shadow-lg">
         Превью ленты
