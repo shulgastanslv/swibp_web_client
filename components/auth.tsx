@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
   checkCredentials,
@@ -73,6 +73,8 @@ export function AuthModal({
 
   const router = useRouter();
   const shownAuthError = useRef(false);
+
+  const searchParams = useSearchParams();
 
   const resetForm = () => {
     setEmail("");
@@ -138,17 +140,15 @@ export function AuthModal({
     onOpenChange?.(open);
   };
 
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setIsLoading(true);
 
     try {
-<<<<<<< HEAD
       const callbackUrl = searchParams.get("callbackUrl") || "/studio";
-=======
-      const callbackUrl = queryParam("callbackUrl") || "/";
->>>>>>> cursor/canvas-architecture-refactor-9641
 
       // 1. Register a new account
       if (view === "register") {
@@ -240,11 +240,7 @@ export function AuthModal({
 
   const handleGoogleSignIn = () => {
     signIn("google", {
-<<<<<<< HEAD
       callbackUrl: searchParams.get("callbackUrl") || "/studio",
-=======
-      callbackUrl: queryParam("callbackUrl") || "/",
->>>>>>> cursor/canvas-architecture-refactor-9641
     });
   };
 

@@ -122,7 +122,7 @@ export function LandingPage() {
         <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="white" />
         <BackgroundBeams className="opacity-60" />
         <div className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link href="/" className="grid size-9 place-items-center overflow-hidden rounded-xl bg-white" aria-label="Swibp">
+          <Link href="/" className="grid size-9 place-items-center overflow-hidden rounded-xl" aria-label="Swibp">
             <Logo width={36} height={36} />
           </Link>
 

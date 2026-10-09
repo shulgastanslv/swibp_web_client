@@ -92,22 +92,11 @@ export function NewProjectModal({ open, onOpenChange }: NewProjectModalProps) {
     setLoading(true);
     setError(null);
 
-<<<<<<< HEAD
-    const res = await createProject(currentUserId, name);
-
-    if (res.success && res.projectId) {
-      setName("");
-      onOpenChange(false);
-      router.push(`/studio?project=${res.projectId}`);
-    } else {
-      alert(res.error || "Ошибка при создании");
-=======
     const res = await newProject(name.trim(), format.ratio);
     if (!res.success) {
       setError("Couldn't create the project");
       setLoading(false);
       return;
->>>>>>> cursor/canvas-architecture-refactor-9641
     }
 
     if (templateId) {

@@ -25,10 +25,7 @@ import {
   Focus,
   Shield,
 } from "lucide-react";
-<<<<<<< HEAD
-=======
 import { NotificationsMenu } from "@/components/notifications-menu";
->>>>>>> cursor/canvas-architecture-refactor-9641
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { useSession, signOut } from "next-auth/react";
@@ -66,16 +63,7 @@ interface HeaderProps {
   onFocus?: () => void;
 }
 
-<<<<<<< HEAD
-export function Header({
-  projectName = "Untitled Carousel",
-  onProjectNameChange,
-  onPublishTemplate,
-}: HeaderProps) {
-  const [name, setName] = useState(projectName);
-=======
 export function Header({ onPreview, onFocus }: HeaderProps) {
->>>>>>> cursor/canvas-architecture-refactor-9641
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authVerifyToken, setAuthVerifyToken] = useState<string | null>(null);
   const [authResetToken, setAuthResetToken] = useState<string | null>(null);
@@ -202,13 +190,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
     <>
       <header className="h-12 w-full flex items-center justify-between px-4 bg-background/80 backdrop-blur-md border-b border-border/60 text-xs z-20 shrink-0 gap-3 select-none">
         <div className="flex items-center gap-1.5 min-w-0">
-<<<<<<< HEAD
-          <Link href="/" aria-label="Swibp" className="shrink-0">
-            <Logo width={25} height={25} />
-          </Link>
-=======
           <Logo width={25} height={25} className="hover:opacity-80 transition-opacity cursor-pointer duration-300" />
->>>>>>> cursor/canvas-architecture-refactor-9641
           <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
           <input
             type="text"
@@ -238,7 +220,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-1">
-        
+
           <div className="flex items-center p-0.5 rounded-full">
             <Button
               variant="ghost"
@@ -269,11 +251,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
           >
             <BookOpen className="w-3.5 h-3.5" />
           </Button>
-<<<<<<< HEAD
-        </div>
-=======
           <div className="h-4 w-px bg-border/60 mx-0.5 hidden sm:block" />
->>>>>>> cursor/canvas-architecture-refactor-9641
 
           <Button
             variant={isDirty ? "default" : "secondary"}
@@ -298,7 +276,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             <Layers2 className="w-3 h-3 fill-current text-muted-foreground" />
             <span className="hidden sm:inline">Preview</span>
           </Button>
-          
+
           <Button
             variant="ghost"
             size="sm"
@@ -326,7 +304,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             variant="secondary"
             size="sm"
             onClick={openPublish}
-            className="h-8 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
+            className="h-10 px-3 text-xs font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
             title="Publish as Template"
           >
             <Globe className="w-3.5 h-3.5" />
@@ -334,7 +312,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
           </Button>
 
 
-          <div className="flex items-center h-7 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full pl-2.5 pr-0.5 shadow-2xs transition-all gap-1">
+          <div className="flex items-center h-9 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full pl-2.5 pr-0.5 shadow-2xs transition-all gap-1">
             <button
               type="button"
               onClick={() => setShowExport(true)}
@@ -342,7 +320,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             >
               <ArrowUp className="w-3.5 h-3.5" />
               <span>Export</span>
-              <span className="text-xs font-normal text-primary-foreground/70">
+              <span className="text-ы font-normal text-primary-foreground/70">
                 [{slideCount}] · PNG
               </span>
             </button>
