@@ -106,7 +106,7 @@ export function CoverClose({ className }: { className?: string }) {
           карусель
         </h3>
         <div className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#14151c]">
-          PNG · 1080×1350
+          14 млн иконок
         </div>
       </div>
       <Dots active={5} />

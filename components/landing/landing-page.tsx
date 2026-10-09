@@ -6,29 +6,26 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
-  FolderKanban,
-  GalleryHorizontal,
-  Grid3x3,
-  Image as ImageIcon,
-  Layers,
-  LayoutTemplate,
   Menu,
   PenLine,
-  Redo2,
   Shapes,
-  SlidersHorizontal,
-  Smartphone,
   Sparkles,
-  Square,
   SwatchBook,
-  Undo2,
-  ZoomIn,
 } from "lucide-react";
 import {
   IconArrowRight,
+  IconBolt,
+  IconCamera,
+  IconChartBar,
+  IconHeart,
   IconLayersSubtract,
+  IconLeaf,
+  IconMessageCircle,
   IconPhoto,
+  IconRocket,
   IconSparkles,
+  IconStar,
+  IconSun,
 } from "@tabler/icons-react";
 
 import Logo from "@/components/logo";
@@ -67,9 +64,9 @@ const NAV = [
     icon: <SwatchBook className="size-4" />,
   },
   {
-    name: "Студия",
-    link: "#studio",
-    icon: <LayoutTemplate className="size-4" />,
+    name: "Иконки",
+    link: "#icons",
+    icon: <Shapes className="size-4" />,
   },
   {
     name: "Как это работает",
@@ -94,47 +91,19 @@ const PLATFORMS = [
   "Серии",
 ];
 
-const TOOLS: { icon: typeof Sparkles; title: string; text: string }[] = [
-  {
-    icon: Sparkles,
-    title: "Генерация серии",
-    text: "Описываете тему, и ИИ раскладывает её на обложку, середину и финал.",
-  },
-  {
-    icon: LayoutTemplate,
-    title: "Шаблоны",
-    text: "Готовые обложки и внутренние слайды. Меняете текст, каркас остаётся.",
-  },
-  {
-    icon: Layers,
-    title: "Слои",
-    text: "Порядок, подписи и z-index. Текст, фото и плашки не теряются друг под другом.",
-  },
-  {
-    icon: Square,
-    title: "Элементы",
-    text: "Фигуры и текстовые блоки на холсте, чтобы добрать кадр после генерации.",
-  },
-  {
-    icon: ImageIcon,
-    title: "Фоны",
-    text: "Сплошной цвет, градиент или своё изображение на весь слайд.",
-  },
-  {
-    icon: SlidersHorizontal,
-    title: "Фильтры",
-    text: "Обработка фото прямо в студии, без отдельного редактора.",
-  },
-  {
-    icon: Shapes,
-    title: "Иконки",
-    text: "Знаки и плашки рядом с холстом, чтобы отметить шаг или акцент.",
-  },
-  {
-    icon: FolderKanban,
-    title: "Проекты",
-    text: "Серии сохраняются в аккаунте: можно вернуться, а не держать один файл.",
-  },
+const ICON_SET = [
+  IconSparkles,
+  IconHeart,
+  IconRocket,
+  IconStar,
+  IconBolt,
+  IconSun,
+  IconChartBar,
+  IconMessageCircle,
+  IconCamera,
+  IconLeaf,
+  IconPhoto,
+  IconLayersSubtract,
 ];
 
 const CARE = [
@@ -154,14 +123,9 @@ const CARE = [
     body: "Порядок, z-index и подписи объектов живут в боковой панели. Текст, фото и фигуры не теряются друг под другом.",
   },
   {
-    value: "preview",
-    title: "Превью перед публикацией",
-    body: "Пролистайте слайды так, как их увидят в ленте, и только потом забирайте файлы.",
-  },
-  {
-    value: "export",
-    title: "PNG, PDF и JSON",
-    body: "Архив PNG для ленты, многостраничный PDF и копия структуры слайда. Рендер не мылит текст.",
+    value: "icons",
+    title: "14 млн иконок",
+    body: "Поиск по библиотеке рядом с холстом. Знак встаёт на слайд и держит тот же ритм, что и серия.",
   },
 ];
 
@@ -182,7 +146,7 @@ const STORIES = [
   },
   {
     quote:
-      "ИИ закрывает черновик серии, а студия оставляет контроль над слоями. Забираю PNG и не пересобираю кадры вручную.",
+      "ИИ закрывает черновик серии. Иконку и формулировку ставлю сам и не собираю кадры с нуля.",
     name: "Марина Коваль",
     role: "Дизайнер",
     cover: <CoverClose />,
@@ -331,12 +295,12 @@ export function LandingPage() {
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-[#f4f2fb] p-4">
-              <p className="text-3xl font-extrabold tracking-tight">1080</p>
-              <p className="mt-1 text-xs text-[#5c6170]">сторона кадра</p>
+              <p className="text-3xl font-extrabold tracking-tight">14 млн</p>
+              <p className="mt-1 text-xs text-[#5c6170]">иконок в студии</p>
             </div>
             <div className="rounded-2xl bg-[#f4f2fb] p-4">
-              <p className="text-3xl font-extrabold tracking-tight">PNG</p>
-              <p className="mt-1 text-xs text-[#5c6170]">и JSON рядом</p>
+              <p className="text-3xl font-extrabold tracking-tight">1</p>
+              <p className="mt-1 text-xs text-[#5c6170]">мысль на всю серию</p>
             </div>
           </div>
           <Link
@@ -419,145 +383,52 @@ export function LandingPage() {
           <BentoGridItem
             className="md:col-span-2 bg-white"
             icon={<IconPhoto className="size-5 text-[#6d4aff]" />}
-            title="Превью и экспорт"
-            description="Пролистайте кадры как в ленте. Заберите ZIP с PNG, PDF или JSON структуры слайда."
-            header={<ExportHeader />}
+            title="Один ритм"
+            description="Обложка, середина и финал читаются как одна карусель, а не набор отдельных картинок."
+            header={<SeriesHeader />}
           />
           <BentoGridItem
             className="bg-white"
-            icon={<Smartphone className="size-5 text-[#2f5bff]" />}
-            title="Форматы кадра"
-            description="4:5, квадрат, сторис и широкий кадр. Серия переключается без нового макета."
-            header={<RatioHeader />}
+            icon={<Shapes className="size-5 text-[#2f5bff]" />}
+            title="14 млн иконок"
+            description="Библиотека открыта в студии. Знак ищется и встаёт на кадр."
+            header={<IconsHeader />}
           />
         </BentoGrid>
       </section>
 
-      <section id="studio" className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="max-w-2xl">
-          <p className="text-sm font-semibold text-[#6d4aff]">Студия</p>
-          <h2 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Чем собирается кадр
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#5c6170] sm:text-base">
-            Генерация даёт черновик. Дальше серия живёт в редакторе: шаблоны, слои, фон, иконки и проекты.
-          </p>
-        </div>
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {TOOLS.map((tool) => (
-            <article
-              key={tool.title}
-              className="rounded-[1.4rem] bg-white p-5 shadow-[0_10px_40px_rgba(28,32,58,0.05)]"
-            >
-              <span className="grid size-10 place-items-center rounded-2xl bg-[#f4f2fb] text-[#2f5bff]">
-                <tool.icon className="size-5" />
-              </span>
-              <h3 className="mt-4 text-base font-bold">{tool.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-[#5c6170]">{tool.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section id="formats" className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <article className="rounded-[1.7rem] bg-[#14151c] p-6 text-white sm:p-8">
-            <p className="text-xs font-semibold tracking-wide text-[#c9b6ff]">Кадр</p>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Четыре пропорции</h2>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/70">
-              Одна серия под ленту, квадрат, сторис или широкий пост. Размер холста меняется прямо в тулбаре.
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                ["4:5", "1080×1350", "Лента"],
-                ["1:1", "1080×1080", "Квадрат"],
-                ["9:16", "1080×1920", "Сторис"],
-                ["16:9", "1920×1080", "Широкий"],
-              ].map(([ratio, size, label]) => (
-                <div key={ratio} className="rounded-2xl bg-white/10 p-3">
-                  <p className="text-lg font-extrabold">{ratio}</p>
-                  <p className="mt-1 text-[11px] text-white/60">{size}</p>
-                  <p className="mt-2 text-xs text-white/80">{label}</p>
-                </div>
+      <section id="icons" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <div className="overflow-hidden rounded-[2rem] bg-[#14151c] text-white">
+          <div className="grid items-end gap-10 px-6 py-10 sm:px-10 sm:py-14 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.22em] text-white/45 uppercase">
+                Библиотека
+              </p>
+              <h2 className="mt-4 text-6xl leading-none font-extrabold tracking-tighter sm:text-8xl">
+                14<span className="text-[#c9b6ff]">млн</span>
+              </h2>
+              <p className="mt-3 text-lg font-medium text-white/85">иконок в студии</p>
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-white/60">
+                Поиск открыт рядом с холстом. Знак встаёт на слайд и остаётся в том же ритме, что и серия.
+              </p>
+              <Link
+                href="/studio"
+                className="mt-8 inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-[#14151c]"
+              >
+                Открыть библиотеку
+                <ArrowUpRight className="size-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {ICON_SET.map((Icon, index) => (
+                <span
+                  key={index}
+                  className="grid aspect-square place-items-center rounded-2xl bg-white/10 text-white"
+                >
+                  <Icon className="size-6" stroke={1.5} />
+                </span>
               ))}
             </div>
-          </article>
-
-          <article className="rounded-[1.7rem] bg-white p-6 shadow-[0_10px_40px_rgba(28,32,58,0.05)] sm:p-8">
-            <p className="text-xs font-semibold tracking-wide text-[#6d4aff]">Выгрузка</p>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Забрать серию целиком</h2>
-            <ul className="mt-6 space-y-3">
-              {[
-                ["PNG .zip", "Отдельные кадры для Instagram и LinkedIn, без мыла на тексте."],
-                ["PDF", "Многостраничный файл, если карусель уходит документом."],
-                ["JSON", "Структура слайда в буфер, чтобы повторить вёрстку."],
-                ["Превью", "Листание кадров до экспорта, как их увидят в ленте."],
-              ].map(([title, text]) => (
-                <li key={title} className="rounded-2xl bg-[#f4f2fb] px-4 py-3">
-                  <p className="text-sm font-bold">{title}</p>
-                  <p className="mt-1 text-sm text-[#5c6170]">{text}</p>
-                </li>
-              ))}
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              icon: Smartphone,
-              title: "Для ленты",
-              text: "SMM собирает серию под пост: обложка, тезисы и призыв в одном стиле.",
-            },
-            {
-              icon: PenLine,
-              title: "Для редакции",
-              text: "Шаблоны держат типографику. Текст меняется, сетка слайдов нет.",
-            },
-            {
-              icon: Undo2,
-              title: "Для правок",
-              text: "Отмена, слои и превью. Черновик ИИ можно поправить, не начиная заново.",
-            },
-          ].map((item) => (
-            <article
-              key={item.title}
-              className="rounded-[1.6rem] border border-black/5 bg-[#efeaff] p-6"
-            >
-              <item.icon className="size-5 text-[#6d4aff]" />
-              <h3 className="mt-4 text-xl font-extrabold tracking-tight">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-[#3c345c]">{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <div className="rounded-[1.7rem] bg-white p-6 shadow-[0_10px_40px_rgba(28,32,58,0.05)] sm:p-8">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold tracking-wide text-[#6d4aff]">Холст</p>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Правки остаются на серии</h2>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#5c6170] sm:text-base">
-              Черновик ИИ не застывает. Слайды листаются, кадр масштабируется, шаг отменяется.
-            </p>
-          </div>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {[
-              { icon: Undo2, title: "Отмена", text: "Ctrl+Z" },
-              { icon: Redo2, title: "Повтор", text: "Ctrl+Y" },
-              { icon: ZoomIn, title: "Масштаб", text: "Крупнее и сброс" },
-              { icon: Grid3x3, title: "Сетка", text: "Ровная вёрстка" },
-              { icon: Smartphone, title: "Превью", text: "Как в телефоне" },
-              { icon: GalleryHorizontal, title: "Слайды", text: "Порядок серии" },
-            ].map((item) => (
-              <div key={item.title} className="rounded-2xl bg-[#f4f2fb] p-4">
-                <item.icon className="size-5 text-[#2f5bff]" />
-                <p className="mt-3 text-sm font-bold">{item.title}</p>
-                <p className="mt-1 text-xs text-[#5c6170]">{item.text}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -614,7 +485,7 @@ export function LandingPage() {
               {
                 n: "03",
                 title: "Поправьте и заберите",
-                text: "Уточните формулировки, пролистайте превью и заберите PNG, PDF или JSON.",
+                text: "Уточните формулировки и поставьте иконку из библиотеки.",
               },
             ].map((step) => (
               <li
@@ -667,9 +538,8 @@ export function LandingPage() {
               цепляет, следующие объясняют, последний оставляет действие.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <StatPill value="1080×1350" label="кадр" />
-              <StatPill value="PNG" label="рендер" />
-              <StatPill value="JSON" label="структура" />
+              <StatPill value="14 млн" label="иконок" />
+              <StatPill value="ИИ" label="черновик серии" />
             </div>
           </div>
           <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-5 sm:grid-cols-3">
@@ -771,73 +641,48 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="bg-[#0e0f14] text-white">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.2fr_1fr_1fr]">
-          <div>
-            <Link href="/" className="flex items-center gap-2">
-              <span className="grid size-9 place-items-center overflow-hidden rounded-xl bg-white">
-                <Logo width={36} height={36} />
-              </span>
-              <span className="text-lg font-extrabold">swibp</span>
-            </Link>
-            <p className="mt-4 max-w-xs text-sm text-white/60">
-              ИИ собирает карусели: обложка, середина и финал из одного описания.
+      <section id="partner" className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="flex flex-col gap-8 border-y border-black/10 py-14 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold tracking-[0.22em] text-[#6d4aff] uppercase">
+              Сотрудничество
+            </p>
+            <h2 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Сотрудничать с нами
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-[#5c6170] sm:text-base">
+              Брендам, редакциям и студиям. Напишите, если хотите собирать карусели вместе.
             </p>
           </div>
-          <div>
-            <p className="text-xs font-semibold tracking-wide text-white/40">Продукт</p>
-            <ul className="mt-3 space-y-2 text-sm">
-              <li>
-                <a href="#features" className="text-white/80 hover:text-white">
-                  Возможности
-                </a>
-              </li>
-              <li>
-                <a href="#studio" className="text-white/80 hover:text-white">
-                  Студия
-                </a>
-              </li>
-              <li>
-                <a href="#formats" className="text-white/80 hover:text-white">
-                  Форматы
-                </a>
-              </li>
-              <li>
-                <a href="#how" className="text-white/80 hover:text-white">
-                  Как это работает
-                </a>
-              </li>
-              <li>
-                <Link href="/studio" className="text-white/80 hover:text-white">
-                  Студия
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-xs font-semibold tracking-wide text-white/40">Аккаунт</p>
-            <ul className="mt-3 space-y-2 text-sm">
-              <li>
-                <button
-                  type="button"
-                  onClick={() => setAuthOpen(true)}
-                  className="text-white/80 hover:text-white"
-                >
-                  Войти
-                </button>
-              </li>
-              <li>
-                <a href="#stories" className="text-white/80 hover:text-white">
-                  Отзывы
-                </a>
-              </li>
-            </ul>
-          </div>
+          <a
+            href="mailto:hello@swibp.app"
+            className="inline-flex h-11 w-fit items-center rounded-full bg-[#14151c] px-5 text-sm font-semibold text-white"
+          >
+            hello@swibp.app
+          </a>
         </div>
-        <div className="border-t border-white/10">
-          <p className="mx-auto max-w-6xl px-4 py-5 text-xs text-white/40 sm:px-6">
-            © {new Date().getFullYear()} Swibp
-          </p>
+      </section>
+
+      <footer>
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <Link href="/" className="text-sm font-semibold tracking-tight">
+            swibp
+          </Link>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#5c6170]">
+            <a href="#features" className="hover:text-[#14151c]">
+              Возможности
+            </a>
+            <a href="#icons" className="hover:text-[#14151c]">
+              Иконки
+            </a>
+            <a href="#how" className="hover:text-[#14151c]">
+              Как это работает
+            </a>
+            <a href="#partner" className="hover:text-[#14151c]">
+              Сотрудничество
+            </a>
+          </nav>
+          <p className="text-xs text-[#8b90a0]">© {new Date().getFullYear()}</p>
         </div>
       </footer>
     </div>
@@ -884,36 +729,25 @@ function LayersHeader() {
   );
 }
 
-function RatioHeader() {
-  const frames = [
-    { label: "4:5", box: "h-16 w-[3.2rem]" },
-    { label: "1:1", box: "size-12" },
-    { label: "9:16", box: "h-20 w-9" },
-    { label: "16:9", box: "h-8 w-16" },
-  ];
-
+function SeriesHeader() {
   return (
-    <div className="flex h-full min-h-28 items-end justify-center gap-3 rounded-xl bg-[#f4f2fb] px-4 pt-5 pb-4">
-      {frames.map((frame) => (
-        <div key={frame.label} className="flex flex-col items-center gap-1.5">
-          <div className={`${frame.box} rounded-md bg-white shadow-sm ring-1 ring-black/5`} />
-          <span className="text-[10px] font-semibold text-[#5c6170]">{frame.label}</span>
-        </div>
-      ))}
+    <div className="flex h-full min-h-28 items-end gap-3 rounded-xl bg-[#f4f2fb] p-4">
+      <span className="rounded-xl bg-[#f4efe6] px-3 py-2 text-xs font-semibold">01 обложка</span>
+      <span className="rounded-xl bg-[#14151c] px-3 py-2 text-xs font-semibold text-white">02 середина</span>
+      <span className="rounded-xl bg-[#e7deff] px-3 py-2 text-xs font-semibold">06 финал</span>
     </div>
   );
 }
 
-function ExportHeader() {
+function IconsHeader() {
   return (
-    <div className="flex h-full min-h-28 items-end gap-3 rounded-xl bg-[#14151c] p-4">
-      <div className="rounded-xl bg-[#2f5bff] px-4 py-3 text-white">
-        <p className="text-2xl font-extrabold">PNG</p>
-        <p className="text-[11px] text-white/80">резкий рендер</p>
-      </div>
-      <div className="rounded-xl bg-white px-4 py-3 text-[#14151c]">
-        <p className="text-2xl font-extrabold">JSON</p>
-        <p className="text-[11px] text-[#6b7080]">структура слайда</p>
+    <div className="flex h-full min-h-28 flex-col justify-between rounded-xl bg-[#14151c] p-4 text-white">
+      <p className="text-3xl font-extrabold tracking-tight">14 млн</p>
+      <div className="flex gap-2 text-white/80">
+        <IconSparkles className="size-4" />
+        <IconHeart className="size-4" />
+        <IconStar className="size-4" />
+        <IconBolt className="size-4" />
       </div>
     </div>
   );
