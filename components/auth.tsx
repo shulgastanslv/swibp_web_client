@@ -59,7 +59,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
     setIsLoading(true);
 
     try {
-      const callbackUrl = searchParams.get("callbackUrl") || "/";
+      const callbackUrl = searchParams.get("callbackUrl") || "/studio";
 
       // 1. Регистрация нового аккаунта
       if (view === "register") {
@@ -119,7 +119,7 @@ export function AuthModal({ isOpen, onOpenChange }: AuthModalProps) {
 
   const handleGoogleSignIn = () => {
     signIn("google", {
-      callbackUrl: searchParams.get("callbackUrl") || "/",
+      callbackUrl: searchParams.get("callbackUrl") || "/studio",
     });
   };
 

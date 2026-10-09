@@ -20,6 +20,7 @@ import {
   GalleryHorizontal,
   BookOpen,
 } from "lucide-react";
+import Link from "next/link";
 import Logo from "@/components/logo";
 import { useSession, signOut } from "next-auth/react";
 import { AuthModal } from "@/components/auth";
@@ -99,7 +100,9 @@ export function Header({
     <>
       <header className="h-14 w-full flex items-center justify-between px-4 bg-background border-b border-border text-xs z-20 shrink-0 gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Logo width={25} height={25} />
+          <Link href="/" aria-label="Swibp" className="shrink-0">
+            <Logo width={25} height={25} />
+          </Link>
           <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
           <input
             type="text"

@@ -50,7 +50,7 @@ export function NewProjectModal({
     if (res.success && res.projectId) {
       setName("");
       onOpenChange(false);
-      router.push(`/?project=${res.projectId}`);
+      router.push(`/studio?project=${res.projectId}`);
     } else {
       alert(res.error || "Ошибка при создании");
     }
