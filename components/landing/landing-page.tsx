@@ -177,14 +177,19 @@ export function LandingPage() {
           </a>
         </div>
 
-        <div className="relative mx-auto mt-12 h-[430px] max-w-3xl sm:h-[500px]">
-          <div className="absolute inset-x-8 top-8 bottom-0 rounded-[2.2rem] bg-[#efe7ff] sm:inset-x-16" />
-          <div className="absolute top-16 left-[6%] w-[42%] -rotate-6 sm:left-[10%] sm:w-[36%]">
+        <div className="mx-auto mt-10 w-[min(100%,280px)] sm:hidden">
+          <PhoneFrame>
+            <CoverHook />
+          </PhoneFrame>
+        </div>
+        <div className="relative mx-auto mt-12 hidden h-[500px] max-w-3xl overflow-hidden sm:block">
+          <div className="absolute inset-x-16 top-8 bottom-0 rounded-[2.2rem] bg-[#efe7ff]" />
+          <div className="absolute top-16 left-[10%] w-[36%] -rotate-6">
             <PhoneFrame>
               <CoverList />
             </PhoneFrame>
           </div>
-          <div className="absolute top-4 right-[6%] w-[50%] rotate-3 sm:right-[12%] sm:w-[42%]">
+          <div className="absolute top-4 right-[12%] w-[42%] rotate-3">
             <PhoneFrame>
               <CoverHook />
             </PhoneFrame>
@@ -192,9 +197,9 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="overflow-hidden py-8">
-        <div className="relative [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
-          <div className="flex w-max animate-marquee gap-12 pr-12">
+      <section className="max-w-full overflow-x-clip py-8">
+        <div className="relative overflow-x-clip [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+          <div className="pointer-events-none flex w-max animate-marquee gap-12 pr-12">
             {[...PLATFORMS, ...PLATFORMS].map((name, index) => (
               <span
                 key={`${name}-${index}`}
