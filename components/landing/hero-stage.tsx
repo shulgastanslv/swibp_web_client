@@ -3,7 +3,7 @@
 import { useRef, type ReactNode } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { cn } from "@/lib/utils";
-import { CoverHook, CoverList } from "@/components/landing/covers";
+import { InstagramFeed, ThreadsFeed } from "@/components/landing/social-feed";
 
 export function PhoneFrame({
   children,
@@ -36,14 +36,13 @@ export function HeroStage() {
   });
   const yBack = useTransform(scrollYProgress, [0, 1], [0, -150]);
   const yFront = useTransform(scrollYProgress, [0, 1], [0, -70]);
-  const yChip = useTransform(scrollYProgress, [0, 1], [0, -110]);
   const rotBack = useTransform(scrollYProgress, [0, 1], [-10, -16]);
   const rotFront = useTransform(scrollYProgress, [0, 1], [7, 1]);
 
   return (
-    <div ref={ref} className="relative mx-auto h-[460px] w-full max-w-[540px] sm:h-[520px]">
+    <div ref={ref} className="relative mx-auto h-[540px] w-full max-w-[540px] sm:h-[620px]">
       <motion.div
-        className="absolute top-14 left-0 w-[48%]"
+        className="absolute top-10 left-0 w-[46%]"
         style={reduce ? undefined : { y: yBack, rotate: rotBack }}
       >
         <motion.div
@@ -51,13 +50,14 @@ export function HeroStage() {
           transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
         >
           <PhoneFrame>
-            <CoverList />
+            <ThreadsFeed />
           </PhoneFrame>
+          <p className="mt-2 text-center text-[11px] font-semibold tracking-wide text-white/80">Threads</p>
         </motion.div>
       </motion.div>
 
       <motion.div
-        className="absolute top-0 right-0 w-[64%]"
+        className="absolute top-0 right-0 w-[56%]"
         style={reduce ? { rotate: 7 } : { y: yFront, rotate: rotFront }}
       >
         <motion.div
@@ -65,24 +65,10 @@ export function HeroStage() {
           transition={{ duration: 6.2, repeat: Infinity, ease: "easeInOut" }}
         >
           <PhoneFrame>
-            <CoverHook />
+            <InstagramFeed />
           </PhoneFrame>
+          <p className="mt-2 text-center text-[11px] font-semibold tracking-wide text-white/80">Instagram</p>
         </motion.div>
-      </motion.div>
-
-      <motion.div
-        className="absolute top-6 left-[34%] z-20 rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-[#14151c] shadow-xl"
-        style={reduce ? undefined : { y: yChip }}
-      >
-        6 слайдов
-      </motion.div>
-
-      <motion.div
-        className="absolute bottom-8 left-2 z-20 max-w-[12rem] rounded-2xl bg-white px-3 py-2 text-[#14151c] shadow-xl"
-        style={reduce ? undefined : { y: yChip }}
-      >
-        <p className="text-sm font-semibold">Обложка готова</p>
-        <p className="text-xs text-[#6b7080]">Первый кадр уже собран</p>
       </motion.div>
     </div>
   );

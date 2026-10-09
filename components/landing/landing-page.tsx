@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Menu } from "lucide-react";
 
@@ -72,6 +72,16 @@ const CARE = [
     body: "Последний кадр не повторяет обложку. Он говорит, что сделать дальше.",
   },
 ];
+
+function IconMark({ children }: { children: ReactNode }) {
+  return (
+    <span className="grid aspect-square place-items-center rounded-2xl bg-[#f4f6fb] text-[#14151c]">
+      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.7">
+        {children}
+      </svg>
+    </span>
+  );
+}
 
 const STORIES = [
   {
@@ -328,19 +338,63 @@ export function LandingPage() {
 
       <section id="icons" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         <Reveal>
-        <div className="rounded-[2rem] bg-[#14151c] px-6 py-12 text-white sm:px-12 sm:py-16">
-          <h2 className="text-5xl leading-none font-extrabold tracking-tighter sm:text-6xl">
-            14<span className="text-[#c9b6ff]"> млн</span>
-          </h2>
-          <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/75">
-            иконок в студии. Поиск рядом с холстом, знак встаёт на кадр и остаётся в том же ритме, что и карусель.
-          </p>
-          <Link
-            href="/studio"
-            className="mt-8 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#14151c]"
-          >
-            Открыть библиотеку
-          </Link>
+        <div className="grid overflow-hidden rounded-[2rem] bg-[#14151c] text-white lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="px-6 py-12 sm:px-12 sm:py-16">
+            <h2 className="text-5xl leading-none font-extrabold tracking-tighter sm:text-7xl">
+              14<span className="text-[#9eb6ff]"> млн</span>
+            </h2>
+            <p className="mt-6 max-w-md text-base leading-relaxed text-white/70 sm:text-lg">
+              иконок в студии. Поиск рядом с холстом, знак встаёт на кадр и остаётся в том же ритме, что и карусель.
+            </p>
+            <Link
+              href="/studio"
+              className="mt-8 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#14151c]"
+            >
+              Открыть библиотеку
+            </Link>
+          </div>
+          <div className="flex items-end bg-[#1c2030] px-5 pt-8 sm:px-8">
+            <div className="w-full rounded-t-[1.4rem] bg-white px-4 pt-4 pb-5 text-[#14151c] shadow-[0_-20px_50px_rgba(0,0,0,0.18)]">
+              <div className="flex items-center gap-2 rounded-full bg-[#f3f4f8] px-3 py-2.5 text-sm text-[#8b90a0]">
+                <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="6" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+                Найти иконку
+              </div>
+              <div className="mt-4 grid grid-cols-4 gap-2">
+                <IconMark>
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 4v2M12 18v2M4 12h2M18 12h2" />
+                </IconMark>
+                <IconMark>
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </IconMark>
+                <IconMark>
+                  <path d="M12 5 8 13h3l-1 6 6-9h-3l1-5z" />
+                </IconMark>
+                <IconMark>
+                  <path d="M5 16c2-6 12-6 14 0" />
+                  <circle cx="12" cy="9" r="2" />
+                </IconMark>
+                <IconMark>
+                  <path d="M7 7h10v10H7z" />
+                  <path d="M9 12h6" />
+                </IconMark>
+                <IconMark>
+                  <path d="M12 4 14.5 9.5 20 12l-5.5 2.5L12 20l-2.5-5.5L4 12l5.5-2.5L12 4z" />
+                </IconMark>
+                <IconMark>
+                  <circle cx="8" cy="9" r="2" />
+                  <circle cx="16" cy="9" r="2" />
+                  <path d="M5 17c1.2-2 3-3 3-3s1.8 1 4 1 4-1 4-1 1.8 1 3 3" />
+                </IconMark>
+                <IconMark>
+                  <path d="M6 16 12 6l6 10H6z" />
+                </IconMark>
+              </div>
+            </div>
+          </div>
         </div>
         </Reveal>
       </section>
