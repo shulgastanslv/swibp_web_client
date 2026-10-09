@@ -7,8 +7,8 @@ import { CoverHook, CoverList } from "@/components/landing/covers";
 export function HeroStage() {
   return (
     <CardContainer containerClassName="py-0" className="w-full">
-      <CardBody className="relative mx-auto h-[540px] w-full max-w-[560px] sm:h-[620px]">
-        <CardItem translateZ={16} className="absolute top-16 left-0 w-[46%] sm:top-12">
+      <CardBody className="relative mx-auto h-[460px] w-full max-w-[520px] sm:h-[520px]">
+        <CardItem translateZ={16} className="absolute top-10 left-0 w-[46%] sm:top-8">
           <motion.div
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}

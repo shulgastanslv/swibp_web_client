@@ -142,7 +142,7 @@ export function LandingPage() {
       <section className="relative overflow-hidden bg-[#2f5bff] text-white">
         <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="white" />
         <BackgroundBeams className="opacity-60" />
-        <div className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
+        <div className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2" aria-label="Swibp">
             <span className="grid size-9 place-items-center overflow-hidden rounded-xl bg-white">
               <Logo width={36} height={36} />
@@ -214,13 +214,13 @@ export function LandingPage() {
           </div>
         </div>
 
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 pt-8 pb-28 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:pt-10 lg:pb-36">
+        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-6 px-4 pt-4 pb-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:pt-5 lg:pb-20">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-wide">
               <Sparkles className="size-3.5" />
               ИИ для каруселей
             </p>
-            <h1 className="mt-5 max-w-xl text-[2.7rem] leading-[0.95] font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="mt-3 max-w-xl text-[2.7rem] leading-[0.95] font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
               Карусель
               <br />
               из одной мысли.
@@ -235,7 +235,7 @@ export function LandingPage() {
               Обложка, аргументы и финал появляются в одном ритме. Вы правите
               формулировки, а не собираете каждый кадр с нуля.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button
                 asChild
                 className="h-11 rounded-full bg-white px-5 text-[#1a2f86] hover:bg-white/90"
@@ -257,7 +257,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <div className="relative z-20 mx-auto -mt-16 grid max-w-6xl gap-4 px-4 sm:px-6 md:grid-cols-2">
+      <div className="relative z-20 mx-auto -mt-10 grid max-w-6xl gap-4 px-4 sm:px-6 md:grid-cols-2">
         <article className="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_60px_rgba(28,32,58,0.08)] sm:p-8">
           <p className="text-xs font-semibold tracking-wide text-[#6d4aff]">
             Генерация
