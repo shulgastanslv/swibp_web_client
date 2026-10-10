@@ -1,165 +1,263 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Bookmark, Heart, MessageCircle, Repeat2, Send, ThumbsUp } from "lucide-react";
-import { PhoneFrame } from "@/components/landing/hero-stage";
+import type { ReactNode } from "react";
+import {
+  FaInstagram,
+  FaLinkedinIn,
+  FaPinterestP,
+  FaTelegram,
+  FaThreads,
+  FaXTwitter,
+} from "react-icons/fa6";
 
 const NETWORKS = [
   {
     id: "instagram",
     name: "Instagram",
-    ratio: "4:5",
     use: "Feed carousel",
-    note: "A tall cover stops the scroll. The next frames keep the same width.",
-    panel: "#14151c",
-    ink: "#fff",
+    panel: "#ffe4ef",
+    ink: "#9a4f6b",
   },
   {
     id: "linkedin",
     name: "LinkedIn",
-    ratio: "1:1",
     use: "Document post",
-    note: "A square sequence for a launch, a hire, or a point of view.",
-    panel: "#14151c",
+    panel: "#e4ebff",
     ink: "#3a4f9a",
   },
   {
     id: "telegram",
     name: "Telegram",
-    ratio: "1:1",
     use: "Channel album",
-    note: "Frames go out as an album. The caption sits under the first one.",
-    panel: "#14151c",
+    panel: "#e5f6ea",
     ink: "#3d6b4f",
   },
   {
     id: "threads",
     name: "Threads",
-    ratio: "4:5",
     use: "Short thread",
-    note: "The same story, a shorter caption, still a swipe.",
-    panel: "#14151c",
+    panel: "#efe7ff",
     ink: "#6b5f9a",
   },
   {
     id: "x",
     name: "X",
-    ratio: "16:9",
     use: "Timeline frame",
-    note: "A wide cover for the timeline, then the rest of the idea.",
-    panel: "#14151c",
+    panel: "#fff4cc",
     ink: "#8a7a3a",
   },
   {
     id: "pinterest",
     name: "Pinterest",
-    ratio: "9:16",  
     use: "Tall pin",
-    note: "One story, stretched into a pin people save.",
     panel: "#14151c",
-    ink: "#9a5a3a",
+    ink: "#ffe08a",
   },
 ] as const;
 
+const MARKS = {
+  instagram: FaInstagram,
+  linkedin: FaLinkedinIn,
+  telegram: FaTelegram,
+  threads: FaThreads,
+  x: FaXTwitter,
+  pinterest: FaPinterestP,
+} as const;
+
 export function NetworksBlock() {
-  const reduce = useReducedMotion();
-  const [index, setIndex] = useState(0);
-  const network = NETWORKS[index];
-
-  useEffect(() => {
-    if (reduce) return;
-    const id = window.setInterval(() => {
-      setIndex((current) => (current + 1) % NETWORKS.length);
-    }, 3200);
-    return () => window.clearInterval(id);
-  }, [reduce]);
-
   return (
     <section id="networks" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-5 sm:px-6">
       <div className="mb-6 max-w-2xl">
-        <p className="text-[13px] font-bold tracking-wide text-white">Networks</p>
-        <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+        <p className="text-[13px] font-bold tracking-wide text-[#2f5bff]">Networks</p>
+        <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[#14151c] sm:text-4xl">
           One carousel, every feed
         </h2>
-        <p className="mt-3 max-w-lg text-base leading-relaxed text-white">
-          Switch the ratio and the same story fits the place you post.
+        <p className="mt-3 max-w-lg text-base leading-relaxed text-[#5c6170]">
+          The same story, redrawn for the place you post.
         </p>
       </div>
 
-      <div
-        className="overflow-hidden rounded-[2rem] p-6 transition-colors duration-500 sm:rounded-[2.4rem] sm:p-8"
-        style={{ background: network.panel }}
-      >
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {NETWORKS.map((item, itemIndex) => {
-            const active = itemIndex === index;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setIndex(itemIndex)}
-                className={
-                  active
-                    ? "h-10 shrink-0 rounded-full bg-white px-4 text-[13px] font-semibold text-black"
-                    : "h-10 shrink-0 rounded-full bg-white/75 px-4 text-[13px] font-semibold text-black"
-                }
-              >
-                {item.name}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-8 grid items-center gap-8 lg:grid-cols-[1fr_0.8fr]">
-          <AnimatePresence mode="wait">
-            <motion.div
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {NETWORKS.map((network) => {
+          const Logo = MARKS[network.id];
+          const dark = network.id === "pinterest";
+          return (
+            <article
               key={network.id}
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? undefined : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-[1.6rem] px-2.5 pb-3 pt-3"
+              style={{ background: network.panel }}
             >
-              <p className="text-[13px] font-bold text-white">
-                {network.use}
-              </p>
-              <h3 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl text-white">
-                {network.name}
-              </h3>
-              <p className="mt-3 max-w-md text-base leading-relaxed text-white">
-                {network.note}
-              </p>
-              <p className="mt-6 inline-flex h-10 items-center rounded-full bg-white px-4 text-[13px] font-extrabold text-black">
-                {network.ratio}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-          <FrameStack ratio={network.ratio} />
-        </div>
+              <MiniPhone>
+                <Schematic id={network.id} />
+              </MiniPhone>
+              <div className="mt-3 flex items-center gap-1.5 px-0.5">
+                <Logo className={`size-3.5 shrink-0 ${dark ? "text-[#ffe08a]" : "text-[#14151c]"}`} />
+                <div className="min-w-0">
+                  <p className={`truncate text-[13px] font-bold leading-none ${dark ? "text-white" : "text-[#14151c]"}`}>
+                    {network.name}
+                  </p>
+                  <p className="mt-1 truncate text-[11px] font-medium leading-none" style={{ color: network.ink }}>
+                    {network.use}
+                  </p>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-function FrameStack({ ratio }: { ratio: string }) {
-  const aspect =
-    ratio === "9:16" ? "aspect-[9/16] w-[92px]" : ratio === "16:9" ? "aspect-video w-[210px]" : ratio === "1:1" ? "aspect-square w-[150px]" : "aspect-[4/5] w-[140px]";
-
+function MiniPhone({ children }: { children: ReactNode }) {
   return (
-    <div className="relative mx-auto flex h-[240px] w-full max-w-[320px] items-center justify-center" aria-hidden>
-      <div className={`absolute -rotate-6 translate-x-10 rounded-2xl bg-white ${aspect}`} />
-      <div className={`absolute rotate-3 -translate-x-8 rounded-2xl bg-white ${aspect}`} />
-      <div className={`relative rounded-2xl bg-white p-3 shadow-[0_16px_40px_rgba(20,21,28,0.08)] ${aspect}`}>
-        <div className="h-2 w-2/3 rounded-full bg-[#14151c]" />
-        <div className="mt-2 h-2 w-1/2 rounded-full bg-[#e4ebff]" />
-        <div className="mt-3 h-[45%] rounded-2xl bg-[#2f5bff]" />
-        <div className="mt-3 flex gap-1">
-          <span className="size-1.5 rounded-full bg-white" />
-          <span className="size-1.5 rounded-full bg-white" />
-          <span className="size-1.5 rounded-full bg-white" />
+    <div className="relative mx-auto h-[248px] w-full max-w-[148px] overflow-hidden rounded-[1.35rem] border-[5px] border-[#14151c] bg-white shadow-[0_14px_28px_rgba(20,21,28,0.14)]">
+      <div className="absolute left-1/2 top-1.5 z-10 h-1 w-8 -translate-x-1/2 rounded-full bg-[#14151c]/80" />
+      <div className="h-full overflow-hidden pt-3.5">{children}</div>
+    </div>
+  );
+}
+
+function Line({ className }: { className?: string }) {
+  return <div className={`h-1 rounded-full bg-[#14151c]/15 ${className ?? ""}`} />;
+}
+
+function Dots({ light = false }: { light?: boolean }) {
+  return (
+    <span className="flex gap-0.5">
+      <i className={`size-1 rounded-full ${light ? "bg-white" : "bg-[#14151c]"}`} />
+      <i className={`size-1 rounded-full ${light ? "bg-white/40" : "bg-[#14151c]/20"}`} />
+      <i className={`size-1 rounded-full ${light ? "bg-white/40" : "bg-[#14151c]/20"}`} />
+    </span>
+  );
+}
+
+function Schematic({ id }: { id: (typeof NETWORKS)[number]["id"] }) {
+  if (id === "instagram") return <InstagramScheme />;
+  if (id === "linkedin") return <LinkedInScheme />;
+  if (id === "telegram") return <TelegramScheme />;
+  if (id === "threads") return <ThreadsScheme />;
+  if (id === "x") return <XScheme />;
+  return <PinterestScheme />;
+}
+
+function InstagramScheme() {
+  return (
+    <div className="flex h-full flex-col bg-white px-2 pb-2">
+      <div className="flex items-center gap-1.5">
+        <span className="size-4 rounded-full bg-[#ffe4ef]" />
+        <Line className="w-10 bg-[#14151c]/50" />
+      </div>
+      <div className="relative mt-1.5 min-h-0 flex-1 overflow-hidden rounded-lg bg-[#ffe4ef]">
+        <div className="absolute left-1.5 top-1.5 h-1 w-8 rounded-full bg-[#9a4f6b]" />
+        <div className="absolute inset-x-1.5 bottom-4 h-[38%] rounded-md bg-[#2f5bff]" />
+        <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2">
+          <Dots light />
+        </span>
+      </div>
+      <div className="mt-1.5 flex gap-1">
+        <span className="size-2 rounded-full bg-[#14151c]/70" />
+        <span className="size-2 rounded-full bg-[#14151c]/25" />
+        <span className="size-2 rounded-full bg-[#14151c]/25" />
+      </div>
+    </div>
+  );
+}
+
+function LinkedInScheme() {
+  return (
+    <div className="flex h-full flex-col bg-white px-2 pb-2">
+      <div className="flex items-center gap-1.5">
+        <span className="size-4 rounded-[4px] bg-[#2f5bff]" />
+        <Line className="w-8 bg-[#14151c]/50" />
+      </div>
+      <Line className="mt-2 w-12" />
+      <div className="relative mx-auto mt-1.5 aspect-square w-full overflow-hidden rounded-lg bg-[#e4ebff]">
+        <div className="absolute left-1.5 top-1.5 h-1 w-7 rounded-full bg-[#3a4f9a]" />
+        <div className="absolute inset-x-1.5 bottom-4 h-[40%] rounded-md bg-[#2f5bff]" />
+        <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2">
+          <Dots />
+        </span>
+      </div>
+      <Line className="mt-auto w-14" />
+    </div>
+  );
+}
+
+function TelegramScheme() {
+  return (
+    <div className="flex h-full flex-col bg-[#e5f6ea]">
+      <div className="flex h-5 items-center gap-1 bg-[#3d6b4f] px-2">
+        <span className="size-2.5 rounded-full bg-white/80" />
+        <span className="h-1 w-8 rounded-full bg-white/70" />
+      </div>
+      <div className="m-1.5 rounded-xl rounded-tl-sm bg-white p-1">
+        <div className="grid grid-cols-2 gap-0.5">
+          <span className="aspect-square rounded-md bg-[#2f5bff]" />
+          <span className="aspect-square rounded-md bg-[#e4ebff]" />
+          <span className="aspect-square rounded-md bg-[#fff4cc]" />
+          <span className="aspect-square rounded-md bg-[#efe7ff]" />
+        </div>
+        <Line className="mx-0.5 mt-1 w-12" />
+      </div>
+    </div>
+  );
+}
+
+function ThreadsScheme() {
+  return (
+    <div className="flex h-full flex-col bg-white px-2 pb-2">
+      <div className="flex items-center gap-1.5">
+        <span className="size-4 rounded-full bg-[#efe7ff]" />
+        <div className="space-y-0.5">
+          <Line className="w-8 bg-[#14151c]/50" />
+          <Line className="w-5" />
         </div>
       </div>
+      <Line className="mt-2 w-full" />
+      <Line className="mt-1 w-2/3" />
+      <div className="relative mt-1.5 aspect-square w-full overflow-hidden rounded-lg bg-[#efe7ff]">
+        <div className="absolute inset-x-1.5 bottom-4 top-1.5 rounded-md bg-[#6b5f9a]/80" />
+        <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2">
+          <Dots light />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function XScheme() {
+  return (
+    <div className="flex h-full flex-col bg-white px-2 pb-2">
+      <div className="flex items-center gap-1.5">
+        <span className="size-4 rounded-full bg-[#14151c]" />
+        <Line className="w-10 bg-[#14151c]/50" />
+      </div>
+      <Line className="mt-2 w-full" />
+      <Line className="mt-1 w-3/4" />
+      <div className="relative mt-1.5 aspect-video w-full overflow-hidden rounded-lg bg-[#fff4cc]">
+        <div className="absolute left-1.5 top-1.5 h-1 w-8 rounded-full bg-[#8a7a3a]" />
+        <div className="absolute inset-x-1.5 bottom-1.5 h-[42%] rounded-md bg-[#14151c]" />
+      </div>
+      <div className="mt-auto flex gap-1">
+        <Line className="w-4" />
+        <Line className="w-4" />
+        <Line className="w-4" />
+      </div>
+    </div>
+  );
+}
+
+function PinterestScheme() {
+  return (
+    <div className="flex h-full flex-col bg-white px-2 pb-2">
+      <div className="flex items-center justify-between">
+        <span className="size-3.5 rounded-full bg-[#9a4f6b]" />
+        <span className="h-3 w-7 rounded-full bg-[#14151c]" />
+      </div>
+      <div className="relative mt-1.5 min-h-0 flex-1 overflow-hidden rounded-xl bg-[#ffe4ef]">
+        <div className="absolute left-1.5 top-2 h-1 w-8 rounded-full bg-[#9a4f6b]" />
+        <div className="absolute inset-x-1.5 bottom-2 top-6 rounded-lg bg-[#2f5bff]" />
+      </div>
+      <Line className="mt-1.5 w-12 bg-[#14151c]/40" />
     </div>
   );
 }

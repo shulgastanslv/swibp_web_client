@@ -87,8 +87,8 @@ export function StudioArt() {
     <svg viewBox="0 0 280 150" className="h-auto w-full" aria-hidden>
       <rect x="16" y="18" width="168" height="114" rx="20" fill="#fff" />
       <rect x="30" y="32" width="108" height="78" rx="12" fill="#efe7ff" />
-      <rect x="44" y="46" width="52" height="8" rx="4" fill="#6b5f9a" />
-      <rect x="44" y="62" width="36" height="6" rx="3" fill="#fff" />
+      <rect x="48" y="46" width="52" height="8" rx="4" fill="#6b5f9a" />
+      <rect x="48" y="62" width="36" height="6" rx="3" fill="#fff" />
       <rect x="46" y="40" width="76" height="58" rx="8" fill="none" stroke="#2f5bff" strokeWidth="2" />
       <circle cx="46" cy="40" r="3" fill="#2f5bff" />
       <circle cx="122" cy="40" r="3" fill="#2f5bff" />
@@ -113,7 +113,7 @@ export function IconsArt() {
         <path d="M54 32l2.6 6.6 7 .4-5.4 4.4 1.8 7L54 46.4 48 50.4l1.8-7-5.4-4.4 7-.4z" fill="#ffe08a" />
       </g>
       <g transform="rotate(10 262 46)">
-        <rect x="236" y="16" width="52" height="52" rx="16" fill="#fff" />
+        <rect x="236" y="0" width="52" height="52" rx="16" fill="#fff" />
         <path d="M262 30c-6-4-11-8-11-13 0-3 2.4-5.4 5.4-5.4 1.8 0 3.4.8 4.6 2.4 1.2-1.6 2.8-2.4 4.6-2.4 3 0 5.4 2.4 5.4 5.4 0 5-5 9-9 13z" fill="#ffb7d5" />
       </g>
       <g transform="rotate(8 70 156)">

@@ -1,9 +1,41 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion"; // или motion/react
 import { cn } from "@/lib/utils"; // Утилита из shadcn/ui (clsx + tailwind-merge)
-import { InstagramFeed, ThreadsFeed } from "./social-feed";
+
+export const THREAD_SHOTS = [
+  "/threads/function.png",
+  "/threads/gotoit.png",
+  "/threads/lua.png",
+  "/threads/memcashed.png",
+  "/threads/rainbow.png",
+  "/threads/redis.png",
+  "/threads/redis2.png",
+  "/threads/vlan.png",
+  "/threads/yandexmap.png",
+] as const;
+
+export function ThreadShot({ start }: { start: number }) {
+  const reduce = useReducedMotion();
+  const [index, setIndex] = useState(start % THREAD_SHOTS.length);
+
+  useEffect(() => {
+    if (reduce) return;
+    const id = window.setInterval(() => {
+      setIndex((current) => (current + 1) % THREAD_SHOTS.length);
+    }, 4200);
+    return () => window.clearInterval(id);
+  }, [reduce]);
+
+  return (
+    <img
+      src={THREAD_SHOTS[index]}
+      alt=""
+      className="h-full w-full object-cover object-top"
+    />
+  );
+}
 
 // --- Компонент Рамки Телефона (Сделан чисто на Tailwind, без лишней вложенности) ---
 export function PhoneFrame({
@@ -66,7 +98,7 @@ export function HeroStage() {
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           >
             <PhoneFrame>
-              <ThreadsFeed />
+              <ThreadShot start={0} />
             </PhoneFrame>
           </motion.div>
         </motion.div>
@@ -81,7 +113,7 @@ export function HeroStage() {
             transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           >
             <PhoneFrame>
-              <InstagramFeed />
+              <ThreadShot start={2} />
             </PhoneFrame>
           </motion.div>
         </motion.div>

@@ -1,44 +1,161 @@
-import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
+"use client";
 
-const REVIEWS = [
+import { useState } from "react";
+
+import { THREAD_SHOTS } from "@/components/landing/hero-stage";
+
+const PHOTOS = THREAD_SHOTS;
+
+const PINS = [
   {
-    quote:
-      "I used to spend the evening on the cover. Now the frames are already there and I only fix the wording.",
-    name: "Mira",
-    title: "Editor",
+    name: "theshulya",
+    time: "2h",
+    views: "186K",
+    comment: "Cover, middle, ending. I posted the carousel as it came out.",
+    aspect: "aspect-[3/4]",
+    focus: "object-left",
   },
   {
-    quote:
-      "We ship a launch carousel the same day the feature lands. Cover, middle, ending — then export.",
-    name: "Leo",
-    title: "Founder",
+    name: "theshulya",
+    time: "5h",
+    views: "42.1K",
+    comment: "Launch thread. The frames were already in order.",
+    aspect: "aspect-square",
+    focus: "object-center",
   },
   {
-    quote:
-      "The ratio switch is the part I did not expect to care about. One story, four feeds.",
-    name: "Ana",
-    title: "Social",
+    name: "theshulya",
+    time: "1d",
+    views: "91K",
+    comment: "One story, and this feed actually got the views.",
+    aspect: "aspect-[4/5]",
+    focus: "object-center",
   },
   {
-    quote:
-      "No watermark on the download. I post the frames as they come out of the studio.",
-    name: "Jonah",
-    title: "Marketer",
+    name: "theshulya",
+    time: "1d",
+    views: "128K",
+    comment: "No watermark. The views showed up overnight.",
+    aspect: "aspect-[3/4]",
+    focus: "object-right",
   },
-];
+  {
+    name: "theshulya",
+    time: "2d",
+    views: "240K",
+    comment: "I stopped building slides by hand. This is the result.",
+    aspect: "aspect-[4/5]",
+  },
+  {
+    name: "theshulya",
+    time: "2d",
+    views: "64K",
+    comment: "The canvas was the post. Exported and published.",
+    aspect: "aspect-square",
+  },
+  {
+    name: "theshulya",
+    time: "3d",
+    views: "18.6K",
+    comment: "Replaced the Sunday layout with one prompt.",
+    aspect: "aspect-[3/4]",
+  },
+  {
+    name: "theshulya",
+    time: "4d",
+    views: "33K",
+    comment: "Twelve slides before lunch. The order held.",
+    aspect: "aspect-[4/5]",
+  },
+  {
+    name: "theshulya",
+    time: "5d",
+    views: "512K",
+    comment: "Icons on the cover. I never left the studio.",
+    aspect: "aspect-[3/4]",
+  },
+  {
+    name: "theshulya",
+    time: "6d",
+    views: "77.4K",
+    comment: "The ZIP went straight into the thread.",
+    aspect: "aspect-square",
+  },
+  {
+    name: "theshulya",
+    time: "1w",
+    views: "29K",
+    comment: "Same story, shorter caption. Still a swipe.",
+    aspect: "aspect-[4/5]",
+  },
+  {
+    name: "theshulya",
+    time: "1w",
+    views: "154K",
+    comment: "Free export. The views match what I saw on the canvas.",
+    aspect: "aspect-[3/4]",
+  },
+] as const;
+
+const PREVIEW = 6;
 
 export function ReviewsBlock() {
-  return (
-    <section id="reviews" className="scroll-mt-24 py-8">
-      <div className="mx-auto mb-2 max-w-6xl px-4 sm:px-6">
-        <p className="text-[13px] font-bold tracking-wide text-[#2f5bff]">Reviews</p>
-        <h2 className="mt-2 max-w-md text-3xl font-extrabold tracking-tight sm:text-4xl">
-          From topic to post, in one sitting
-        </h2>
-      </div>
-      <div className="mx-auto mb-2 max-w-6xl px-4 sm:px-6">
+  const [open, setOpen] = useState(false);
+  const visible = open ? PINS : PINS.slice(0, PREVIEW);
 
-        <InfiniteMovingCards items={REVIEWS} direction="left" speed="slow" />
+  return (
+    <section id="reviews" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-5 sm:px-6">
+      <div className="rounded-[2rem] bg-muted px-4 py-5 sm:rounded-[2.4rem] sm:px-6 sm:py-6">
+        <p className="text-[13px] font-bold tracking-wide text-[#2f5bff]">Reviews</p>
+        <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+          Threads carousels people posted
+        </h2>
+
+        <ul className="mt-4 columns-2 gap-3 lg:columns-3">
+          {visible.map((pin, index) => (
+            <li key={index} className="mb-3 break-inside-avoid">
+              <article className="overflow-hidden rounded-2xl bg-white text-neutral-900">
+                <div className="p-2.5">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={PHOTOS[index % PHOTOS.length]}
+                      alt=""
+                      className="size-8 rounded-full object-cover"
+                    />
+                    <p className="min-w-0 text-[13px] leading-none">
+                      <span className="font-semibold">{pin.name}</span>
+                      <span className="text-muted-foreground"> · {pin.time}</span>
+                    </p>
+                  </div>
+                  <div className={`relative mt-2 overflow-hidden rounded-xl ${pin.aspect}`}>
+                    <img
+                      src={PHOTOS[index % PHOTOS.length]}
+                      alt=""
+                      className={`absolute inset-0 h-full w-full object-cover object-top ${"focus" in pin ? pin.focus : ""}`}
+                    />
+                    <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1">
+                      <span className="size-1.5 rounded-full bg-white" />
+                      <span className="size-1.5 rounded-full bg-white/45" />
+                      <span className="size-1.5 rounded-full bg-white/45" />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[13px] text-neutral-500">{pin.views} views</p>
+                </div>
+                <p className="border-t border-neutral-100 px-2.5 py-2.5 text-[13px] leading-snug">
+                  “{pin.comment}”
+                </p>
+              </article>
+            </li>
+          ))}
+        </ul>
+
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className="mt-2 inline-flex h-12 items-center rounded-full bg-foreground px-4 text-[13px] font-semibold text-background"
+        >
+          {open ? "Show less" : "Show more"}
+        </button>
       </div>
     </section>
   );

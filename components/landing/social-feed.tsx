@@ -19,19 +19,19 @@ export type FeedSlide = {
 
 const SLIDES = [
   {
-    src: "https://i.pinimg.com/736x/33/d4/78/33d47874c4e5f6fd592c148f92a0a9a4.jpg",
-    title: "Five minutes at night",
-    caption: "Less is the whole point.",
+    src: "/threads/function.png",
+    title: "Finished recursion",
+    caption: "One function, one frame.",
   },
   {
-    src: "https://i.pinimg.com/736x/40/dd/07/40dd0784cbdc504cea21f61425ff2daf.jpg",
-    title: "City rhythm",
-    caption: "Motion in every frame.",
+    src: "/threads/rainbow.png",
+    title: "Hail to the Rainbow",
+    caption: "The frames stay in order.",
   },
   {
-    src: "https://i.pinimg.com/736x/2b/24/ed/2b24edb122a755cb5fa936e3e626d4e8.jpg",
-    title: "The outdoors call",
-    caption: "Breathe and look around.",
+    src: "/threads/redis2.png",
+    title: "How Redis works",
+    caption: "Cover, then the explanation.",
   },
 ];
 

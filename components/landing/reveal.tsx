@@ -21,7 +21,7 @@ export function Reveal({
   return (
     <motion.div
       className={`landing-reveal max-md:!opacity-100 max-md:!transform-none ${className ?? ""}`}
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 60 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: "some" }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay }}

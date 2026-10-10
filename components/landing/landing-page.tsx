@@ -30,6 +30,7 @@ import { AudienceBlock } from "@/components/landing/audience-block";
 import { Reveal } from "@/components/landing/reveal";
 import { FreeBlock } from "@/components/landing/free-block";
 import { NetworksBlock } from "@/components/landing/networks-block";
+import { StudioCapabilities } from "@/components/landing/studio-capabilities";
 import { ReviewsBlock } from "@/components/landing/reviews-block";
 import {
   ExportArt,
@@ -353,12 +354,13 @@ export function LandingPage() {
       </section>
 
 
+     
       <Reveal>
-        <NetworksBlock />
+        <FreeBlock />
       </Reveal>
 
       <Reveal>
-        <FreeBlock />
+        <ReviewsBlock />
       </Reveal>
 
       <section id="studio" className="mx-auto max-w-6xl scroll-mt-24 space-y-4 px-4 py-5 sm:px-6">
@@ -411,7 +413,7 @@ export function LandingPage() {
             <Layer className="bg-[#fff4cc] p-7 sm:p-10">
               <p className="text-[13px] font-bold text-[#8a7a3a]">Templates</p>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-                The frame is ready
+                Library of templates
               </h2>
               <p className="mt-3 max-w-xs text-[13px] text-[#5c6170]">
                 Cover and ending stay in rhythm. You change the words.
@@ -419,6 +421,10 @@ export function LandingPage() {
               <TemplatesArt />
             </Layer>
           </div>
+        </Reveal>
+
+        <Reveal delay={0.05}>
+          <StudioCapabilities />
         </Reveal>
       </section>
 

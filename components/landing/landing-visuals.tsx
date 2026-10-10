@@ -8,15 +8,9 @@ import {
   Type,
 } from "lucide-react";
 
-import { PhoneFrame } from "@/components/landing/hero-stage";
-import { InstagramFeed, ThreadsFeed } from "@/components/landing/social-feed";
+import { PhoneFrame, THREAD_SHOTS, ThreadShot } from "@/components/landing/hero-stage";
 
-const SAMPLE_SLIDES = [
-  "/covers/first.jpg",
-  "/covers/second.jpg",
-  "/covers/third.jpg",
-  "/covers/fourth.jpg",
-] as const;
+const SAMPLE_SLIDES = THREAD_SHOTS;
 
 const ICON_SET = [
   "/icons/Rocket_perspective_matte-1.png",
@@ -57,12 +51,12 @@ export function PromptMock() {
   );
 }
 
-/** Phone showing a live carousel feed. */
+/** Phone showing a Threads screenshot. */
 export function PhoneCarouselMock({
-  app = "instagram",
+  start = 0,
   className,
 }: {
-  app?: "instagram" | "threads";
+  start?: number;
   className?: string;
 }) {
   return (
@@ -72,7 +66,7 @@ export function PhoneCarouselMock({
         "h-[380px] w-[190px] border-[6px] sm:h-[420px] sm:w-[210px]"
       }
     >
-      {app === "instagram" ? <InstagramFeed /> : <ThreadsFeed />}
+      <ThreadShot start={start} />
     </PhoneFrame>
   );
 }
@@ -81,15 +75,15 @@ export function PhoneCarouselMock({
 export function DualPhonesMock() {
   return (
     <div className="relative mx-auto h-[300px] w-full max-w-[360px] sm:h-[340px]">
-      <div className="absolute bottom-[-48px] left-[4%] z-0 -rotate-12 scale-[0.88]">
+      <div className="absolute bottom-[-120px] left-[4%] z-0 -rotate-12 scale-[0.88]">
         <PhoneCarouselMock
-          app="threads"
+          start={0}
           className="h-[360px] w-[180px] border-[6px] sm:h-[400px] sm:w-[200px]"
         />
       </div>
-      <div className="absolute bottom-[-36px] right-[2%] z-10 rotate-6">
+      <div className="absolute bottom-[-128px] right-[2%] z-10 rotate-6">
         <PhoneCarouselMock
-          app="instagram"
+          start={4}
           className="h-[380px] w-[190px] border-[6px] sm:h-[420px] sm:w-[210px]"
         />
       </div>
@@ -143,7 +137,7 @@ export function EditorMock() {
         <div className="bg-[#12131a] p-3">
           <div className="relative mx-auto aspect-[4/5] max-h-[150px] overflow-hidden rounded-lg bg-[#2a2b34]">
             <img
-              src="/covers/third.jpg"
+              src={THREAD_SHOTS[2]}
               alt=""
               className="h-full w-full object-cover"
             />
