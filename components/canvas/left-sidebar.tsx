@@ -1,22 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  LayoutTemplate,
-  Layers,
-  Settings,
-  ImageIcon,
-  PanelLeftClose,
-  PanelLeftOpen,
-  FilterIcon,
-  Folder,
-  Shapes,
-  Sparkles,
-  StickerIcon,
-  WandSparklesIcon,
-} from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
 import { SidebarProjects } from "@/components/canvas/sidebar/projects/sidebar-projects";
 import { SidebarTemplates } from "@/components/canvas/sidebar/sidebar-templates";
 import { SidebarElements } from "@/components/canvas/sidebar/sidebar-elements";
@@ -34,6 +21,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  IconStackFront,
+  IconSticker,
+  IconWand,
+  IconSparkles,
+  IconTriangleSquareCircle,
+  IconFolder,
+  IconLayout,
+  IconPhoto,
+  IconFilter,
+  IconStack,
+  IconStack3,
+} from "@tabler/icons-react";
 export type NavId =
   | "projects"
   | "templates"
@@ -108,16 +108,16 @@ export function LeftSidebar({
 
   const [legal, setLegal] = useState<LegalKind | null>(null);
 
-  const navItems: { id: NavId; icon: React.ElementType | null; label: string }[] = [
-    { id: "generate", icon: Sparkles, label: "AI" },
-    { id: "tools", icon: WandSparklesIcon, label: "Tools" },
-    { id: "elements", icon: Shapes, label: "Elements" },
-    { id: "projects", icon: Folder, label: "Projects" },
-    { id: "layers", icon: Layers, label: "Layers" },
-    { id: "templates", icon: LayoutTemplate, label: "Templates" },
-    { id: "background", icon: ImageIcon, label: "Background" },
-    { id: "filters", icon: FilterIcon, label: "Filter" },
-    { id: "icons", icon: StickerIcon, label: "Icons" },
+  const navItems: { id: NavId; icon: ReactNode; label: string }[] = [
+    { id: "generate", icon: <IconSparkles className="size-5 stroke-2" />, label: "AI" },
+    { id: "elements", icon: <IconTriangleSquareCircle className="size-5 stroke-2" />, label: "Elements" },
+    { id: "tools", icon: <IconWand className="size-5 stroke-2 " />, label: "Tools" },
+    { id: "projects", icon: <IconFolder className="size-5 stroke-2" />, label: "Projects" },
+    { id: "layers", icon: <IconStack3 className="size-5 stroke-2" />, label: "Layers" },
+    { id: "templates", icon: <IconLayout className="size-5 stroke-2" />, label: "Templates" },
+    { id: "background", icon: <IconPhoto className="size-5 stroke-2" />, label: "Background" },
+    { id: "filters", icon: <IconFilter className="size-5 stroke-2" />, label: "Filter" },
+    { id: "icons", icon: <IconSticker className="size-5 stroke-2" />, label: "Icons" },
   ];
 
   return (
@@ -126,7 +126,7 @@ export function LeftSidebar({
         <TooltipProvider delayDuration={300}>
           <div className="flex flex-col gap-1.5">
             {navItems.map(({ id, icon: Icon, label }, index) => (
-              <RailTooltip key={id} label={`${index + 1}  ${label}`}>
+              <RailTooltip key={id} label={`Key: ${index + 1} - ${label}`}>
                 <Button
                   variant={activeNav === id ? "secondary" : "ghost"}
                   size="icon"
@@ -137,7 +137,7 @@ export function LeftSidebar({
                     if (isLeftCollapsed) setIsLeftCollapsed(false);
                   }}
                 >
-                  {Icon ? <Icon className="size-4 stroke-2" /> : null}
+                    {Icon}
                 </Button>
               </RailTooltip>
             ))}
@@ -178,7 +178,6 @@ export function LeftSidebar({
         </TooltipProvider>
       </aside>
 
-      {/* ── Collapsible content panel ── */}
       <div
         className={`flex min-h-0 min-w-0 flex-col overflow-hidden transition-all duration-200 ease-in-out ${
           isLeftCollapsed ? "w-0 opacity-0" : "w-72 opacity-100"
