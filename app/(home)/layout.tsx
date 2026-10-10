@@ -7,8 +7,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Swibp — карусели из одной идеи",
-  description: "Тема → карусель. Обложка, середина, финал. Правки в студии.",
+  title: "Swibp — carousels from one idea",
+  description: "Topic to carousel. Cover, middle, ending. Finish it in the studio.",
 };
 
 export default function MarketingLayout({

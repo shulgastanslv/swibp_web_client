@@ -38,11 +38,10 @@ export function PromptMock() {
         Generate
       </div>
       <div className="mt-3 rounded-2xl bg-[#f4f5f9] p-4 text-[13px] leading-relaxed text-[#14151c]">
-        Объясни запуск продукта за 6 кадров. Спокойно, для основателей, без
-        жаргона.
+        Explain a product launch in 6 frames. Calm, for founders, no jargon.
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        {["6 слайдов", "Night", "Спокойный тон"].map((chip) => (
+        {["6 slides", "Night", "Calm tone"].map((chip) => (
           <span
             key={chip}
             className="rounded-full bg-[#e4ebff] px-3 py-1 text-[13px] font-semibold text-[#1a2f86]"
@@ -52,7 +51,7 @@ export function PromptMock() {
         ))}
       </div>
       <div className="mt-4 flex h-10 items-center justify-center rounded-full bg-[#2f5bff] text-[13px] font-semibold text-white">
-        Создать карусель
+        Create a carousel
       </div>
     </div>
   );
@@ -217,7 +216,7 @@ export function IconsShowcase() {
             <circle cx="11" cy="11" r="6" />
             <path d="m20 20-3.5-3.5" />
           </svg>
-          Найти иконку…
+          Search icons…
         </div>
         {ICON_TAGS.map((tag) => (
           <span
@@ -247,7 +246,7 @@ export function IconsShowcase() {
       </div>
 
       <p className="mt-5 text-center text-[13px] font-semibold tracking-wide text-[#3a4f9a]/80">
-        14 000 000+ иконок · вставка на холст в один клик
+        14,000,000+ icons · drop onto the canvas in one click
       </p>
     </div>
   );
@@ -265,7 +264,7 @@ export function TemplatesPair() {
             className="aspect-[4/5] w-full rounded-[1.25rem] object-cover"
           />
           <figcaption className="mt-2 text-[13px] font-semibold text-[#5c6170]">
-            {index === 0 ? "Обложка" : "Финал"}
+            {index === 0 ? "Cover" : "Ending"}
           </figcaption>
         </figure>
       ))}
@@ -278,10 +277,10 @@ export function PromptInline() {
   return (
     <div className="mt-6 max-w-md">
       <p className="text-[13px] leading-relaxed text-[#14151c]/80">
-        «Объясни запуск продукта за 6 кадров. Спокойно, для основателей.»
+        “Explain a product launch in 6 frames. Calm, for founders.”
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
-        {["6 слайдов", "Night", "Спокойный тон"].map((chip) => (
+        {["6 slides", "Night", "Calm tone"].map((chip) => (
           <span
             key={chip}
             className="rounded-full bg-[#14151c]/[0.07] px-3 py-1 text-[13px] font-semibold"
@@ -299,7 +298,7 @@ export function ExportInline() {
   return (
     <ul className="mt-5 space-y-2">
       {[
-        ["carousel.zip", "архив"],
+        ["carousel.zip", "archive"],
         ["01-cover.png", "PNG"],
         ["06-close.png", "PNG"],
       ].map(([name, kind]) => (

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Swibp — студия",
-  description: "Редактор каруселей Swibp",
+  title: "Swibp — studio",
+  description: "Swibp carousel editor",
 };
 
 export default function StudioLayout({

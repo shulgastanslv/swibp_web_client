@@ -20,28 +20,28 @@ type Audience = {
 const AUDIENCES: Audience[] = [
   {
     id: "dev",
-    name: "Программисты",
+    name: "Developers",
     app: "instagram",
-    handle: "релиз",
+    handle: "release",
     avatar: "/landing/slide-mid.jpg",
-    post: "Карусель про выкладку: что проверить и чем закончить.",
-    text: "Один шаг — один кадр.",
+    post: "A carousel about shipping: what to check and how to finish.",
+    text: "One step, one frame.",
     panel: "#e4ebff",
     slides: [
       {
         src: "/landing/slide-mid.jpg",
-        title: "Релиз без паники",
-        caption: "Обложка называет, о чём карусель.",
+        title: "Ship without panic",
+        caption: "The cover names what the carousel is about.",
       },
       {
         src: "/landing/slide-cover.jpg",
-        title: "Три проверки",
-        caption: "Середина раскладывает шаги.",
+        title: "Three checks",
+        caption: "The middle lays out the steps.",
       },
       {
         src: "/landing/slide-end.jpg",
-        title: "Можно выкатывать",
-        caption: "Финал оставляет действие.",
+        title: "Ready to ship",
+        caption: "The ending leaves an action.",
       },
     ],
   },
@@ -49,107 +49,107 @@ const AUDIENCES: Audience[] = [
     id: "smm",
     name: "SMM",
     app: "threads",
-    handle: "лента",
+    handle: "feed",
     avatar: "/landing/slide-cover.jpg",
-    post: "Рубрика на шесть кадров. Обложка, объяснение, финал.",
-    text: "Рубрика за минуты, не за вечер.",
+    post: "A series in six frames. Cover, explanation, ending.",
+    text: "A series in minutes, not an evening.",
     panel: "#ffe4ef",
     slides: [
       {
         src: "/landing/slide-cover.jpg",
-        title: "Крючок для ленты",
-        caption: "Первый кадр останавливает прокрутку.",
+        title: "A hook for the feed",
+        caption: "The first frame stops the scroll.",
       },
       {
         src: "/landing/slide-end.jpg",
-        title: "Рубрика по порядку",
-        caption: "Слайды читаются друг за другом.",
+        title: "The series, in order",
+        caption: "Slides read one after another.",
       },
       {
         src: "/landing/slide-mid.jpg",
-        title: "Что сделать дальше",
-        caption: "Последний кадр не повторяет обложку.",
+        title: "What to do next",
+        caption: "The last frame does not repeat the cover.",
       },
     ],
   },
   {
     id: "marketing",
-    name: "Маркетологи",
+    name: "Marketers",
     app: "instagram",
-    handle: "запуск",
+    handle: "launch",
     avatar: "/landing/slide-end.jpg",
-    post: "Запуск в одной карусели: кому, зачем и что дальше.",
-    text: "Запуск в одной ленте.",
+    post: "A launch in one carousel: who, why, and what is next.",
+    text: "A launch in one feed.",
     panel: "#fff4cc",
     slides: [
       {
         src: "/landing/slide-end.jpg",
-        title: "Запуск без шума",
-        caption: "Обложка говорит, зачем открыть.",
+        title: "A quiet launch",
+        caption: "The cover says why to open it.",
       },
       {
         src: "/landing/slide-mid.jpg",
-        title: "Кому это нужно",
-        caption: "Середина объясняет без жаргона.",
+        title: "Who this is for",
+        caption: "The middle explains without jargon.",
       },
       {
         src: "/landing/slide-cover.jpg",
-        title: "Следующий шаг",
-        caption: "Финал оставляет действие.",
+        title: "The next step",
+        caption: "The ending leaves an action.",
       },
     ],
   },
   {
     id: "editors",
-    name: "Редакторы",
+    name: "Editors",
     app: "threads",
-    handle: "редакция",
+    handle: "desk",
     avatar: "/landing/slide-cover.jpg",
-    post: "Один тезис на слайд. Карусель держит ритм колонки.",
-    text: "Один тезис на кадр.",
+    post: "One point per slide. The carousel keeps the column's rhythm.",
+    text: "One point per frame.",
     panel: "#efe7ff",
     slides: [
       {
         src: "/landing/slide-cover.jpg",
-        title: "Один тезис",
-        caption: "Обложка держит обещание текста.",
+        title: "One point",
+        caption: "The cover keeps the promise of the text.",
       },
       {
         src: "/landing/slide-mid.jpg",
-        title: "Середина без воды",
-        caption: "Каждый слайд добавляет шаг.",
+        title: "A tight middle",
+        caption: "Each slide adds a step.",
       },
       {
         src: "/landing/slide-end.jpg",
-        title: "Финал коротко",
-        caption: "Последний кадр закрывает мысль.",
+        title: "A short ending",
+        caption: "The last frame closes the thought.",
       },
     ],
   },
   {
     id: "founders",
-    name: "Основатели",
+    name: "Founders",
     app: "instagram",
-    handle: "продукт",
+    handle: "product",
     avatar: "/landing/slide-end.jpg",
-    post: "Зачем продукт, как устроен и куда идти дальше.",
-    text: "Продукт без питч-дека.",
+    post: "Why the product, how it works, and where to go next.",
+    text: "A product, without a pitch deck.",
     panel: "#e5f6ea",
     slides: [
       {
         src: "/landing/slide-end.jpg",
-        title: "Зачем продукт",
-        caption: "Обложка формулирует обещание.",
+        title: "Why the product",
+        caption: "The cover states the promise.",
       },
       {
         src: "/landing/slide-cover.jpg",
-        title: "Как это устроено",
-        caption: "Середина показывает путь.",
+        title: "How it works",
+        caption: "The middle shows the path.",
       },
       {
         src: "/landing/slide-mid.jpg",
-        title: "Куда дальше",
-        caption: "Финал оставляет следующий шаг.",
+        title: "Where next",
+        caption: "The ending leaves the next step.",
       },
     ],
   },
@@ -186,9 +186,9 @@ export function AudienceBlock() {
   return (
     <section id="audiences" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-8 sm:px-6">
       <div className="mb-6">
-        <p className="text-[13px] font-bold tracking-wide text-[#2f5bff]">Для кого</p>
+        <p className="text-[13px] font-bold tracking-wide text-[#2f5bff]">Who it is for</p>
         <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
-          Одна студия — разные ленты
+          One studio, different feeds
         </h2>
       </div>
 

@@ -20,18 +20,18 @@ export type FeedSlide = {
 const SLIDES = [
   {
     src: "https://i.pinimg.com/736x/33/d4/78/33d47874c4e5f6fd592c148f92a0a9a4.jpg",
-    title: "Если вечером есть 5 минут",
-    caption: "Когда меньше значит больше.",
+    title: "Five minutes at night",
+    caption: "Less is the whole point.",
   },
   {
     src: "https://i.pinimg.com/736x/40/dd/07/40dd0784cbdc504cea21f61425ff2daf.jpg",
-    title: "Городской ритм",
-    caption: "Движение в каждом кадре.",
+    title: "City rhythm",
+    caption: "Motion in every frame.",
   },
   {
     src: "https://i.pinimg.com/736x/2b/24/ed/2b24edb122a755cb5fa936e3e626d4e8.jpg",
-    title: "Природа зовет",
-    caption: "Выдохни и посмотри вокруг.",
+    title: "The outdoors call",
+    caption: "Breathe and look around.",
   },
 ];
 
@@ -130,7 +130,7 @@ export function InstagramFeed({
           </div>
           <Bookmark className="h-6 w-6 hover:text-yellow-500 cursor-pointer transition-colors" />
         </div>
-        <p className="text-[13px] text-neutral-500">Нравится 1,240 людям</p>
+        <p className="text-[13px] text-neutral-500">1,240 likes</p>
         <p className="text-[13px] mt-1">
           <span className="font-semibold mr-1">design_daily</span>
           {slide.caption}
@@ -162,10 +162,10 @@ export function ThreadsFeed({
         <div className="flex-1">
           <div className="flex items-baseline justify-between">
              <span className="font-semibold text-[13px]">swibp</span>
-             <span className="text-[13px] text-neutral-400">2ч</span>
+             <span className="text-[13px] text-neutral-400">2h</span>
           </div>
           <p className="text-[13px] leading-snug mt-1">
-            Карусель из одной мысли. Обложка, середина и финал. 🧵
+            A carousel from one thought. Cover, middle, and ending. 🧵
           </p>
         </div>
       </div>

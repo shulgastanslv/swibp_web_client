@@ -28,88 +28,91 @@ import { FloatingNav } from "@/components/ui/floating-navbar";
 import { HeroStage } from "@/components/landing/hero-stage";
 import { AudienceBlock } from "@/components/landing/audience-block";
 import { Reveal } from "@/components/landing/reveal";
+import { FreeBlock } from "@/components/landing/free-block";
+import { NetworksBlock } from "@/components/landing/networks-block";
+import { ReviewsBlock } from "@/components/landing/reviews-block";
 import {
-  DualPhonesMock,
-  EditorMock,
-  ExportInline,
-  IconsShowcase,
-  PhoneCarouselMock,
-  PromptInline,
-  TemplatesPair,
-} from "@/components/landing/landing-visuals";
+  ExportArt,
+  FeedArt,
+  GenerateArt,
+  IconsArt,
+  PublishArt,
+  StudioArt,
+  TemplatesArt,
+} from "@/components/landing/landing-art";
+import { DualPhonesMock } from "@/components/landing/landing-visuals";
+import { EditorStage } from "./editor-stage";
 
 const NAV = [
   { name: "Product", link: "#product" },
   { name: "Studio", link: "#studio" },
-  { name: "Library", link: "#library" },
+  { name: "Networks", link: "#networks" },
+  { name: "Free", link: "#free" },
+  { name: "Reviews", link: "#reviews" },
   { name: "FAQ", link: "#faq" },
 ];
 
-const PLATFORMS = [
-  "Instagram",
-  "LinkedIn",
-  "Telegram",
-  "Threads",
-  "X",
-  "Pinterest",
-];
-
 const EDITOR_POINTS = [
-  "Generate на холсте",
-  "Слои и инспектор",
-  "Навигатор слайдов",
-  "Экспорт PNG / ZIP",
+  "Generate on the canvas",
+  "Layers and inspector",
+  "Slide navigator",
+  "Export PNG / ZIP",
 ];
 const FAQ = [
   {
     value: "what",
-    q: "Что такое Swibp?",
-    a: "Студия для каруселей: из темы собирается последовательность слайдов, дальше вы правите их на холсте и экспортируете кадры.",
+    q: "What is Swibp?",
+    a: "A studio for carousels. A topic becomes a sequence of slides, then you edit them on the canvas and export the frames.",
   },
   {
     value: "how-gen",
-    q: "Как работает генерация?",
-    a: "Вы задаёте тему, число слайдов и стиль. Модель раскладывает мысль по кадрам и открывает результат сразу в редакторе — обложка, середина и финал уже на местах.",
+    q: "How does generation work?",
+    a: "You set the topic, slide count, and style. The model spreads the idea across frames and opens the result in the editor — cover, middle, and ending already in place.",
   },
   {
     value: "edit",
-    q: "Можно ли править после генерации?",
-    a: "Да. Меняйте текст, фото, иконки, фоны и порядок слайдов. Генерация — старт, не финальный пост.",
+    q: "Can I edit after generation?",
+    a: "Yes. Change text, photos, icons, backgrounds, and slide order. Generation is the start, not the finished post.",
   },
   {
     value: "vs-canva",
-    q: "Чем это отличается от Canva?",
-    a: "Canva начинается с пустого макета. Swibp сначала собирает смысл по кадрам, а визуал вы доводите в своей студии: слои, шаблоны, экспорт.",
+    q: "How is this different from Canva?",
+    a: "Canva starts from an empty layout. Swibp first builds the story across frames, then you finish the look in your studio: layers, templates, export.",
   },
   {
     value: "templates",
-    q: "Нужны ли шаблоны?",
-    a: "Не обязательно. Можно генерировать с нуля или взять шаблон как каркас и переписать под свою тему.",
+    q: "Do I need templates?",
+    a: "No. Generate from scratch, or take a template as a frame and rewrite it for your topic.",
   },
   {
     value: "export",
-    q: "Что я скачиваю?",
-    a: "Отдельные кадры PNG/JPEG или архив ZIP. Удобно сразу выкладывать в Instagram, LinkedIn, Threads или Telegram.",
+    q: "What do I download?",
+    a: "Separate PNG or JPEG frames, or a ZIP. Ready to post on Instagram, LinkedIn, Threads, or Telegram.",
   },
   {
     value: "slides",
-    q: "Сколько слайдов можно сделать?",
-    a: "При генерации выбираете длину карусели. В редакторе слайды можно добавлять, дублировать и удалять.",
+    q: "How many slides can I make?",
+    a: "You pick the length when you generate. In the editor you can add, duplicate, and delete slides.",
   },
   {
     value: "account",
-    q: "Нужен ли аккаунт?",
-    a: "Чтобы сохранять проекты и возвращаться к ним — да. Черновики остаются в аккаунте.",
+    q: "Do I need an account?",
+    a: "Yes, if you want projects saved so you can come back. Drafts stay on the account.",
   },
   {
     value: "lang",
-    q: "На каком языке текст?",
-    a: "Пишите тему на том языке, на котором нужна карусель. Редактор не привязан к одному языку.",
+    q: "What language is the text?",
+    a: "Write the topic in the language you want on the carousel. The editor is not tied to one language.",
+  },
+  {
+    value: "free",
+    q: "Is it actually free?",
+    a: "Yes. No subscription: generation, canvas edits, and PNG or ZIP export. Frames have no watermark.",
   },
   {
     value: "who",
-    q: "Кому это подходит?",
-    a: "SMM, основателям, редакторам, маркетологам — всем, кто регулярно объясняет мысль каруселью, а не одним квадратом.",
+    q: "Who is it for?",
+    a: "Social teams, founders, editors, marketers — anyone who explains an idea as a carousel, not a single square.",
   },
 ];
 
@@ -197,7 +200,7 @@ export function LandingPage() {
                   variant="ghost"
                   size="icon"
                   className="text-white hover:bg-white/10 hover:text-white md:hidden"
-                  aria-label="Меню"
+                  aria-label="Menu"
                 >
                   <Menu />
                 </Button>
@@ -222,10 +225,10 @@ export function LandingPage() {
                     className="mt-3 h-10 rounded-full"
                     onClick={() => setAuthOpen(true)}
                   >
-                    Войти
+                    Sign in
                   </Button>
                   <Button asChild className="h-10 rounded-full">
-                    <Link href="/studio">Открыть студию</Link>
+                    <Link href="/studio">Open studio</Link>
                   </Button>
                 </div>
               </SheetContent>
@@ -248,8 +251,7 @@ export function LandingPage() {
             />
             <p className="mt-4 max-w-md text-[13px] leading-relaxed text-white/75 sm:text-base">
               The model itself decides what to put on the cover, why to explain the middle and
-              why to finish. You fix the formulations, not collect each frame
-              с нуля.
+              why to finish.               You fix the wording. You do not build every frame from scratch.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button
@@ -270,107 +272,110 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Opening composition — one pastel bento, no wireframe cards */}
       <section
         id="product"
         className="relative z-20 mx-auto -mt-14 max-w-6xl scroll-mt-24 px-4 sm:-mt-20 sm:px-6"
       >
         <Reveal>
           <div className="grid gap-3 md:grid-cols-12 md:grid-rows-[auto_auto_auto]">
-            <Layer className="bg-[#fff4cc] p-6 sm:p-8 md:col-span-7 md:row-span-2 md:min-h-[480px]">
-              <p className="text-[13px] font-bold text-[#8a7a3a]">#Generate</p>
-              <h2 className="mt-3 max-w-sm text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Тема → карусель
+            <Layer className="bg-[#f4f5f9] backdrop-blur-xl sm:p-8 md:col-span-7 md:row-span-2 md:min-h-[480px]">
+              <p className="text-[13px] font-bold text-black  ">#Generate</p>
+              <h2 className="mt-3 max-w-sm text-3xl font-extrabold tracking-tight sm:text-4xl text-black">
+                Topic → carousel
               </h2>
-              <p className="mt-3 max-w-xs text-[13px] text-[#5c6170]">
-                Обложка, середина, финал — из пары предложений.
+              <p className="mt-3 max-w-xs text-[13px] text-black">
+                Cover, middle, ending — from a couple of sentences.
               </p>
-              <div className="mt-8 flex justify-center md:mt-10">
+              <div className="mt-6 flex justify-center md:mt-8">
+                <GenerateArt />
               </div>
             </Layer>
 
-            <Layer className="bg-[#e4ebff] p-0 md:col-span-5 md:min-h-[230px]">
-              <div className="relative flex h-full min-h-[230px] items-end justify-center overflow-hidden px-4 pt-8">
-                <div className="absolute inset-x-10 top-6 bottom-0 rounded-t-[2rem] bg-[#c9d4ff]" />
-                <div className="relative z-10 translate-y-8">
-                  <PhoneCarouselMock
-                    app="instagram"
-                    className="h-[280px] w-[140px] border-[5px] sm:h-[300px] sm:w-[150px]"
-                  />
-                </div>
-                <p className="absolute top-5 left-5 z-10 text-[13px] font-bold text-[#3a4f9a]">
-                  #Лента
-                </p>
+            <Layer className="bg-[#e4ebff] p-5 sm:p-6 md:col-span-5 md:min-h-[230px]">
+              <p className="text-[13px] font-bold text-[#3a4f9a]">#Feed</p>
+              <h3 className="mt-2 text-xl font-extrabold tracking-tight">
+                A post, not a file
+              </h3>
+              <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-[#5c6170]">
+                The carousel is already in feed proportions. Cover plus the next frames, not a single square.
+              </p>
+              <div className="mt-2 flex justify-center">
+                <FeedArt />
               </div>
             </Layer>
 
             <Layer className="bg-[#efe7ff] p-5 sm:p-6 md:col-span-5">
-              <p className="text-[13px] font-bold text-[#6b5f9a]">#Студия</p>
+              <p className="text-[13px] font-bold text-[#6b5f9a]">#Studio</p>
               <h3 className="mt-2 text-xl font-extrabold tracking-tight">
-                Правите на холсте
+                Edit on the canvas
               </h3>
-              <div className="mt-4 origin-top scale-[0.85]">
-                <EditorMock />
+              <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-[#5c6170]">
+                Text, background, and frame order. Generation only opens the carousel. You finish it.
+              </p>
+              <div className="mt-3">
+                <StudioArt />
               </div>
             </Layer>
 
             <Layer className="bg-[#e5f6ea] p-5 sm:p-6 md:col-span-5">
               <p className="text-[13px] font-bold text-[#3d6b4f]">#Export</p>
               <h3 className="mt-2 text-xl font-extrabold tracking-tight">
-                ZIP или PNG
+                ZIP or PNG
               </h3>
-              <div className="mt-4">
-              </div>
+              <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-[#5c6170]">
+                Each slide is its own PNG. The whole carousel downloads as one archive, with no watermark.
+              </p>
+              <ExportArt />
             </Layer>
 
-            <Layer className="bg-[#ffe4ef] p-5 sm:p-6 md:col-span-7">
+            <Layer className="bg-muted p-5 sm:p-6 md:col-span-7">
               <div className="flex h-full flex-col justify-between gap-6 sm:flex-row sm:items-center">
                 <div>
-                  <p className="text-[13px] font-bold text-[#9a4f6b]">#Готово</p>
+                  <p className="text-[13px] font-bold text-black">#Ready</p>
                   <h3 className="mt-2 text-2xl font-extrabold tracking-tight">
-                    От темы до публикации
+                    From topic to post
                   </h3>
-                  <p className="mt-2 max-w-sm text-[13px] text-[#5c6170]">
-                    Без Canva, без пустого холста, без вечера на сборку.
+                  <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-[#5c6170]">
+                    The topic becomes frames, the frames download, and they go straight into the post. No blank canvas and no evening of assembly.
                   </p>
+                  <Link
+                    href="/studio"
+                    className="mt-5 inline-flex h-11 items-center rounded-full bg-black px-5 text-[13px] font-semibold text-white"
+                  >
+                    Open studio
+                  </Link>
                 </div>
-                <Link
-                  href="/studio"
-                  className="inline-flex h-11 shrink-0 items-center rounded-full bg-[#14151c] px-5 text-[13px] font-semibold text-white"
-                >
-                  Открыть студию
-                </Link>
+                <PublishArt />
               </div>
             </Layer>
           </div>
         </Reveal>
       </section>
 
-      <div className="pt-5">
-        <AudienceBlock />
-      </div>
+
+      <Reveal>
+        <NetworksBlock />
+      </Reveal>
+
+      <Reveal>
+        <FreeBlock />
+      </Reveal>
 
       <section id="studio" className="mx-auto max-w-6xl scroll-mt-24 space-y-4 px-4 py-5 sm:px-6">
         <Reveal>
-          <Layer className="bg-[#efe7ff]">
-            <div className="grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-2 lg:gap-12">
+          <Layer className="bg-white">
+            <div className="grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-2 lg:gap-10">
               <div>
-                <p className="text-[13px] font-bold text-[#6b5f9a]">Студия</p>
-                <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-5xl">
-                  Редактор
-                  <br />
-                  под ленту
+                <p className="text-[13px] font-bold text-[#6b5f9a]">Studio</p>
+                <h2 className="mt-3 text-3xl font-extrabold tracking-tight">
+                  An editor built for the feed
                 </h2>
-                <p className="mt-4 max-w-sm text-base text-[#5c6170]">
-                  Генерация открывает карусель на холсте. Дальше — слои, текст,
-                  слайды и экспорт.
+                <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-[#5c6170]">
+                  The canvas is already in post format. Frames sit underneath: cover, middle, ending. Text and layers sit on the right.
                 </p>
-                <ul className="mt-6 space-y-3">
+                <ul className="mt-5 flex flex-col gap-2">
                   {EDITOR_POINTS.map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-center gap-3 text-base font-semibold"
-                    >
+                    <li key={item} className="flex items-center gap-2 text-lg font-semibold">
                       <span className="grid size-6 place-items-center rounded-full bg-[#14151c] text-white">
                         <Check className="size-3.5" />
                       </span>
@@ -380,18 +385,12 @@ export function LandingPage() {
                 </ul>
                 <Link
                   href="/studio"
-                  className="mt-8 inline-flex h-11 items-center rounded-full bg-[#14151c] px-5 text-[13px] font-semibold text-white"
+                  className="mt-6 inline-flex h-11 items-center rounded-full bg-[#14151c] px-5 text-[13px] font-semibold text-white"
                 >
-                  Открыть студию
+                  Open studio
                 </Link>
               </div>
-              <div className="relative flex min-h-[300px] items-center justify-center sm:min-h-[360px]">
-                <div className="absolute inset-[10%] rounded-[2.5rem] bg-[#ddd0ff]" />
-                <div className="absolute -right-2 top-8 size-14 rounded-full bg-white/60" />
-                <div className="relative z-10 w-full max-w-md rotate-2">
-                  <EditorMock />
-                </div>
-              </div>
+              <EditorStage />
             </div>
           </Layer>
         </Reveal>
@@ -399,28 +398,25 @@ export function LandingPage() {
         <Reveal delay={0.05}>
           <div className="grid gap-3 lg:grid-cols-2">
             <Layer className="bg-[#e4ebff] p-7 sm:p-10">
-              <p className="text-[13px] font-bold text-[#3a4f9a]">Иконки</p>
+              <p className="text-[13px] font-bold text-[#3a4f9a]">Icons</p>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-                14 млн
+                14 million
               </h2>
               <p className="mt-3 max-w-xs text-[13px] text-[#5c6170]">
-                Поиск рядом с холстом. Знак встаёт на слайд.
+                Search sits next to the canvas. The icon drops onto the slide.
               </p>
-              <div className="mt-10">
-              </div>
+              <IconsArt />
             </Layer>
 
             <Layer className="bg-[#fff4cc] p-7 sm:p-10">
-              <p className="text-[13px] font-bold text-[#8a7a3a]">Шаблоны</p>
+              <p className="text-[13px] font-bold text-[#8a7a3a]">Templates</p>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Каркас готов
+                The frame is ready
               </h2>
               <p className="mt-3 max-w-xs text-[13px] text-[#5c6170]">
-                Обложка и финал — меняете слова, ритм остаётся.
+                Cover and ending stay in rhythm. You change the words.
               </p>
-              <div className="mt-8">
-                <TemplatesPair />
-              </div>
+              <TemplatesArt />
             </Layer>
           </div>
         </Reveal>
@@ -434,7 +430,7 @@ export function LandingPage() {
                 FAQ
               </h2>
               <p className="mt-3 max-w-xs text-[13px] text-[#5c6170]">
-                Коротко про генерацию, правки, экспорт и аккаунт.
+                Generation, edits, export, and your account — in short.
               </p>
             </div>
             <Accordion type="single" collapsible defaultValue="what">
@@ -465,31 +461,31 @@ export function LandingPage() {
               <div className="absolute bottom-20 left-[40%] size-28 rounded-full bg-[#9eb6ff]/30 blur-xl" />
               <div className="relative z-10 pb-12 sm:pb-16">
                 <h2 className="mt-3 max-w-md text-3xl font-extrabold tracking-tight sm:text-5xl">
-                  Тема есть.
+                  You have the topic.
                   <br />
-                  Карусель — дальше.
+                  The carousel is next.
                 </h2>
                 <p className="mt-4 max-w-sm text-[13px] text-white/75 sm:text-base">
-                  Откройте студию и соберите первую ленту за один проход.
+                  Open the studio and build the first feed in one pass.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link
                     href="/studio"
                     className="inline-flex h-11 items-center rounded-full bg-white px-5 text-[13px] font-semibold text-[#1a2f86]"
                   >
-                    Создать карусель
+                    Create a carousel
                   </Link>
                   <button
                     type="button"
                     onClick={() => setAuthOpen(true)}
                     className="inline-flex h-11 items-center rounded-full border border-white/30 px-5 text-[13px] font-semibold"
                   >
-                    Войти
+                    Sign in
                   </button>
                 </div>
               </div>
               <div className="relative z-10 overflow-hidden">
-                <div className="absolute inset-x-8 top-10 bottom-0 rounded-[2rem] bg-[#1a3fd6]" />
+                <div className="absolute inset-x-8 top-5 bottom-0 h-96 rounded-full bg-[#1a3fd6]" />
                 <DualPhonesMock />
               </div>
             </div>
@@ -500,6 +496,7 @@ export function LandingPage() {
       <footer>
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <Link href="/" className="text-[13px] font-semibold tracking-tight">
+            swibp.io
           </Link>
           <nav className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-[#5c6170]">
             {NAV.map((item) => (

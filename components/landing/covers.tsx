@@ -44,23 +44,23 @@ function PhotoSlide({
 
 export function CoverHook({ className }: { className?: string }) {
   return (
-    <PhotoSlide src="/landing/slide-cover.jpg" alt="Обложка карусели" className={className}>
+    <PhotoSlide src="/landing/slide-cover.jpg" alt="Carousel cover" className={className}>
       <div className="flex items-center justify-between text-[11px] font-semibold tracking-[0.18em]">
-        <span>КАРУСЕЛЬ</span>
+        <span>CAROUSEL</span>
         <span>01 / 06</span>
       </div>
       <div>
-        <p className="text-[13px] font-semibold">ИИ создал карусель</p>
+        <p className="text-[13px] font-semibold">The carousel is generated</p>
         <h3 className="mt-2 text-3xl leading-[0.95] font-extrabold sm:text-4xl">
-          Карусель
+          A carousel
           <br />
-          из одной
+          from one
           <br />
-          мысли
+          thought
         </h3>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[13px] font-medium">Обложка</span>
+        <span className="text-[13px] font-medium">Cover</span>
         <Dots />
       </div>
     </PhotoSlide>
@@ -69,21 +69,21 @@ export function CoverHook({ className }: { className?: string }) {
 
 export function CoverList({ className }: { className?: string }) {
   return (
-    <PhotoSlide src="/landing/slide-mid.jpg" alt="Второй слайд карусели" className={className}>
+    <PhotoSlide src="/landing/slide-mid.jpg" alt="Second carousel slide" className={className}>
       <div className="flex items-center justify-between text-[11px] font-semibold tracking-[0.16em]">
-        <span>СЛАЙД 02</span>
+        <span>SLIDE 02</span>
         <span>02 / 06</span>
       </div>
       <div>
         <h3 className="text-3xl leading-none font-extrabold">
-          Три кадра,
+          Three frames,
           <br />
-          одна история
+          one story
         </h3>
         <ul className="mt-4 space-y-2 text-[13px]">
-          <li className="rounded-xl bg-black/35 px-3 py-2 backdrop-blur-sm">01 Обложка цепляет</li>
-          <li className="rounded-xl bg-black/35 px-3 py-2 backdrop-blur-sm">02 Середина объясняет</li>
-          <li className="rounded-xl bg-[#2f5bff]/90 px-3 py-2">03 Финал зовёт</li>
+          <li className="rounded-xl bg-black/35 px-3 py-2 backdrop-blur-sm">01 The cover hooks</li>
+          <li className="rounded-xl bg-black/35 px-3 py-2 backdrop-blur-sm">02 The middle explains</li>
+          <li className="rounded-xl bg-[#2f5bff]/90 px-3 py-2">03 The ending invites</li>
         </ul>
       </div>
       <Dots active={1} />
@@ -93,20 +93,20 @@ export function CoverList({ className }: { className?: string }) {
 
 export function CoverClose({ className }: { className?: string }) {
   return (
-    <PhotoSlide src="/landing/slide-end.jpg" alt="Финальный слайд карусели" className={className}>
+    <PhotoSlide src="/landing/slide-end.jpg" alt="Final carousel slide" className={className}>
       <div className="flex items-center justify-between text-[11px] font-semibold tracking-[0.16em]">
-        <span>ФИНАЛ</span>
+        <span>ENDING</span>
         <span>06 / 06</span>
       </div>
       <div>
-        <p className="text-[13px] font-semibold">Карусель готова</p>
+        <p className="text-[13px] font-semibold">The carousel is ready</p>
         <h3 className="mt-2 text-4xl leading-[0.95] font-extrabold">
-          Забери
+          Take
           <br />
-          кадры
+          the frames
         </h3>
         <div className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#14151c]">
-          6 слайдов
+          6 slides
         </div>
       </div>
       <Dots active={5} />

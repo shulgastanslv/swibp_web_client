@@ -288,7 +288,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
             variant="ghost"
             size="sm"
             onClick={onFocus}
-            className="h-9 px-3 text-[13px] font-medium gap-1.5 rounded-full shadow-2xs hover:shadow-xs transition-all"
+            className="h-9 px-3 text-[13px] font-medium gap-1.5 rounded-full shadow-none transition-all"
             title="Hide the panels and keep the canvas"
           >
             <Focus className="w-3 h-3" />
