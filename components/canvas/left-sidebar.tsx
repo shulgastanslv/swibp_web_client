@@ -22,18 +22,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  IconStackFront,
-  IconSticker,
-  IconWand,
-  IconSparkles,
-  IconTriangleSquareCircle,
-  IconFolder,
-  IconLayout,
-  IconPhoto,
-  IconFilter,
-  IconStack,
-  IconStack3,
-} from "@tabler/icons-react";
+  FaFilter,
+  FaFolderOpen,
+  FaIcons,
+  FaImage,
+  FaLayerGroup,
+  FaMagic,
+  FaShapes,
+  FaThLarge,
+  FaWrench,
+  FaStickyNote,
+} from "react-icons/fa";
 export type NavId =
   | "projects"
   | "templates"
@@ -109,15 +108,15 @@ export function LeftSidebar({
   const [legal, setLegal] = useState<LegalKind | null>(null);
 
   const navItems: { id: NavId; icon: ReactNode; label: string }[] = [
-    { id: "generate", icon: <IconSparkles className="size-5 stroke-2" />, label: "AI" },
-    { id: "elements", icon: <IconTriangleSquareCircle className="size-5 stroke-2" />, label: "Elements" },
-    { id: "tools", icon: <IconWand className="size-5 stroke-2 " />, label: "Tools" },
-    { id: "projects", icon: <IconFolder className="size-5 stroke-2" />, label: "Projects" },
-    { id: "layers", icon: <IconStack3 className="size-5 stroke-2" />, label: "Layers" },
-    { id: "templates", icon: <IconLayout className="size-5 stroke-2" />, label: "Templates" },
-    { id: "background", icon: <IconPhoto className="size-5 stroke-2" />, label: "Background" },
-    { id: "filters", icon: <IconFilter className="size-5 stroke-2" />, label: "Filter" },
-    { id: "icons", icon: <IconSticker className="size-5 stroke-2" />, label: "Icons" },
+    { id: "generate", icon: <FaMagic className="size-4" />, label: "AI" },
+    { id: "elements", icon: <FaShapes className="size-4" />, label: "Elements" },
+    { id: "tools", icon: <FaWrench className="size-4" />, label: "Tools" },
+    { id: "projects", icon: <FaFolderOpen className="size-4" />, label: "Projects" },
+    { id: "layers", icon: <FaLayerGroup className="size-4" />, label: "Layers" },
+    { id: "templates", icon: <FaThLarge className="size-4" />, label: "Templates" },
+    { id: "background", icon: <FaImage className="size-4" />, label: "Background" },
+    { id: "filters", icon: <FaFilter className="size-4" />, label: "Filter" },
+    { id: "icons", icon: <FaStickyNote className="size-4" />, label: "Icons" },
   ];
 
   return (

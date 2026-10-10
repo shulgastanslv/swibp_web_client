@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
   checkCredentials,
@@ -33,6 +33,10 @@ function queryParam(name: string): string | null {
   return new URLSearchParams(window.location.search).get(name);
 }
 
+function callbackUrlFromQuery(): string {
+  return queryParam("callbackUrl") || "/studio";
+}
+
 function authErrorMessage(code: string): string {
   if (code === "AccessDenied") return "Google did not confirm this email.";
   return "Couldn't sign in with Google. Try again.";
@@ -49,7 +53,6 @@ function verifyEmailOnce(token: string) {
 interface AuthModalProps {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** When true, modal cannot be dismissed until the user signs in. */
   required?: boolean;
   verifyToken?: string | null;
   resetToken?: string | null;
@@ -74,8 +77,6 @@ export function AuthModal({
 
   const router = useRouter();
   const shownAuthError = useRef(false);
-
-  const searchParams = useSearchParams();
 
   const resetForm = () => {
     setEmail("");
@@ -149,7 +150,7 @@ export function AuthModal({
     setIsLoading(true);
 
     try {
-      const callbackUrl = searchParams.get("callbackUrl") || "/studio";
+      const callbackUrl = callbackUrlFromQuery();
 
       // 1. Register a new account
       if (view === "register") {
@@ -241,7 +242,7 @@ export function AuthModal({
 
   const handleGoogleSignIn = () => {
     signIn("google", {
-      callbackUrl: searchParams.get("callbackUrl") || "/studio",
+      callbackUrl: callbackUrlFromQuery(),
     });
   };
 
