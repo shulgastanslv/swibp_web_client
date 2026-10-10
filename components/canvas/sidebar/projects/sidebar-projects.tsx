@@ -132,7 +132,7 @@ export function SidebarProjects() {
 
   if (!userId) {
     return (
-      <div className="p-4 text-center text-sm text-muted-foreground">
+      <div className="p-4 text-center text-[13px] text-muted-foreground">
         Sign in to save and manage projects.
       </div>
     );
@@ -148,7 +148,7 @@ export function SidebarProjects() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search projects..."
-          className="w-full h-8 pl-10 pr-10 text-sm bg-muted/50 rounded-full placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+          className="w-full h-8 pl-10 pr-10 text-[13px] bg-muted/50 rounded-full placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
         />
         {search && (
           <button
@@ -197,7 +197,7 @@ export function SidebarProjects() {
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       ) : visibleProjects.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground py-6">
+        <p className="text-center text-[13px] text-muted-foreground py-6">
           No projects found
         </p>
       ) : (

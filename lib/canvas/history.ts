@@ -9,6 +9,11 @@ export class HistoryStack<T> {
     this.index = 0;
   }
 
+  /** Rewrites every saved step in place. `current` replaces the active step. */
+  rewrite(fn: (state: T) => T, current: T): void {
+    this.states = this.states.map((state, index) => (index === this.index ? current : fn(state)));
+  }
+
   push(state: T): void {
     this.states = this.states.slice(0, this.index + 1);
     this.states.push(state);

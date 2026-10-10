@@ -130,14 +130,14 @@ export function LeftSidebar({
                 <Button
                   variant={activeNav === id ? "secondary" : "ghost"}
                   size="icon"
-                  className="w-8 h-8 rounded-lg text-sm font-medium tracking-tight"
+                  className="w-8 h-8 rounded-full text-[13px] font-medium tracking-tight hover:text-foreground"
                   aria-label={label}
                   onClick={() => {
                     setActiveNav(id);
                     if (isLeftCollapsed) setIsLeftCollapsed(false);
                   }}
                 >
-                  {Icon ? <Icon className="w-4 h-4" /> : "Tools"}
+                  {Icon ? <Icon className="size-4 stroke-2" /> : null}
                 </Button>
               </RailTooltip>
             ))}
@@ -180,15 +180,15 @@ export function LeftSidebar({
 
       {/* ── Collapsible content panel ── */}
       <div
-        className={`flex flex-col transition-all duration-200 ease-in-out overflow-hidden min-h-0 min-w-0 ${
+        className={`flex min-h-0 min-w-0 flex-col overflow-hidden transition-all duration-200 ease-in-out ${
           isLeftCollapsed ? "w-0 opacity-0" : "w-72 opacity-100"
         }`}
       >
-        <div className="h-8 flex items-center px-4 text-sm font-semibold tracking-tight text-foreground border-b border-border/40 shrink-0">
+        <div className="h-8 flex items-center px-4 text-[13px] font-semibold tracking-tight text-foreground border-b border-border/40 shrink-0">
           {PANEL_TITLES[activeNav] ?? activeNav}
         </div>
 
-        <ScrollArea className="flex-1 min-h-0 p-2">
+        <ScrollArea className="h-full min-h-0 w-full flex-1 p-2 [&_[data-slot=scroll-area-viewport]]:overflow-x-hidden">
           {activeNav === "projects" && <SidebarProjects />}
           {activeNav === "templates" && <SidebarTemplates />}
           {activeNav === "elements" && <SidebarElements />}
@@ -207,7 +207,7 @@ export function LeftSidebar({
           {activeNav === "tools" && <SidebarTools />}
           {activeNav === "generate" && <SidebarGenerate />}
         </ScrollArea>
-        <div className="px-4 py-2 border-t border-border/40 shrink-0 flex items-center justify-start gap-2 text-sm text-muted-foreground">
+        <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-border/40 px-4 py-2 text-[13px] text-muted-foreground">
           <button
             type="button"
             onClick={() => setLegal("terms")}

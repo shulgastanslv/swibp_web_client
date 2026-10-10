@@ -21,7 +21,7 @@ export function ThemeSwitcherMenu() {
 
   if (!mounted) {
     return (
-      <DropdownMenuItem disabled className="text-sm">
+      <DropdownMenuItem disabled className="text-[13px]">
         <Sun className="w-3.5 h-3.5 mr-2 opacity-50" />
         <span>Theme</span>
       </DropdownMenuItem>
@@ -30,7 +30,7 @@ export function ThemeSwitcherMenu() {
 
   return (
     <DropdownMenuSub>
-      <DropdownMenuSubTrigger className="cursor-pointer text-sm gap-2">
+      <DropdownMenuSubTrigger className="cursor-pointer text-[13px] gap-2">
         {theme === "dark" ? (
           <Moon className="w-3.5 h-3.5 text-muted-foreground" />
         ) : theme === "light" ? (
@@ -41,9 +41,9 @@ export function ThemeSwitcherMenu() {
         <span>Theme</span>
       </DropdownMenuSubTrigger>
       <DropdownMenuPortal>
-        <DropdownMenuSubContent className="w-36 text-sm">
+        <DropdownMenuSubContent className="w-36 text-[13px]">
           <DropdownMenuItem
-            className="cursor-pointer flex items-center justify-between text-sm"
+            className="cursor-pointer flex items-center justify-between text-[13px]"
             onClick={() => setTheme("light")}
           >
             <div className="flex items-center gap-2">
@@ -54,7 +54,7 @@ export function ThemeSwitcherMenu() {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            className="cursor-pointer flex items-center justify-between text-sm"
+            className="cursor-pointer flex items-center justify-between text-[13px]"
             onClick={() => setTheme("dark")}
           >
             <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export function ThemeSwitcherMenu() {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            className="cursor-pointer flex items-center justify-between text-sm"
+            className="cursor-pointer flex items-center justify-between text-[13px]"
             onClick={() => setTheme("system")}
           >
             <div className="flex items-center gap-2">

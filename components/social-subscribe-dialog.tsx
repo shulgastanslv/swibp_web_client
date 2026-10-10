@@ -25,10 +25,10 @@ export function SocialSubscribeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[360px] rounded-2xl border-border/70 p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 pt-4 pb-3 border-b border-border/40 text-left">
-          <DialogTitle className="text-sm font-semibold tracking-tight">
+          <DialogTitle className="text-[13px] font-semibold tracking-tight">
             Follow along
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
+          <DialogDescription className="text-[13px] text-muted-foreground">
             New presets and updates land on Telegram and Threads.
           </DialogDescription>
         </DialogHeader>
@@ -36,7 +36,7 @@ export function SocialSubscribeDialog({
         <div className="flex flex-col gap-2 px-4 py-4">
           <Button
             variant="outline"
-            className="h-9 w-full justify-start gap-2 rounded-full text-sm border-none bg-muted/50 backdrop-blur-sm"
+            className="h-9 w-full justify-start gap-2 rounded-full text-[13px] border-none bg-muted/50 backdrop-blur-sm"
             asChild
           >
             <a href={SOCIAL_LINKS.telegram} target="_blank" rel="noopener noreferrer">
@@ -46,7 +46,7 @@ export function SocialSubscribeDialog({
           </Button>
           <Button
             variant="outline"
-            className="h-9 w-full justify-start gap-2 rounded-full text-sm border-none bg-muted/50 backdrop-blur-sm"
+            className="h-9 w-full justify-start gap-2 rounded-full text-[13px] border-none bg-muted/50 backdrop-blur-sm"
             asChild
           >
             <a href={SOCIAL_LINKS.threads} target="_blank" rel="noopener noreferrer">

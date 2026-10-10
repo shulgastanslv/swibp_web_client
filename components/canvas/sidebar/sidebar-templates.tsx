@@ -230,7 +230,7 @@ export function SidebarTemplates() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search templates..."
-            className="h-8 w-full min-w-0 rounded-full bg-muted/50 pl-8 pr-7 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+            className="h-8 w-full min-w-0 rounded-full bg-muted/50 pl-8 pr-7 text-[13px] placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
           />
           {search && (
             <button
@@ -267,7 +267,7 @@ export function SidebarTemplates() {
             const file = event.dataTransfer.files?.[0];
             void handleImportFile(file);
           }}
-          className="flex h-8 items-center justify-center gap-1.5 rounded-full  px-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/40 disabled:opacity-60"
+          className="flex h-8 items-center justify-center gap-1.5 rounded-full  px-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted/40 disabled:opacity-60"
         >
           {importing ? (
             <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
@@ -278,7 +278,7 @@ export function SidebarTemplates() {
       </div>
 
       {error && (
-        <p className="text-sm text-destructive px-1">{error}</p>
+        <p className="text-[13px] text-destructive px-1">{error}</p>
       )}
 
       {loading && templates.length === 0 ? (
@@ -287,7 +287,7 @@ export function SidebarTemplates() {
         </div>
       ) : templates.length === 0 ? (
         <div className="py-6 px-2 text-center space-y-3">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             No templates found. Seed built-in presets or publish your own through Publish.
           </p>
         </div>

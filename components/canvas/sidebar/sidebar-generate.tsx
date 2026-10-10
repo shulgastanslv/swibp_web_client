@@ -22,7 +22,7 @@ export function SidebarGenerate() {
   const genStatus = useCanvasStore((s) => s.genStatus);
   const [theme, setTheme] = useState("");
   const [slides, setSlides] = useState(6);
-  const [setId, setSetId] = useState<string>("night");
+  const [setId, setSetId] = useState<string>("black");
   const [localError, setLocalError] = useState<string | null>(null);
   const [ideasLoading, setIdeasLoading] = useState(false);
   const [themes, setThemes] = useState<CarouselThemeIdea[]>([]);
@@ -139,15 +139,15 @@ export function SidebarGenerate() {
   };
 
   return (
-    <div className="flex flex-col gap-3 px-1 py-1 text-sm text-foreground">
+    <div className="flex w-full min-w-0 flex-col gap-3 px-1 py-1 text-[13px] text-foreground">
 
-      <div className="flex gap-1.5">
+      <div className="flex min-w-0 gap-1.5">
         <button
           type="button"
           disabled={ideasLoading || busy}
           onClick={() => void fetchIdeas()}
           className={cn(
-            "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full bg-muted px-2.5 text-sm transition-colors",
+            "flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-muted px-2.5 text-[13px] transition-colors",
             "hover:bg-muted/80 disabled:opacity-40",
           )}
         >
@@ -156,13 +156,13 @@ export function SidebarGenerate() {
           ) : (
             <RefreshCw className="size-3.5" />
           )}
-          {ideasLoading ? "Ideas…" : "Suggest themes"}
+          <span className="truncate">{ideasLoading ? "Ideas…" : "Suggest themes"}</span>
         </button>
         <button
           type="button"
           disabled={ideasLoading || busy}
           onClick={surpriseTheme}
-          className="flex h-8 items-center justify-center gap-1.5 rounded-full bg-muted px-3 text-sm transition-colors hover:bg-muted/80 disabled:opacity-40"
+          className="flex h-8 items-center justify-center gap-1.5 rounded-full bg-muted px-3 text-[13px] transition-colors hover:bg-muted/80 disabled:opacity-40"
           title="Surprise theme"
         >
           <Dices className="size-3.5" />
@@ -170,9 +170,9 @@ export function SidebarGenerate() {
       </div>
 
       {themes.length > 0 ? (
-        <div className="flex flex-col gap-1">
+        <div className="flex w-full flex-col gap-1">
           <span className="px-1 font-medium text-muted-foreground">Themes</span>
-          <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+          <div className="flex max-h-36 w-full flex-col gap-1 overflow-y-auto">
             {themes.map((idea) => {
               const set = suggestedSetById(idea.setId);
               const active = theme.trim() === idea.prompt.trim();
@@ -183,18 +183,18 @@ export function SidebarGenerate() {
                   disabled={busy}
                   onClick={() => pickTheme(idea)}
                   className={cn(
-                    "rounded-xl px-2.5 py-2 text-left transition-colors disabled:opacity-40",
+                    "w-full rounded-xl px-2.5 py-2 text-left transition-colors disabled:opacity-40",
                     active ? "bg-foreground text-background" : "bg-muted/40 hover:bg-muted/70",
                   )}
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex w-full items-center gap-2">
                     {set ? (
                       <span
                         className="size-3.5 shrink-0 rounded-full border border-border/40"
                         style={{ backgroundColor: set.background }}
                       />
                     ) : null}
-                    <span className="truncate font-medium">{idea.title}</span>
+                    <span className="w-24 flex-1 truncate font-medium text-left">{idea.title}</span>
                     <span
                       className={cn(
                         "ml-auto shrink-0 text-[10px]",
@@ -206,7 +206,7 @@ export function SidebarGenerate() {
                   </span>
                   <span
                     className={cn(
-                      "mt-0.5 line-clamp-2 text-[11px] w-12 leading-snug",
+                      "mt-0.5 line-clamp-2 w-12 text-[11px] leading-snug",
                       active ? "text-background/75" : "text-muted-foreground",
                     )}
                   >
@@ -227,16 +227,16 @@ export function SidebarGenerate() {
           placeholder="Seed a niche, or paste a full carousel brief…"
           rows={3}
           disabled={busy}
-          className="w-full resize-none rounded-xl bg-muted/30 px-3 py-2 text-sm leading-relaxed outline-none placeholder:text-muted-foreground focus:bg-muted/50 disabled:opacity-50"
+          className="w-full h-32 resize-y rounded-xl bg-muted/30 px-3 py-2 text-[13px] leading-relaxed outline-none placeholder:text-muted-foreground focus:bg-muted/50 disabled:opacity-50"
         />
       </label>
 
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between px-1">
+      <div className="flex w-full flex-col gap-4">
+        <div className="flex min-w-0 items-center justify-between gap-2 px-1">
           <span className="font-medium text-muted-foreground">Palette</span>
-          <span className="text-[10px] text-muted-foreground">{selectedSet.label}</span>
+          <span className="truncate text-[10px] text-muted-foreground">{selectedSet.label}</span>
         </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-muted/30 px-2 py-1.5">
+        <div className="flex min-w-0 items-center gap-1.5 rounded-full bg-muted/30 px-2 py-1.5">
           {(
             [
               ["background", selectedSet.background],
@@ -248,15 +248,15 @@ export function SidebarGenerate() {
             <span
               key={label}
               title={`${label} ${color}`}
-              className="size-5 rounded-full border border-border/50"
+              className="size-5 shrink-0 rounded-full border border-border/50"
               style={{ backgroundColor: color }}
             />
           ))}
-          <span className="truncate pl-1 text-[11px] text-muted-foreground">
-            {paletteIdeas.find((p) => p.setId === selectedSet.id)?.reason || selectedSet.label}
-          </span>
         </div>
-        <div className="grid grid-cols-8 gap-1.5">
+        <span className="w-full flex-1 truncate pl-1 text-[11px] text-left text-muted-foreground text-wrap line-clamp-6">
+          {paletteIdeas.find((p) => p.setId === selectedSet.id)?.reason || selectedSet.label || "No reason"}
+        </span>
+        <div className="grid w-full grid-cols-6 gap-2">
           {paletteRows.map((set) => {
             const active = set.id === setId;
             return (
@@ -267,7 +267,7 @@ export function SidebarGenerate() {
                 title={set.label}
                 onClick={() => applyPalette(set.id)}
                 className={cn(
-                  "aspect-square rounded-full border transition-transform hover:scale-105 disabled:opacity-40",
+                  "aspect-square w-full min-w-0 rounded-full border transition-transform hover:scale-105 disabled:opacity-40",
                   active ? "border-foreground ring-2 ring-foreground/70" : "border-border/40",
                 )}
                 style={{ backgroundColor: set.background }}
@@ -291,19 +291,19 @@ export function SidebarGenerate() {
             if (!Number.isFinite(next)) return;
             setSlides(Math.min(20, Math.max(1, Math.round(next))));
           }}
-          className="h-8 w-full rounded-full bg-muted/30 px-3 text-sm outline-none focus:bg-muted/50 disabled:opacity-50"
+          className="h-8 w-full rounded-full bg-muted/30 px-3 text-[13px] outline-none focus:bg-muted/50 disabled:opacity-50"
         />
       </label>
 
       {localError ? <p className="px-1 text-[11px] text-destructive">{localError}</p> : null}
 
-      <div className="flex gap-1.5">
+      <div className="sticky bottom-0 z-10 -mx-1 flex gap-1.5 bg-background/95 px-1 pt-2 pb-1 backdrop-blur-sm">
         <button
           type="button"
           disabled={theme.trim().length < 2 || !manager || !slidesController || busy}
           onClick={() => void generate()}
           className={cn(
-            "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground px-2.5 text-sm text-background transition-opacity",
+            "flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground px-2.5 text-[13px] text-background transition-opacity",
             "disabled:opacity-40",
           )}
         >
@@ -314,7 +314,7 @@ export function SidebarGenerate() {
           <button
             type="button"
             onClick={cancel}
-            className="h-8 rounded-full bg-muted px-3 text-sm text-foreground transition-colors hover:bg-muted/80"
+            className="h-8 rounded-full bg-muted px-3 text-[13px] text-foreground transition-colors hover:bg-muted/80"
           >
             Stop
           </button>

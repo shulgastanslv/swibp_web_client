@@ -59,7 +59,7 @@ export function GenerateOverlay() {
             )}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">
+            <p className="truncate text-[13px] font-semibold text-foreground">
               {status === "error"
                 ? "Generation failed"
                 : status === "done"
@@ -80,7 +80,7 @@ export function GenerateOverlay() {
               type="button"
               size="sm"
               variant="ghost"
-              className="h-7 rounded-full px-2.5 text-sm"
+              className="h-7 rounded-full px-2.5 text-[13px]"
               onClick={cancel}
             >
               Cancel

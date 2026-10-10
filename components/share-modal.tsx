@@ -127,10 +127,10 @@ export function ShareModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm rounded-2xl p-5 border-border">
         <DialogHeader className="space-y-1.5 text-left border-b border-border/40 pb-3">
-          <DialogTitle className="text-sm font-semibold tracking-tight">
+          <DialogTitle className="text-[13px] font-semibold tracking-tight">
             Share Project
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
+          <DialogDescription className="text-[13px] text-muted-foreground">
             Anyone with the link can open the carousel.
             You can turn public access off at any time.
           </DialogDescription>
@@ -138,17 +138,17 @@ export function ShareModal({
 
         <div className="flex flex-col gap-3 pt-2">
           {status !== "authenticated" ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Sign in to share this project.
             </p>
           ) : (
             <>
               <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/20 px-3 py-2.5">
                 <div className="min-w-0">
-                  <Label htmlFor="share-public" className="text-sm font-medium">
+                  <Label htmlFor="share-public" className="text-[13px] font-medium">
                     Public link
                   </Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     {isPublic ? "Anyone with the link can open it" : "Off"}
                   </p>
                 </div>
@@ -164,13 +164,13 @@ export function ShareModal({
                 <Input
                   readOnly
                   value={shareUrl || "Save the project to get a link"}
-                  className="h-8 text-sm font-mono bg-muted/40 border-border/60 rounded-xl"
+                  className="h-8 text-[13px] font-mono bg-muted/40 border-border/60 rounded-xl"
                 />
                 <Button
                   size="sm"
                   onClick={() => void handleCopy()}
                   disabled={busy}
-                  className="h-8 px-3 text-sm rounded-xl shrink-0 gap-1.5"
+                  className="h-8 px-3 text-[13px] rounded-xl shrink-0 gap-1.5"
                 >
                   {busy ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -192,7 +192,7 @@ export function ShareModal({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-sm rounded-xl gap-1.5"
+                  className="h-8 text-[13px] rounded-xl gap-1.5"
                   disabled={busy}
                   onClick={() => void ensureSavedAndPublic()}
                 >
@@ -203,7 +203,7 @@ export function ShareModal({
             </>
           )}
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-[13px] text-destructive">{error}</p>}
         </div>
       </DialogContent>
     </Dialog>

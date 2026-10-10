@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Check, Menu } from "lucide-react";
 
-import Logo from "@/components/logo";
+import { WhiteLogo } from "@/components/logo";
 import { AuthModal } from "@/components/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -140,7 +140,7 @@ function SectionHead({
 }) {
   return (
     <div className="mb-6 max-w-2xl sm:mb-8">
-      <p className="text-sm font-bold tracking-wide text-[#2f5bff]">{eyebrow}</p>
+      <p className="text-[13px] font-bold tracking-wide text-[#2f5bff]">{eyebrow}</p>
       <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
         {title}
       </h2>
@@ -166,15 +166,10 @@ export function LandingPage() {
         />
         <BackgroundBeams className="opacity-60" />
         <div className="relative z-10 mx-auto mt-4 flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link
-            href="/"
-            className="grid size-9 place-items-center overflow-hidden rounded-xl"
-            aria-label="Swibp"
-          >
-            <Logo width={36} height={36} white />
-          </Link>
 
-          <nav className="hidden items-center gap-7 text-sm font-medium text-white/85 md:flex">
+          <WhiteLogo width={36} height={36} />
+
+          <nav className="hidden items-center gap-7 text-[13px] font-medium text-white/85 md:flex">
             {NAV.map((item) => (
               <a key={item.link} href={item.link} className="hover:text-white">
                 {item.name}
@@ -251,7 +246,7 @@ export function LandingPage() {
               className="text-lg font-medium text-white/90 sm:text-2xl"
               spanClassName="text-white/90"
             />
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">
+            <p className="mt-4 max-w-md text-[13px] leading-relaxed text-white/75 sm:text-base">
               The model itself decides what to put on the cover, why to explain the middle and
               why to finish. You fix the formulations, not collect each frame
               с нуля.
@@ -265,7 +260,7 @@ export function LandingPage() {
               </Button>
               <a
                 href="#product"
-                className="inline-flex h-11 items-center rounded-full border border-white/30 px-5 text-sm font-medium text-white hover:bg-white/10"
+                className="inline-flex h-11 items-center rounded-full border border-white/30 px-5 text-[13px] font-medium text-white hover:bg-white/10"
               >
                 How it works
               </a>
@@ -283,11 +278,11 @@ export function LandingPage() {
         <Reveal>
           <div className="grid gap-3 md:grid-cols-12 md:grid-rows-[auto_auto_auto]">
             <Layer className="bg-[#fff4cc] p-6 sm:p-8 md:col-span-7 md:row-span-2 md:min-h-[480px]">
-              <p className="text-sm font-bold text-[#8a7a3a]">#Generate</p>
+              <p className="text-[13px] font-bold text-[#8a7a3a]">#Generate</p>
               <h2 className="mt-3 max-w-sm text-3xl font-extrabold tracking-tight sm:text-4xl">
                 Тема → карусель
               </h2>
-              <p className="mt-3 max-w-xs text-sm text-[#5c6170]">
+              <p className="mt-3 max-w-xs text-[13px] text-[#5c6170]">
                 Обложка, середина, финал — из пары предложений.
               </p>
               <div className="mt-8 flex justify-center md:mt-10">
@@ -303,14 +298,14 @@ export function LandingPage() {
                     className="h-[280px] w-[140px] border-[5px] sm:h-[300px] sm:w-[150px]"
                   />
                 </div>
-                <p className="absolute top-5 left-5 z-10 text-sm font-bold text-[#3a4f9a]">
+                <p className="absolute top-5 left-5 z-10 text-[13px] font-bold text-[#3a4f9a]">
                   #Лента
                 </p>
               </div>
             </Layer>
 
             <Layer className="bg-[#efe7ff] p-5 sm:p-6 md:col-span-5">
-              <p className="text-sm font-bold text-[#6b5f9a]">#Студия</p>
+              <p className="text-[13px] font-bold text-[#6b5f9a]">#Студия</p>
               <h3 className="mt-2 text-xl font-extrabold tracking-tight">
                 Правите на холсте
               </h3>
@@ -320,7 +315,7 @@ export function LandingPage() {
             </Layer>
 
             <Layer className="bg-[#e5f6ea] p-5 sm:p-6 md:col-span-5">
-              <p className="text-sm font-bold text-[#3d6b4f]">#Export</p>
+              <p className="text-[13px] font-bold text-[#3d6b4f]">#Export</p>
               <h3 className="mt-2 text-xl font-extrabold tracking-tight">
                 ZIP или PNG
               </h3>
@@ -331,17 +326,17 @@ export function LandingPage() {
             <Layer className="bg-[#ffe4ef] p-5 sm:p-6 md:col-span-7">
               <div className="flex h-full flex-col justify-between gap-6 sm:flex-row sm:items-center">
                 <div>
-                  <p className="text-sm font-bold text-[#9a4f6b]">#Готово</p>
+                  <p className="text-[13px] font-bold text-[#9a4f6b]">#Готово</p>
                   <h3 className="mt-2 text-2xl font-extrabold tracking-tight">
                     От темы до публикации
                   </h3>
-                  <p className="mt-2 max-w-sm text-sm text-[#5c6170]">
+                  <p className="mt-2 max-w-sm text-[13px] text-[#5c6170]">
                     Без Canva, без пустого холста, без вечера на сборку.
                   </p>
                 </div>
                 <Link
                   href="/studio"
-                  className="inline-flex h-11 shrink-0 items-center rounded-full bg-[#14151c] px-5 text-sm font-semibold text-white"
+                  className="inline-flex h-11 shrink-0 items-center rounded-full bg-[#14151c] px-5 text-[13px] font-semibold text-white"
                 >
                   Открыть студию
                 </Link>
@@ -360,7 +355,7 @@ export function LandingPage() {
           <Layer className="bg-[#efe7ff]">
             <div className="grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-2 lg:gap-12">
               <div>
-                <p className="text-sm font-bold text-[#6b5f9a]">Студия</p>
+                <p className="text-[13px] font-bold text-[#6b5f9a]">Студия</p>
                 <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-5xl">
                   Редактор
                   <br />
@@ -385,7 +380,7 @@ export function LandingPage() {
                 </ul>
                 <Link
                   href="/studio"
-                  className="mt-8 inline-flex h-11 items-center rounded-full bg-[#14151c] px-5 text-sm font-semibold text-white"
+                  className="mt-8 inline-flex h-11 items-center rounded-full bg-[#14151c] px-5 text-[13px] font-semibold text-white"
                 >
                   Открыть студию
                 </Link>
@@ -404,11 +399,11 @@ export function LandingPage() {
         <Reveal delay={0.05}>
           <div className="grid gap-3 lg:grid-cols-2">
             <Layer className="bg-[#e4ebff] p-7 sm:p-10">
-              <p className="text-sm font-bold text-[#3a4f9a]">Иконки</p>
+              <p className="text-[13px] font-bold text-[#3a4f9a]">Иконки</p>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
                 14 млн
               </h2>
-              <p className="mt-3 max-w-xs text-sm text-[#5c6170]">
+              <p className="mt-3 max-w-xs text-[13px] text-[#5c6170]">
                 Поиск рядом с холстом. Знак встаёт на слайд.
               </p>
               <div className="mt-10">
@@ -416,11 +411,11 @@ export function LandingPage() {
             </Layer>
 
             <Layer className="bg-[#fff4cc] p-7 sm:p-10">
-              <p className="text-sm font-bold text-[#8a7a3a]">Шаблоны</p>
+              <p className="text-[13px] font-bold text-[#8a7a3a]">Шаблоны</p>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
                 Каркас готов
               </h2>
-              <p className="mt-3 max-w-xs text-sm text-[#5c6170]">
+              <p className="mt-3 max-w-xs text-[13px] text-[#5c6170]">
                 Обложка и финал — меняете слова, ритм остаётся.
               </p>
               <div className="mt-8">
@@ -438,7 +433,7 @@ export function LandingPage() {
               <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
                 FAQ
               </h2>
-              <p className="mt-3 max-w-xs text-sm text-[#5c6170]">
+              <p className="mt-3 max-w-xs text-[13px] text-[#5c6170]">
                 Коротко про генерацию, правки, экспорт и аккаунт.
               </p>
             </div>
@@ -474,20 +469,20 @@ export function LandingPage() {
                   <br />
                   Карусель — дальше.
                 </h2>
-                <p className="mt-4 max-w-sm text-sm text-white/75 sm:text-base">
+                <p className="mt-4 max-w-sm text-[13px] text-white/75 sm:text-base">
                   Откройте студию и соберите первую ленту за один проход.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link
                     href="/studio"
-                    className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[#1a2f86]"
+                    className="inline-flex h-11 items-center rounded-full bg-white px-5 text-[13px] font-semibold text-[#1a2f86]"
                   >
                     Создать карусель
                   </Link>
                   <button
                     type="button"
                     onClick={() => setAuthOpen(true)}
-                    className="inline-flex h-11 items-center rounded-full border border-white/30 px-5 text-sm font-semibold"
+                    className="inline-flex h-11 items-center rounded-full border border-white/30 px-5 text-[13px] font-semibold"
                   >
                     Войти
                   </button>
@@ -504,9 +499,9 @@ export function LandingPage() {
 
       <footer>
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
+          <Link href="/" className="text-[13px] font-semibold tracking-tight">
           </Link>
-          <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#5c6170]">
+          <nav className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-[#5c6170]">
             {NAV.map((item) => (
               <a
                 key={item.link}
@@ -517,7 +512,7 @@ export function LandingPage() {
               </a>
             ))}
           </nav>
-          <p className="text-sm text-[#8b90a0]">© {new Date().getFullYear()}</p>
+          <p className="text-[13px] text-[#8b90a0]">© {new Date().getFullYear()}</p>
         </div>
       </footer>
     </div>

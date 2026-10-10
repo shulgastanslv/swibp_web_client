@@ -92,8 +92,8 @@ function Control({
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium text-foreground">{label}</span>
-        <span className="tabular-nums text-sm text-muted-foreground/70">
+        <span className="text-[13px] font-medium text-foreground">{label}</span>
+        <span className="tabular-nums text-[13px] text-muted-foreground/70">
           {valueLabel}
         </span>
       </div>
@@ -218,19 +218,19 @@ export function SidebarFilters() {
     <Tabs
       value={tab}
       onValueChange={(value) => setTab(value as Tab)}
-      className="gap-3 overflow-hidden p-1.5 text-sm"
+      className="gap-3 overflow-hidden p-1.5 text-[13px]"
     >
       <div className="flex items-center gap-1">
         <TabsList className="grid h-8 min-w-0 flex-1 grid-cols-2 rounded-full">
           <TabsTrigger
             value="slide"
-            className="rounded-full text-sm shadow-none data-active:border-transparent dark:data-active:border-transparent"
+            className="rounded-full text-[13px] shadow-none data-active:border-transparent dark:data-active:border-transparent"
           >
             Slide
           </TabsTrigger>
           <TabsTrigger
             value="image"
-            className="rounded-full text-sm shadow-none data-active:border-transparent dark:data-active:border-transparent"
+            className="rounded-full text-[13px] shadow-none data-active:border-transparent dark:data-active:border-transparent"
           >
             Image
           </TabsTrigger>
@@ -323,7 +323,7 @@ export function SidebarFilters() {
       <TabsContent value="image">
         <div className="flex flex-col gap-3">
           {!hasImageTarget && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Select an image or use an image background.
             </p>
           )}

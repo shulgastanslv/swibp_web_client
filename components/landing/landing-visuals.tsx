@@ -33,11 +33,11 @@ const ICON_SET = [
 export function PromptMock() {
   return (
     <div className="w-full max-w-md rounded-[1.4rem] bg-white p-4 shadow-[0_20px_50px_rgba(28,32,58,0.12)]">
-      <div className="flex items-center gap-2 text-sm font-semibold text-[#8b90a0]">
+      <div className="flex items-center gap-2 text-[13px] font-semibold text-[#8b90a0]">
         <Sparkles className="size-3.5 text-[#2f5bff]" />
         Generate
       </div>
-      <div className="mt-3 rounded-2xl bg-[#f4f5f9] p-4 text-sm leading-relaxed text-[#14151c]">
+      <div className="mt-3 rounded-2xl bg-[#f4f5f9] p-4 text-[13px] leading-relaxed text-[#14151c]">
         Объясни запуск продукта за 6 кадров. Спокойно, для основателей, без
         жаргона.
       </div>
@@ -45,13 +45,13 @@ export function PromptMock() {
         {["6 слайдов", "Night", "Спокойный тон"].map((chip) => (
           <span
             key={chip}
-            className="rounded-full bg-[#e4ebff] px-3 py-1 text-sm font-semibold text-[#1a2f86]"
+            className="rounded-full bg-[#e4ebff] px-3 py-1 text-[13px] font-semibold text-[#1a2f86]"
           >
             {chip}
           </span>
         ))}
       </div>
-      <div className="mt-4 flex h-10 items-center justify-center rounded-full bg-[#2f5bff] text-sm font-semibold text-white">
+      <div className="mt-4 flex h-10 items-center justify-center rounded-full bg-[#2f5bff] text-[13px] font-semibold text-white">
         Создать карусель
       </div>
     </div>
@@ -206,7 +206,7 @@ export function IconsShowcase() {
   return (
     <div className="w-full">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-10 min-w-[12rem] flex-1 items-center gap-2 rounded-full bg-[#14151c]/[0.06] px-4 text-sm text-[#5c6170]">
+        <div className="flex h-10 min-w-[12rem] flex-1 items-center gap-2 rounded-full bg-[#14151c]/[0.06] px-4 text-[13px] text-[#5c6170]">
           <svg
             viewBox="0 0 24 24"
             className="size-4 shrink-0"
@@ -222,7 +222,7 @@ export function IconsShowcase() {
         {ICON_TAGS.map((tag) => (
           <span
             key={tag}
-            className="hidden h-10 items-center rounded-full px-3.5 text-sm font-semibold text-[#3a4f9a] sm:inline-flex"
+            className="hidden h-10 items-center rounded-full px-3.5 text-[13px] font-semibold text-[#3a4f9a] sm:inline-flex"
           >
             {tag}
           </span>
@@ -246,7 +246,7 @@ export function IconsShowcase() {
         ))}
       </div>
 
-      <p className="mt-5 text-center text-sm font-semibold tracking-wide text-[#3a4f9a]/80">
+      <p className="mt-5 text-center text-[13px] font-semibold tracking-wide text-[#3a4f9a]/80">
         14 000 000+ иконок · вставка на холст в один клик
       </p>
     </div>
@@ -264,7 +264,7 @@ export function TemplatesPair() {
             alt=""
             className="aspect-[4/5] w-full rounded-[1.25rem] object-cover"
           />
-          <figcaption className="mt-2 text-sm font-semibold text-[#5c6170]">
+          <figcaption className="mt-2 text-[13px] font-semibold text-[#5c6170]">
             {index === 0 ? "Обложка" : "Финал"}
           </figcaption>
         </figure>
@@ -277,14 +277,14 @@ export function TemplatesPair() {
 export function PromptInline() {
   return (
     <div className="mt-6 max-w-md">
-      <p className="text-sm leading-relaxed text-[#14151c]/80">
+      <p className="text-[13px] leading-relaxed text-[#14151c]/80">
         «Объясни запуск продукта за 6 кадров. Спокойно, для основателей.»
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         {["6 слайдов", "Night", "Спокойный тон"].map((chip) => (
           <span
             key={chip}
-            className="rounded-full bg-[#14151c]/[0.07] px-3 py-1 text-sm font-semibold"
+            className="rounded-full bg-[#14151c]/[0.07] px-3 py-1 text-[13px] font-semibold"
           >
             {chip}
           </span>
@@ -305,13 +305,13 @@ export function ExportInline() {
       ].map(([name, kind]) => (
         <li
           key={name}
-          className="flex items-center justify-between text-sm font-semibold"
+          className="flex items-center justify-between text-[13px] font-semibold"
         >
           <span className="flex items-center gap-2">
             <Download className="size-3.5 text-[#3d6b4f]" />
             {name}
           </span>
-          <span className="text-sm font-medium text-[#5c6170]">{kind}</span>
+          <span className="text-[13px] font-medium text-[#5c6170]">{kind}</span>
         </li>
       ))}
     </ul>
@@ -327,15 +327,15 @@ export function ExportMock() {
           <Download className="size-5" />
         </span>
         <div>
-          <p className="text-sm font-extrabold">carousel.zip</p>
-          <p className="text-sm text-[#8b90a0]">6 × PNG · 2×</p>
+          <p className="text-[13px] font-extrabold">carousel.zip</p>
+          <p className="text-[13px] text-[#8b90a0]">6 × PNG · 2×</p>
         </div>
       </div>
       <div className="mt-4 space-y-2">
         {["01-cover.png", "02-mid.png", "03-close.png"].map((name) => (
           <div
             key={name}
-            className="flex items-center justify-between rounded-xl bg-[#f4f5f9] px-3 py-2 text-sm font-semibold"
+            className="flex items-center justify-between rounded-xl bg-[#f4f5f9] px-3 py-2 text-[13px] font-semibold"
           >
             <span>{name}</span>
             <span className="text-[#8b90a0]">PNG</span>
@@ -359,7 +359,7 @@ export function LayersMock() {
           <span className="grid size-5 place-items-center rounded text-[9px] font-semibold text-[#14151c]/40">
             {rows.length - index}
           </span>
-          <span className="text-sm font-medium text-[#14151c]/70">{label}</span>
+          <span className="text-[13px] font-medium text-[#14151c]/70">{label}</span>
           <Layers className="ml-auto size-3 text-[#14151c]/25" />
         </div>
       ))}

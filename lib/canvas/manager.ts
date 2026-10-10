@@ -1,4 +1,4 @@
-import { Canvas, FabricObject, Pattern, PencilBrush } from "fabric";
+import { ActiveSelection, Canvas, FabricObject, Pattern, PencilBrush, Shadow } from "fabric";
 import { drawPatternTile, type BackgroundPatternId } from "./background-patterns";
 import type { BackgroundConfig, CanvasState } from "./types";
 import { CanvasCore } from "./core";
@@ -14,6 +14,8 @@ import { recolorIcon } from "./recolor-icon";
 import { withRemoteImageCors } from "./image-cors";
 import { ImageCropSession } from "./crop-session";
 import { refreshMask } from "./object-appearance";
+import { fitCanvasJSON, fitGeometry, type FrameSize } from "./fit-frame";
+import { isAutoFlowSkippable } from "./auto-flow";
 import { stabilizeGroups } from "./group";
 import { refreshCanvasFonts } from "./paint-live";
 
@@ -158,47 +160,81 @@ export class CanvasManager {
     const active = this.getActiveObject();
     if (!active) return null;
 
-    const icon = active as FabricObject & { swibpIcon?: boolean };
-    const patch = updates as Partial<FabricObject> & { fill?: unknown; swibpSlot?: string };
-    if (icon.swibpIcon && typeof patch.fill === "string") {
-      const rest = { ...patch };
-      delete rest.fill;
-      delete rest.swibpSlot;
-      if (Object.keys(rest).length > 0) active.set(rest);
-      recolorIcon(active, patch.fill, "swibpSlot" in patch ? patch.swibpSlot : undefined);
-    } else {
-      active.set(updates);
+    const targets =
+      active instanceof ActiveSelection ? active.getObjects() : [active];
+    for (const target of targets) this.paintObject(target, updates);
+    if (targets.length > 1) active.setCoords();
+
+    this.canvas.renderAll();
+    this.commit();
+    this.events.emit("selection", active);
+    return active;
+  }
+
+  /** Applies a property patch to one object, including each member of a multi-selection. */
+  private paintObject(target: FabricObject, updates: Partial<FabricObject>): void {
+    const textKeys = [
+      "fontFamily",
+      "fontSize",
+      "fontWeight",
+      "fontStyle",
+      "underline",
+      "linethrough",
+      "lineHeight",
+      "charSpacing",
+      "textAlign",
+      "backgroundColor",
+      "text",
+    ] as const;
+    const isText = target.type === "textbox" || target.type === "text" || target.type === "i-text";
+    const patch = { ...updates } as Partial<FabricObject> & { fill?: unknown; swibpSlot?: string };
+    if (!isText) {
+      for (const key of textKeys) delete patch[key];
     }
 
-    // Typography changes need an explicit layout pass — otherwise Fabric keeps
-    // the previous font metrics until another property forces a reflow.
+    const icon = target as FabricObject & { swibpIcon?: boolean };
+    if (icon.swibpIcon && typeof patch.fill === "string") {
+      const fill = patch.fill;
+      const slot = "swibpSlot" in patch ? patch.swibpSlot : undefined;
+      delete patch.fill;
+      delete patch.swibpSlot;
+      if (Object.keys(patch).length > 0) target.set(this.cloneShadow(patch));
+      recolorIcon(target, fill, slot);
+    } else {
+      target.set(this.cloneShadow(patch));
+    }
+
+    if (!isText) {
+      refreshMask(target);
+      target.setCoords();
+      return;
+    }
+
+    const textLike = target as FabricObject & {
+      initDimensions?: () => void;
+      dirty?: boolean;
+      _forceClearCache?: boolean;
+    };
     if (
       "fontFamily" in updates ||
       "fontSize" in updates ||
       "fontWeight" in updates ||
       "fontStyle" in updates ||
       "lineHeight" in updates ||
-      "charSpacing" in updates
+      "charSpacing" in updates ||
+      "text" in updates
     ) {
-      const textLike = active as FabricObject & {
-        initDimensions?: () => void;
-        dirty?: boolean;
-        _forceClearCache?: boolean;
-      };
-      const type = active.type;
-      if (type === "textbox" || type === "text" || type === "i-text") {
-        textLike._forceClearCache = true;
-        textLike.dirty = true;
-        textLike.initDimensions?.();
-      }
+      textLike._forceClearCache = true;
+      textLike.dirty = true;
+      textLike.initDimensions?.();
     }
+    refreshMask(target);
+    target.setCoords();
+  }
 
-    refreshMask(active);
-    active.setCoords();
-    this.canvas.renderAll();
-    this.commit();
-    this.events.emit("selection", active);
-    return active;
+  private cloneShadow(patch: Partial<FabricObject>): Partial<FabricObject> {
+    if (!patch.shadow || typeof patch.shadow !== "object") return patch;
+    return { ...patch, shadow: new Shadow(patch.shadow) };
   }
 
   selectObject(obj: FabricObject): void {
@@ -239,6 +275,95 @@ export class CanvasManager {
     this.canvas.backgroundColor = new Pattern({ source: tile, repeat: "repeat" });
     this.canvas.requestRenderAll();
     if (options?.commit !== false) this.commit();
+  }
+
+  /**
+   * Keeps the layout when the slide frame changes.
+   * Call this before the store updates `canvasDimensions`.
+   */
+  fitToFrame(from: FrameSize, to: FrameSize): void {
+    if (from.width <= 0 || from.height <= 0) return;
+    if (from.width === to.width && from.height === to.height) return;
+
+    this.silentDepth++;
+    try {
+      for (const obj of this.canvas.getObjects()) {
+        if (isAutoFlowSkippable(obj)) continue;
+        const fitted = fitGeometry(
+          {
+            type: obj.type,
+            left: obj.left,
+            top: obj.top,
+            width: obj.width,
+            height: obj.height,
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY,
+            originX: obj.originX,
+            originY: obj.originY,
+            angle: obj.angle,
+            strokeWidth: obj.strokeWidth,
+          },
+          from,
+          to,
+        );
+        obj.set({
+          left: fitted.left,
+          top: fitted.top,
+          scaleX: fitted.scaleX,
+          scaleY: fitted.scaleY,
+          ...(fitted.width != null ? { width: fitted.width } : {}),
+          ...(fitted.strokeWidth != null ? { strokeWidth: fitted.strokeWidth } : {}),
+        });
+        const shadow = obj.shadow;
+        if (shadow && typeof shadow === "object") {
+          shadow.blur *= fitted.shadowScale;
+          shadow.offsetX *= fitted.shadowScale;
+          shadow.offsetY *= fitted.shadowScale;
+        }
+        if (fitted.width != null && "initDimensions" in obj) {
+          const text = obj as { initDimensions?: () => void };
+          text.initDimensions?.();
+        }
+        obj.setCoords();
+      }
+
+      const background = this.canvas.backgroundImage;
+      if (background && typeof background !== "string") {
+        const fitted = fitCanvasJSON(
+          {
+            version: "6.0.0",
+            objects: [],
+            backgroundImage: {
+              type: background.type,
+              left: background.left,
+              top: background.top,
+              width: background.width,
+              height: background.height,
+              scaleX: background.scaleX,
+              scaleY: background.scaleY,
+            },
+          },
+          from,
+          to,
+        ).backgroundImage as { left?: number; top?: number; scaleX?: number; scaleY?: number } | undefined;
+        if (fitted) {
+          background.set({
+            left: fitted.left,
+            top: fitted.top,
+            scaleX: fitted.scaleX,
+            scaleY: fitted.scaleY,
+          });
+        }
+      }
+      this.canvas.requestRenderAll();
+    } finally {
+      this.silentDepth--;
+    }
+
+    const state = this.getState();
+    this.history.rewrite((snap) => fitCanvasJSON(snap, from, to), state);
+    this.events.emit("change", state);
+    this.events.emit("selection", this.getActiveObject());
   }
 
   /** Fits the logical canvas (nativeW × nativeH) into the screen at `scale`. */

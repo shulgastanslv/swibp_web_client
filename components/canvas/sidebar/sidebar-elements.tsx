@@ -31,7 +31,7 @@ export function SidebarElements() {
   } = useElementLibrary();
 
   return (
-    <div className="flex flex-col text-sm text-foreground">
+    <div className="flex flex-col text-[13px] text-foreground">
       <CollapsibleGroup id="elements-image" title="Image">
         <input
           type="file"
@@ -67,7 +67,7 @@ export function SidebarElements() {
         >
           <ImagePlus className="size-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 truncate text-foreground/80">Upload or drop</span>
-          <span className="text-sm text-muted-foreground">PNG, JPG</span>
+          <span className="text-[13px] text-muted-foreground">PNG, JPG</span>
         </button>
 
         <div className="flex items-center gap-1.5">
@@ -88,7 +88,7 @@ export function SidebarElements() {
                   void addImageFromUrl();
                 }
               }}
-              className="h-8 rounded-full border-border/50 bg-muted/30 pl-8 text-sm shadow-none"
+              className="h-8 rounded-full border-border/50 bg-muted/30 pl-8 text-[13px] shadow-none"
             />
           </div>
           <Button
@@ -97,12 +97,12 @@ export function SidebarElements() {
             size="sm"
             disabled={!manager || urlLoading || !imageUrl.trim()}
             onClick={() => void addImageFromUrl()}
-            className="h-8 shrink-0 rounded-full px-3 text-sm"
+            className="h-8 shrink-0 rounded-full px-3 text-[13px]"
           >
             {urlLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Add"}
           </Button>
         </div>
-        {urlError && <p className="text-sm text-destructive">{urlError}</p>}
+        {urlError && <p className="text-[13px] text-destructive">{urlError}</p>}
       </CollapsibleGroup>
 
       <CollapsibleGroup id="elements-frames" title="Frames">
@@ -125,7 +125,7 @@ export function SidebarElements() {
               className="flex flex-col items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
             >
               <Icon className="h-4 w-4" strokeWidth={1.5} />
-              <span className="max-w-full truncate text-sm leading-none">{label}</span>
+              <span className="max-w-full truncate text-[13px] leading-none">{label}</span>
             </button>
           ))}
         </div>
@@ -154,7 +154,7 @@ export function SidebarElements() {
         >
           <ImagePlus className="size-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 truncate text-foreground/80">Add image</span>
-          <span className="text-sm text-muted-foreground">PNG, JPG</span>
+          <span className="text-[13px] text-muted-foreground">PNG, JPG</span>
         </button>
       </CollapsibleGroup>
 
@@ -171,7 +171,7 @@ export function SidebarElements() {
                 className="flex flex-col items-center justify-center gap-1.5 rounded-full px-2.5 py-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               >
                 <Icon className="h-4 w-4" strokeWidth={1.5} />
-                <span className="max-w-full truncate text-sm leading-none">{label}</span>
+                <span className="max-w-full truncate text-[13px] leading-none">{label}</span>
               </button>
             ))}
           </div>

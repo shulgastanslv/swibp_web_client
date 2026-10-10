@@ -177,7 +177,7 @@ export function PublishTemplateDialog({
           <DialogTitle className="text-base font-semibold tracking-tight">
             Publish
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             {slides.length} slide{slides.length === 1 ? "" : "s"} · {currentRatio}
           </p>
         </DialogHeader>
@@ -187,7 +187,7 @@ export function PublishTemplateDialog({
             <div className="flex size-10 items-center justify-center rounded-full bg-muted">
               <Check className="size-4" />
             </div>
-            <p className="text-sm font-medium">Published</p>
+            <p className="text-[13px] font-medium">Published</p>
           </div>
         ) : (
           <>
@@ -204,12 +204,12 @@ export function PublishTemplateDialog({
                       className="max-h-36 max-w-full object-contain"
                     />
                   ) : (
-                    <p className="px-4 text-center text-sm text-muted-foreground">
+                    <p className="px-4 text-center text-[13px] text-muted-foreground">
                       First slide preview unavailable
                     </p>
                   )}
                 </div>
-                <p className="px-3 py-2 text-sm text-muted-foreground">
+                <p className="px-3 py-2 text-[13px] text-muted-foreground">
                   Preview is the first slide
                 </p>
               </div>
@@ -219,7 +219,7 @@ export function PublishTemplateDialog({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Template name"
                 disabled={loading}
-                className="h-8 rounded-full border-0 bg-muted/50 px-4 text-sm shadow-none"
+                className="h-8 rounded-full border-0 bg-muted/50 px-4 text-[13px] shadow-none"
               />
 
               <div className="flex flex-wrap gap-1.5">
@@ -230,7 +230,7 @@ export function PublishTemplateDialog({
                     disabled={loading}
                     onClick={() => setCategory(item.id)}
                     className={cn(
-                      "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm transition-colors",
+                      "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] transition-colors",
                       category === item.id
                         ? "bg-foreground text-background"
                         : "bg-muted/50 text-muted-foreground hover:text-foreground",
@@ -243,7 +243,7 @@ export function PublishTemplateDialog({
               </div>
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-[13px] text-destructive">{error}</p>}
 
             <Button
               type="button"

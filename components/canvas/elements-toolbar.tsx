@@ -413,7 +413,7 @@ export function ElementsToolbar({ onExit }: ElementsToolbarProps) {
                           void addImageFromUrl();
                         }
                       }}
-                      className="h-8 rounded-full border-border/50 bg-muted/30 pl-7 text-sm shadow-none"
+                      className="h-8 rounded-full border-border/50 bg-muted/30 pl-7 text-[13px] shadow-none"
                     />
                   </div>
                   <Button
@@ -422,12 +422,12 @@ export function ElementsToolbar({ onExit }: ElementsToolbarProps) {
                     size="sm"
                     disabled={!manager || urlLoading || !imageUrl.trim()}
                     onClick={() => void addImageFromUrl()}
-                    className="h-8 shrink-0 rounded-full px-2.5 text-sm"
+                    className="h-8 shrink-0 rounded-full px-2.5 text-[13px]"
                   >
                     {urlLoading ? <Loader2 className="size-3 animate-spin" /> : "Add"}
                   </Button>
                 </div>
-                {urlError && <p className="px-2 pb-1.5 text-sm text-destructive">{urlError}</p>}
+                {urlError && <p className="px-2 pb-1.5 text-[13px] text-destructive">{urlError}</p>}
               </DropdownMenuContent>
               </CornerMenu>
             }

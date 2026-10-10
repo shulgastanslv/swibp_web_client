@@ -43,12 +43,12 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
         </div>
         <div className="px-4 py-3.5">
           <DialogHeader className="gap-1 text-left">
-            <DialogTitle className="text-sm font-medium">Help</DialogTitle>
+            <DialogTitle className="text-[13px] font-medium">Help</DialogTitle>
           </DialogHeader>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
             One slide at a time. The strip under the canvas is the carousel.
           </p>
-          <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-foreground">
+          <ul className="mt-3 space-y-1.5 text-[13px] leading-relaxed text-foreground">
             {NOTES.map((note) => (
               <li key={note}>{note}</li>
             ))}

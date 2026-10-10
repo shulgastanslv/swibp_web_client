@@ -186,7 +186,7 @@ export function AudienceBlock() {
   return (
     <section id="audiences" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-8 sm:px-6">
       <div className="mb-6">
-        <p className="text-sm font-bold tracking-wide text-[#2f5bff]">Для кого</p>
+        <p className="text-[13px] font-bold tracking-wide text-[#2f5bff]">Для кого</p>
         <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
           Одна студия — разные ленты
         </h2>
@@ -213,8 +213,8 @@ export function AudienceBlock() {
                     onClick={() => pick(index)}
                     className={
                       active
-                        ? "h-10 rounded-full bg-[#14151c] px-4 text-sm font-semibold text-white"
-                        : "h-10 rounded-full bg-white/70 px-4 text-sm font-semibold text-[#14151c]"
+                        ? "h-10 rounded-full bg-[#14151c] px-4 text-[13px] font-semibold text-white"
+                        : "h-10 rounded-full bg-white/70 px-4 text-[13px] font-semibold text-[#14151c]"
                     }
                   >
                     {item.name}

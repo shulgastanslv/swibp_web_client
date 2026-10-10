@@ -111,12 +111,12 @@ function CornerSelect({
         if (isCorner(next)) onChange(next);
       }}
     >
-      <SelectTrigger className="h-8 w-[7.25rem] shrink-0 rounded-full px-2.5 text-sm" aria-label="Position">
+      <SelectTrigger className="h-8 w-[7.25rem] shrink-0 rounded-full px-2.5 text-[13px]" aria-label="Position">
         <SelectValue />
       </SelectTrigger>
       <SelectContent position="popper" align="end">
         {CORNERS.map((corner) => (
-          <SelectItem key={corner.id} value={corner.id} className="text-sm">
+          <SelectItem key={corner.id} value={corner.id} className="text-[13px]">
             {corner.label}
           </SelectItem>
         ))}
@@ -126,9 +126,9 @@ function CornerSelect({
 }
 
 const actionButton =
-  "h-8 rounded-full bg-muted px-2.5 text-sm text-foreground/80 transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40 flex items-center justify-center gap-1";
+  "h-8 rounded-full bg-muted px-2.5 text-[13px] text-foreground/80 transition-colors hover:bg-muted/60 disabled:pointer-events-none disabled:opacity-40 flex items-center justify-center gap-1";
 const fieldInput =
-  "h-8 w-full rounded-full bg-muted/40 px-3 text-sm outline-none placeholder:text-muted-foreground focus:bg-muted/60";
+  "h-8 w-full rounded-full bg-muted/40 px-3 text-[13px] outline-none placeholder:text-muted-foreground focus:bg-muted/60";
 
 export function SidebarTools() {
   const manager = useCanvasManager();
@@ -263,7 +263,7 @@ export function SidebarTools() {
   };
 
   return (
-    <div className="flex flex-col text-sm text-foreground">
+    <div className="flex flex-col text-[13px] text-foreground">
 
       <CollapsibleGroup id="tools-find" title="Find">
         <div className="space-y-1.5">
@@ -281,7 +281,7 @@ export function SidebarTools() {
             aria-label="Replacement text"
             className={fieldInput}
           />
-          <label className="flex items-center gap-2 px-0.5 text-sm text-muted-foreground">
+          <label className="flex items-center gap-2 px-0.5 text-[13px] text-muted-foreground">
             <input
               type="checkbox"
               checked={matchCase}
@@ -290,7 +290,7 @@ export function SidebarTools() {
             />
             Match case
           </label>
-          <p className="px-0.5 text-sm text-muted-foreground">
+          <p className="px-0.5 text-[13px] text-muted-foreground">
             {findQuery.trim()
               ? textHits.count === 0
                 ? "No matches"
@@ -315,7 +315,7 @@ export function SidebarTools() {
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="One line, one slide"
           rows={3}
-          className="w-full resize-none rounded-xl bg-muted/30 px-3 py-2 text-sm leading-relaxed outline-none placeholder:text-muted-foreground focus:bg-muted/40"
+          className="w-full resize-none rounded-xl bg-muted/30 px-3 py-2 text-[13px] leading-relaxed outline-none placeholder:text-muted-foreground focus:bg-muted/40"
         />
         <div className="grid grid-cols-3 gap-1">
           {TEXT_STYLES.map((style) => (
@@ -324,7 +324,7 @@ export function SidebarTools() {
               type="button"
               onClick={() => setSlideStyle(style.id)}
               className={cn(
-                "h-7 rounded-full px-1 text-sm transition-colors",
+                "h-7 rounded-full px-1 text-[13px] transition-colors",
                 slideStyle === style.id
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
@@ -354,12 +354,12 @@ export function SidebarTools() {
                 if (next === "1" || next === "01" || next === "1 / 8") setNumberStyle(next);
               }}
             >
-              <SelectTrigger className="h-8 min-w-0 flex-1 rounded-full px-2.5 text-sm" aria-label="Slide number">
+              <SelectTrigger className="h-8 min-w-0 flex-1 rounded-full px-2.5 text-[13px]" aria-label="Slide number">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent position="popper">
                 {NUMBER_STYLES.map((style) => (
-                  <SelectItem key={style} value={style} className="text-sm">
+                  <SelectItem key={style} value={style} className="text-[13px]">
                     {formatSlideNumber(style, slideIndex, slideTotal)}
                   </SelectItem>
                 ))}
@@ -385,7 +385,7 @@ export function SidebarTools() {
               type="button"
               title="Change avatar"
               onClick={() => avatarInputRef.current?.click()}
-              className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-foreground/10 text-sm font-semibold"
+              className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-foreground/10 text-[13px] font-semibold"
             >
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -394,7 +394,7 @@ export function SidebarTools() {
                 handleInitial
               )}
             </button>
-            <span className="min-w-0 flex-1 truncate text-sm font-medium leading-tight">{handleText}</span>
+            <span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-tight">{handleText}</span>
             {avatarUrl ? (
               <button
                 type="button"
@@ -457,12 +457,12 @@ export function SidebarTools() {
         <div className="space-y-2">
           <div className="flex gap-1">
             <Select value={swipeVariant} onValueChange={setSwipeVariant}>
-              <SelectTrigger className="h-8 min-w-0 flex-1 rounded-full px-2.5 text-sm" aria-label="Swipe">
+              <SelectTrigger className="h-8 min-w-0 flex-1 rounded-full px-2.5 text-[13px]" aria-label="Swipe">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-72">
                 {SWIPE_VARIANTS.map((variant) => (
-                  <SelectItem key={variant} value={variant} className="text-sm">
+                  <SelectItem key={variant} value={variant} className="text-[13px]">
                     {variant}
                   </SelectItem>
                 ))}
@@ -485,12 +485,12 @@ export function SidebarTools() {
         <div className="space-y-1.5">
           <div className="flex gap-1">
             <Select value={socialNetwork} onValueChange={setSocialNetwork}>
-              <SelectTrigger className="h-8 min-w-0 flex-1 rounded-full px-2.5 text-sm" aria-label="Network">
+              <SelectTrigger className="h-8 min-w-0 flex-1 rounded-full px-2.5 text-[13px]" aria-label="Network">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-72">
                 {SOCIAL_NETWORKS.map((network) => (
-                  <SelectItem key={network} value={network} className="text-sm">
+                  <SelectItem key={network} value={network} className="text-[13px]">
                     {network}
                   </SelectItem>
                 ))}

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useCanvasStore } from "@/store/useCanvasStore";
 import { CANVAS_RATIOS, type RatioKey } from "@/lib/types";
+import { fitCanvasJSON } from "@/lib/canvas/fit-frame";
 import { useCanvasManager } from "@/context/canvas-manager";
 import { GridControls } from "@/components/canvas/grid-controls";
 import { ClearCanvasButton } from "@/components/canvas/clear-canvas-button";
@@ -27,7 +28,6 @@ export function CanvasToolbar() {
 
   const currentRatio = useCanvasStore((s) => s.currentRatio);
   const setCurrentRatio = useCanvasStore((s) => s.setCurrentRatio);
-  const setCanvasDimensions = useCanvasStore((s) => s.setCanvasDimensions);
   const isReferenceOpen = useCanvasStore((s) => s.isReferenceOpen);
   const toggleReferenceOpen = useCanvasStore((s) => s.toggleReferenceOpen);
   const autoFlowEnabled = useCanvasStore((s) => s.autoFlowEnabled);
@@ -35,10 +35,19 @@ export function CanvasToolbar() {
   const [copied, setCopied] = useState(false);
 
   const handleRatioChange = (ratio: RatioKey) => {
-    const dimensions = CANVAS_RATIOS[ratio];
-    if (!dimensions) return;
+    const to = CANVAS_RATIOS[ratio];
+    if (!to) return;
+    const state = useCanvasStore.getState();
+    const from = state.canvasDimensions;
+    if (state.currentRatio === ratio) return;
 
-    setCanvasDimensions(dimensions);
+    if (manager && (from.width !== to.width || from.height !== to.height)) {
+      for (const slide of state.slides) {
+        if (slide.id === state.currentSlideId) continue;
+        state.updateSlideJSONById(slide.id, fitCanvasJSON(slide.canvasJSON, from, to));
+      }
+      manager.fitToFrame(from, to);
+    }
     setCurrentRatio(ratio);
   };
 
@@ -57,13 +66,13 @@ export function CanvasToolbar() {
   };
 
   return (
-    <div className="h-11 w-full flex items-center justify-between px-4 bg-background/60 backdrop-blur-md border-b border-border/40 z-10 select-none shrink-0">
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider pl-1">
-          Aspect Ratio
+    <div className="flex h-11 w-full min-w-0 shrink-0 items-center justify-between gap-2 overflow-x-auto border-b border-border/40 bg-background/60 px-3 backdrop-blur-md select-none">
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="hidden pl-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase sm:inline">
+          Ratio
         </span>
 
-        <div className="flex items-center bg-muted/60 p-0.5 rounded-full shadow-2xs">
+        <div className="flex shrink-0 items-center rounded-full bg-muted/60 p-0.5 shadow-2xs">
           {QUICK_RATIOS.map(({ ratio, iconClass }) => {
             const isActive = currentRatio === ratio;
             return (
@@ -71,7 +80,7 @@ export function CanvasToolbar() {
                 key={ratio}
                 type="button"
                 onClick={() => handleRatioChange(ratio)}
-                className={`flex items-center gap-1.5 px-3 py-1 text-sm rounded-full transition-all duration-150 ${
+                className={`flex items-center gap-1.5 px-3 py-1 text-[13px] rounded-full transition-all duration-150 ${
                   isActive
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-medium"
@@ -113,7 +122,7 @@ export function CanvasToolbar() {
             variant="ghost"
             size="sm"
             onClick={toggleAutoFlow}
-            className={`h-8 px-2 text-sm gap-1 rounded-full transition-colors ${
+            className={`h-8 px-2 text-[13px] gap-1 rounded-full transition-colors ${
               autoFlowEnabled
                 ? "bg-background text-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-background/50"
@@ -125,19 +134,19 @@ export function CanvasToolbar() {
             }
           >
             <Workflow className="w-3.5 h-3.5" />
-            <span className="hidden md:inline text-sm font-medium">
+            <span className="hidden md:inline text-[13px] font-medium">
               Auto Flow
             </span>
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <Button
           variant="ghost"
           size="sm"
           onClick={handleCopyJSON}
-          className="h-8 px-2.5 text-sm font-medium gap-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
+          className="h-8 px-2.5 text-[13px] font-medium gap-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
           title="Copy current slide as JSON"
         >
           {copied ? (

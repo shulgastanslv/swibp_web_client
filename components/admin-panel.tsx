@@ -43,8 +43,8 @@ function DeskForm({
       }}
     >
       <div>
-        <h2 className="text-sm font-semibold">{title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
+        <h2 className="text-[13px] font-semibold">{title}</h2>
+        <p className="mt-1 text-[13px] text-muted-foreground">{hint}</p>
       </div>
       <Input
         value={heading}
@@ -59,13 +59,13 @@ function DeskForm({
         placeholder="Message"
         required
         rows={4}
-        className="w-full resize-y rounded-2xl border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="w-full resize-y rounded-2xl border border-input bg-transparent px-3 py-2 text-[13px] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={busy} className="rounded-full">
           {busy ? <Loader2 className="size-3.5 animate-spin" /> : submitLabel}
         </Button>
-        {message ? <span className="text-sm text-muted-foreground">{message}</span> : null}
+        {message ? <span className="text-[13px] text-muted-foreground">{message}</span> : null}
       </div>
     </form>
   );
@@ -89,11 +89,11 @@ export function AdminPanel({ email }: { email: string }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Admin</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Signed in as {email}. News goes on the record. Notifications reach every account.
           </p>
         </div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/" className="text-[13px] text-muted-foreground hover:text-foreground">
           Back to the studio
         </Link>
       </div>
@@ -121,20 +121,20 @@ export function AdminPanel({ email }: { email: string }) {
       />
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold">News</h2>
+        <h2 className="text-[13px] font-semibold">News</h2>
         {news.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing published yet.</p>
+          <p className="text-[13px] text-muted-foreground">Nothing published yet.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {news.map((item) => (
               <li key={item.id} className="rounded-2xl border border-border/60 px-4 py-3">
                 <div className="flex items-baseline justify-between gap-3">
-                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="text-[13px] font-medium">{item.title}</p>
                   <time className="shrink-0 text-[10px] text-muted-foreground">
                     {new Date(item.createdAt).toLocaleString()}
                   </time>
                 </div>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{item.body}</p>
+                <p className="mt-1 whitespace-pre-wrap text-[13px] text-muted-foreground">{item.body}</p>
                 {item.authorName ? (
                   <p className="mt-2 text-[10px] text-muted-foreground">{item.authorName}</p>
                 ) : null}

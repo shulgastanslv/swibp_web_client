@@ -282,10 +282,10 @@ export function PreviewTemplateDialog({
             <DialogHeader className="shrink-0 space-y-0 px-4 py-3 pr-14 text-left">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <DialogTitle className="truncate text-sm font-medium tracking-tight">
+                  <DialogTitle className="truncate text-[13px] font-medium tracking-tight">
                     {title}
                   </DialogTitle>
-                  <DialogDescription className="mt-1 text-sm text-muted-foreground">
+                  <DialogDescription className="mt-1 text-[13px] text-muted-foreground">
                     <span className="tabular-nums">
                       {slides.length === 0 ? "No slides" : `${view + 1} / ${slides.length}`}
                     </span>
@@ -362,7 +362,7 @@ export function PreviewTemplateDialog({
             />
 
             <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border/40 px-4 py-3">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
                 <span className="tabular-nums">{picked.size} selected</span>
                 <button
                   type="button"
@@ -452,7 +452,7 @@ function SlideImage({
       ) : (
         <div
           className={cn(
-            "flex size-full items-center justify-center px-6 text-center text-sm",
+            "flex size-full items-center justify-center px-6 text-center text-[13px]",
             inverted ? "bg-white/5 text-white/60" : "bg-background text-muted-foreground",
           )}
         >
@@ -640,8 +640,8 @@ function FullscreenPreview({
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
-          <DialogTitle className="truncate text-sm font-medium text-white">{title}</DialogTitle>
-          <DialogDescription className="mt-0.5 text-sm text-white/55">
+          <DialogTitle className="truncate text-[13px] font-medium text-white">{title}</DialogTitle>
+          <DialogDescription className="mt-0.5 text-[13px] text-white/55">
             <span className="tabular-nums">
               {view + 1} / {total}
             </span>

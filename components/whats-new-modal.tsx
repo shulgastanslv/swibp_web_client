@@ -40,7 +40,7 @@ export function WhatsNewModal({ open, onOpenChange }: WhatsNewModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-0 overflow-hidden rounded-2xl border-border/70 p-0 sm:max-w-[360px]">
         <DialogHeader className="border-b border-border/40 px-4 pt-4 pb-3 text-left">
-          <DialogTitle className="text-sm font-semibold tracking-tight">What's new</DialogTitle>
+          <DialogTitle className="text-[13px] font-semibold tracking-tight">What's new</DialogTitle>
         </DialogHeader>
 
         <div className="max-h-[min(70vh,480px)] space-y-4 overflow-y-auto px-4 py-3">
@@ -49,15 +49,15 @@ export function WhatsNewModal({ open, onOpenChange }: WhatsNewModalProps) {
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
             </div>
           ) : news.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Nothing new yet.</p>
+            <p className="py-6 text-center text-[13px] text-muted-foreground">Nothing new yet.</p>
           ) : (
             news.map((item) => (
               <article key={item.id} className="space-y-1.5">
-                <div className="flex items-baseline justify-between gap-3 text-sm">
+                <div className="flex items-baseline justify-between gap-3 text-[13px]">
                   <h3 className="font-medium text-foreground">{item.title}</h3>
                   <time className="shrink-0 text-muted-foreground">{formatWhen(item.createdAt)}</time>
                 </div>
-                <p className="border-l border-border/50 pl-2 text-sm whitespace-pre-wrap text-muted-foreground">
+                <p className="border-l border-border/50 pl-2 text-[13px] whitespace-pre-wrap text-muted-foreground">
                   {item.body}
                 </p>
                 {item.authorName ? (

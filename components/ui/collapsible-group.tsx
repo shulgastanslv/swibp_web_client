@@ -52,7 +52,7 @@ export function CollapsibleGroup({
               isOpen && "rotate-90",
             )}
           />
-          <span className="truncate text-sm font-semibold text-foreground/90">
+          <span className="truncate text-[13px] font-semibold text-foreground/90">
             {title}
           </span>
         </button>

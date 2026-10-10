@@ -36,12 +36,12 @@ export function GallerySection({
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2 px-0.5">
-        <h3 className="text-sm font-medium text-foreground">{title}</h3>
+        <h3 className="text-[13px] font-medium text-foreground">{title}</h3>
         {action ? (
           <button
             type="button"
             onClick={onAction}
-            className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
           >
             {action}
           </button>
@@ -106,7 +106,7 @@ export function GalleryCard({
         onClick={onClick}
         className="flex min-w-0 flex-col px-0.5 text-left disabled:opacity-60"
       >
-        <span className="truncate text-sm font-medium text-foreground">{title}</span>
+        <span className="truncate text-[13px] font-medium text-foreground">{title}</span>
         {meta ? <span className="truncate text-[10px] text-muted-foreground">{meta}</span> : null}
       </button>
     </div>

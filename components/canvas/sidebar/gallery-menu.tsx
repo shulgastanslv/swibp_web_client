@@ -80,7 +80,7 @@ export function GalleryMenu({
         <Button
           variant="ghost"
           size="icon"
-          className="size-5 rounded-full bg-muted/50 backdrop-blur-sm text-muted-foreground opacity-0 ring-1 ring-border/60 transition-opacity group-hover:opacity-100 hover:text-foreground"
+          className="size-5 rounded-full bg-background backdrop-blur-sm text-muted-foreground opacity-0 ring-1 ring-border/60 transition-opacity group-hover:opacity-100 hover:text-foreground"
           onClick={(event) => event.stopPropagation()}
         >
           <MoreHorizontal className="h-3.5 w-3.5" />
@@ -90,7 +90,7 @@ export function GalleryMenu({
       <DropdownMenuContent
         align="start"
         side="right"
-        className="w-64 rounded-2xl bg-background/50 backdrop-blur-sm p-0 text-popover-foreground shadow-xl ring-1 ring-foreground/10"
+        className="w-64 rounded-2xl bg-background backdrop-blur-sm p-0 text-popover-foreground shadow-xl ring-1 ring-foreground/10"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="px-4 pt-3.5 pb-2">
@@ -106,14 +106,14 @@ export function GalleryMenu({
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={(event) => event.stopPropagation()}
-                className="h-8 text-sm font-semibold"
+                className="h-8 text-[13px] font-semibold"
                 aria-label="Name"
               />
             </form>
           ) : (
-            <p className="text-sm leading-snug font-semibold tracking-tight text-foreground">{title}</p>
+            <p className="text-[13px] leading-snug font-semibold tracking-tight text-foreground">{title}</p>
           )}
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-[13px] text-muted-foreground">
             {createdBy ? `View more by ${createdBy}` : "View more by Swibp"}
           </p>
           {visible.length > 0 ? (
@@ -121,7 +121,7 @@ export function GalleryMenu({
               {visible.map((keyword, index) => (
                 <span
                   key={`${keyword}-${index}`}
-                  className="rounded-full border border-border/80 px-2 py-1 text-sm text-foreground"
+                  className="rounded-full border border-border/80 px-2 py-1 text-[13px] text-foreground"
                 >
                   {keyword}
                 </span>
@@ -131,7 +131,7 @@ export function GalleryMenu({
           {hidden > 0 ? (
             <button
               type="button"
-              className="mt-2 text-sm text-violet-600 hover:underline dark:text-violet-300"
+              className="mt-2 text-[13px] text-violet-600 hover:underline dark:text-violet-300"
               onClick={() => setShowAllKeywords(true)}
             >
               Show all keywords
@@ -143,7 +143,7 @@ export function GalleryMenu({
        
         {canRename && onRename ? (
           <DropdownMenuItem
-            className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-sm"
+            className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-[13px]"
             onSelect={(event) => {
               event.preventDefault();
               setDraft(title);
@@ -155,7 +155,7 @@ export function GalleryMenu({
           </DropdownMenuItem>
         ) : null}
         {onDuplicate ? (
-          <DropdownMenuItem className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-sm" onClick={onDuplicate}>
+          <DropdownMenuItem className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-[13px]" onClick={onDuplicate}>
             <Copy className="size-4" />
             Duplicate
           </DropdownMenuItem>
@@ -163,7 +163,7 @@ export function GalleryMenu({
         {onDelete ? (
           <DropdownMenuItem
             variant="destructive"
-            className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-sm"
+            className="cursor-pointer gap-3 rounded-none px-4 py-2.5 text-[13px]"
             onClick={onDelete}
           >
             <Trash2 className="size-4" />

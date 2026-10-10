@@ -107,7 +107,7 @@ export function InstagramFeed({
           <div className="h-8 w-8 rounded-full bg-neutral-200 overflow-hidden">
              <img src={slide.src} className="h-full w-full object-cover" />
           </div>
-          <span className="text-sm font-semibold">design_daily</span>
+          <span className="text-[13px] font-semibold">design_daily</span>
         </div>
         <MoreHorizontal className="h-5 w-5 text-neutral-500" />
       </div>
@@ -130,8 +130,8 @@ export function InstagramFeed({
           </div>
           <Bookmark className="h-6 w-6 hover:text-yellow-500 cursor-pointer transition-colors" />
         </div>
-        <p className="text-sm text-neutral-500">Нравится 1,240 людям</p>
-        <p className="text-sm mt-1">
+        <p className="text-[13px] text-neutral-500">Нравится 1,240 людям</p>
+        <p className="text-[13px] mt-1">
           <span className="font-semibold mr-1">design_daily</span>
           {slide.caption}
         </p>
@@ -161,10 +161,10 @@ export function ThreadsFeed({
         </div>
         <div className="flex-1">
           <div className="flex items-baseline justify-between">
-             <span className="font-semibold text-sm">swibp</span>
-             <span className="text-sm text-neutral-400">2ч</span>
+             <span className="font-semibold text-[13px]">swibp</span>
+             <span className="text-[13px] text-neutral-400">2ч</span>
           </div>
-          <p className="text-sm leading-snug mt-1">
+          <p className="text-[13px] leading-snug mt-1">
             Карусель из одной мысли. Обложка, середина и финал. 🧵
           </p>
         </div>

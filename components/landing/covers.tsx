@@ -50,7 +50,7 @@ export function CoverHook({ className }: { className?: string }) {
         <span>01 / 06</span>
       </div>
       <div>
-        <p className="text-sm font-semibold">ИИ создал карусель</p>
+        <p className="text-[13px] font-semibold">ИИ создал карусель</p>
         <h3 className="mt-2 text-3xl leading-[0.95] font-extrabold sm:text-4xl">
           Карусель
           <br />
@@ -60,7 +60,7 @@ export function CoverHook({ className }: { className?: string }) {
         </h3>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Обложка</span>
+        <span className="text-[13px] font-medium">Обложка</span>
         <Dots />
       </div>
     </PhotoSlide>
@@ -80,7 +80,7 @@ export function CoverList({ className }: { className?: string }) {
           <br />
           одна история
         </h3>
-        <ul className="mt-4 space-y-2 text-sm">
+        <ul className="mt-4 space-y-2 text-[13px]">
           <li className="rounded-xl bg-black/35 px-3 py-2 backdrop-blur-sm">01 Обложка цепляет</li>
           <li className="rounded-xl bg-black/35 px-3 py-2 backdrop-blur-sm">02 Середина объясняет</li>
           <li className="rounded-xl bg-[#2f5bff]/90 px-3 py-2">03 Финал зовёт</li>
@@ -99,13 +99,13 @@ export function CoverClose({ className }: { className?: string }) {
         <span>06 / 06</span>
       </div>
       <div>
-        <p className="text-sm font-semibold">Карусель готова</p>
+        <p className="text-[13px] font-semibold">Карусель готова</p>
         <h3 className="mt-2 text-4xl leading-[0.95] font-extrabold">
           Забери
           <br />
           кадры
         </h3>
-        <div className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#14151c]">
+        <div className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#14151c]">
           6 слайдов
         </div>
       </div>

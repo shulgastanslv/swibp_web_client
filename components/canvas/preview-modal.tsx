@@ -200,13 +200,13 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
       <div className="grid grid-cols-3 items-center px-6 py-4 shrink-0">
         <div className="flex items-center gap-3">
           {rendering && (
-            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
               <Loader2 className="size-3 animate-spin" />
               Preparing slides…
             </span>
           )}
         </div>
-        <div className="flex items-center justify-self-center rounded-full bg-muted p-0.5 text-sm">
+        <div className="flex items-center justify-self-center rounded-full bg-muted p-0.5 text-[13px]">
           <button
             type="button"
             onClick={() => setView("slides")}
@@ -227,7 +227,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
           </button>
         </div>
         <div className="flex items-center justify-self-end gap-3">
-          <span className="text-sm font-mono text-muted-foreground">
+          <span className="text-[13px] font-mono text-muted-foreground">
             {activeIdx + 1} / {slides.length}
           </span>
           <Button
@@ -297,7 +297,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-sm text-muted-foreground">Empty slide</span>
+                      <span className="text-[13px] text-muted-foreground">Empty slide</span>
                     </div>
                   )}
                 </div>
@@ -342,7 +342,7 @@ export function PreviewModal({ open, initialSlideId, onClose }: PreviewModalProp
               />
             ) : (
               <div className="absolute inset-0 bg-background flex items-center justify-center border border-dashed border-border/60">
-                <span className="text-sm text-muted-foreground">Empty slide</span>
+                <span className="text-[13px] text-muted-foreground">Empty slide</span>
               </div>
             )}
           </div>

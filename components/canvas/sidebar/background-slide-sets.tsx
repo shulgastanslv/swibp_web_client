@@ -120,7 +120,7 @@ export function BackgroundSlideSets() {
           >
             <Minus className="size-3.5" />
           </button>
-          <span className="min-w-6 text-center text-sm font-semibold tabular-nums text-foreground">
+          <span className="min-w-6 text-center text-[13px] font-semibold tabular-nums text-foreground">
             {count}
           </span>
           <button

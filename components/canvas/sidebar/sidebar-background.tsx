@@ -185,7 +185,7 @@ export function SidebarBackground() {
   };
 
   return (
-    <div className="flex min-w-0 flex-col overflow-hidden text-sm text-foreground">
+    <div className="flex min-w-0 flex-col overflow-hidden text-[13px] text-foreground">
       <CollapsibleGroup id="background-split" title="Screen split">
         <ScreenSplit />
       </CollapsibleGroup>
@@ -197,7 +197,7 @@ export function SidebarBackground() {
             <TabsTrigger
               key={item.id}
               value={item.id}
-              className="rounded-full text-sm shadow-none data-active:border-transparent dark:data-active:border-transparent"
+              className="rounded-full text-[13px] shadow-none data-active:border-transparent dark:data-active:border-transparent"
             >
               {item.label}
             </TabsTrigger>
@@ -205,7 +205,7 @@ export function SidebarBackground() {
         </TabsList>
 
         <TabsContent value="color">
-          <div className="grid grid-cols-8 gap-1.5">
+          <div className="grid grid-cols-6 gap-1.5">
             {SOLID_PRESETS.map((p) => (
               <button
                 key={p.color}
@@ -231,7 +231,7 @@ export function SidebarBackground() {
         </TabsContent>
 
         <TabsContent value="gradient">
-          <div className="grid grid-cols-8 gap-1.5">
+          <div className="grid grid-cols-6 gap-1.5">
             {GRADIENT_PRESETS.map((g, i) => (
               <button
                 key={`${g.colors[0]}-${g.colors[1]}-${i}`}
@@ -290,8 +290,8 @@ export function SidebarBackground() {
               )}
             >
               <UploadCloud className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Upload</span>
-              <span className="text-sm text-muted-foreground">Drop or click</span>
+              <span className="text-[13px] font-medium">Upload</span>
+              <span className="text-[13px] text-muted-foreground">Drop or click</span>
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5">
@@ -314,7 +314,7 @@ export function SidebarBackground() {
                       void applyImageFromUrl();
                     }
                   }}
-                  className="h-8 text-sm"
+                  className="h-8 text-[13px]"
                 />
                 <Button
                   type="button"
@@ -330,7 +330,7 @@ export function SidebarBackground() {
                   )}
                 </Button>
               </div>
-              {urlError && <p className="text-sm text-destructive">{urlError}</p>}
+              {urlError && <p className="text-[13px] text-destructive">{urlError}</p>}
             </div>
           </div>
         </TabsContent>
@@ -358,7 +358,7 @@ export function SidebarBackground() {
                 setSlidePalette(id === "slide" ? useCanvasStore.getState().palette : null);
               }}
               className={cn(
-                "h-7 flex-1 rounded-full text-sm transition-colors",
+                "h-7 flex-1 rounded-full text-[13px] transition-colors",
                 paletteScope === id ? "bg-background text-foreground shadow-xs" : "text-muted-foreground",
               )}
             >
