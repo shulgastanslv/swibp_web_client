@@ -21,6 +21,7 @@ import {
 } from "@/actions/auth-email";
 import { registerUser } from "@/actions/user";
 import { Loader2 } from "lucide-react";
+import Logo from "./logo";
 
 type View = "login" | "register" | "forgot-password" | "reset-password" | "check-email";
 type CheckKind = "verify" | "reset";
@@ -293,6 +294,9 @@ export function AuthModal({
           {view === "login" && (
             <>
               <DialogHeader className="space-y-1 mb-6 text-center">
+                <div className="flex items-center justify-center mb-4"> 
+                  <Logo width={36} height={36} />
+                </div>
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
                   Welcome back
                 </DialogTitle>
@@ -381,6 +385,9 @@ export function AuthModal({
           {view === "register" && (
             <>
               <DialogHeader className="space-y-1 mb-6 text-center">
+                <div className="flex items-center justify-center mb-4"> 
+                  <Logo width={36} height={36} />
+                </div>
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
                   Create an account
                 </DialogTitle>
