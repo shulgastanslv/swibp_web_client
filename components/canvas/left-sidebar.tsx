@@ -3,7 +3,7 @@
 import React, { ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
+import { FolderIcon, FolderUpIcon, ImageIcon, LayersIcon, LayoutGridIcon, PanelLeftClose, PanelLeftOpen, Settings, ShapesIcon, SparklesIcon, StickyNoteIcon, FilterIcon, WrenchIcon, ToolCase } from "lucide-react";
 import { SidebarProjects } from "@/components/canvas/sidebar/projects/sidebar-projects";
 import { SidebarTemplates } from "@/components/canvas/sidebar/sidebar-templates";
 import { SidebarElements } from "@/components/canvas/sidebar/sidebar-elements";
@@ -108,15 +108,15 @@ export function LeftSidebar({
   const [legal, setLegal] = useState<LegalKind | null>(null);
 
   const navItems: { id: NavId; icon: ReactNode; label: string }[] = [
-    { id: "generate", icon: <FaMagic className="size-4" />, label: "AI" },
-    { id: "elements", icon: <FaShapes className="size-4" />, label: "Elements" },
-    { id: "tools", icon: <FaWrench className="size-4" />, label: "Tools" },
-    { id: "projects", icon: <FaFolderOpen className="size-4" />, label: "Projects" },
-    { id: "layers", icon: <FaLayerGroup className="size-4" />, label: "Layers" },
-    { id: "templates", icon: <FaThLarge className="size-4" />, label: "Templates" },
-    { id: "background", icon: <FaImage className="size-4" />, label: "Background" },
-    { id: "filters", icon: <FaFilter className="size-4" />, label: "Filter" },
-    { id: "icons", icon: <FaStickyNote className="size-4" />, label: "Icons" },
+    { id: "generate", icon: <SparklesIcon className="size-[18px] stroke-[1.7]" />, label: "AI" },
+    { id: "elements", icon: <ShapesIcon className="size-[18px] stroke-[1.7]" />, label: "Elements" },
+    { id: "tools", icon: <ToolCase className="size-[18px] stroke-[1.7]" />, label: "Tools" },
+    { id: "projects", icon: <FolderIcon className="size-[18px] stroke-[1.7]" />, label: "Projects" },
+    { id: "layers", icon: <LayersIcon className="size-[18px] stroke-[1.7]" />, label: "Layers" },
+    { id: "templates", icon: <LayoutGridIcon className="size-[18px] stroke-[1.7]" />, label: "Templates" },
+    { id: "background", icon: <ImageIcon className="size-[18px] stroke-[1.7]" />, label: "Background" },
+    { id: "filters", icon: <FilterIcon className="size-[18px] stroke-[1.7]" />, label: "Filter" },
+    { id: "icons", icon: <StickyNoteIcon className="size-[18px] stroke-[1.7]" />, label: "Icons" },
   ];
 
   return (

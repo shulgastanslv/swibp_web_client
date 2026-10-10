@@ -45,7 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CommandsKbd } from "@/components/commands_kbd";
-import { ThemeSwitcherMenu } from "@/components/theme-switcher";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { ShareModal } from "./share-modal";
 import { ExportModal } from "./export-modal";
 import { useCanvasManager } from "@/context/canvas-manager";
@@ -305,6 +305,7 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
           >
             <Share className="w-3.5 h-3.5" />
           </Button>
+          <ThemeSwitcher />
           <NotificationsMenu />
           <Button
             variant="secondary"
@@ -409,7 +410,6 @@ export function Header({ onPreview, onFocus }: HeaderProps) {
                   <Globe className="w-3.5 h-3.5 mr-2" />
                   <span>Publish template</span>
                 </DropdownMenuItem>
-                <ThemeSwitcherMenu />
                 <DropdownMenuItem
                   className="cursor-pointer text-[13px]"
                   onClick={() => setIsSocialOpen(true)}
