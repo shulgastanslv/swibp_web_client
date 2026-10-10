@@ -1,7 +1,11 @@
 "use client";
 
+import { X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -18,42 +22,70 @@ const NOTES = [
   "Keys 1–9 switch panels. Esc leaves focus.",
 ];
 
+function PhoneMock() {
+  return (
+    <div
+      className="relative h-[132px] w-[72px] shrink-0 overflow-hidden rounded-[1.15rem] border-[3px] border-foreground bg-background"
+      aria-hidden
+    >
+      <div className="absolute top-1 left-1/2 z-10 h-1 w-7 -translate-x-1/2 rounded-full bg-foreground" />
+      <div className="flex h-full flex-col px-1.5 pt-4 pb-2">
+        <div className="flex items-center gap-1">
+          <span className="size-2.5 rounded-full bg-muted" />
+          <span className="h-1 w-6 rounded-full bg-muted" />
+        </div>
+        <div className="mt-1.5 flex-1 rounded-md bg-primary/15" />
+        <div className="mt-1.5 h-1 w-8 rounded-full bg-foreground/25" />
+        <div className="mt-1 h-1 w-5 rounded-full bg-foreground/15" />
+        <div className="mt-1.5 flex justify-center gap-1">
+          <span className="size-1 rounded-full bg-foreground" />
+          <span className="size-1 rounded-full bg-foreground/25" />
+          <span className="size-1 rounded-full bg-foreground/25" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[340px]">
-        <div className="relative bg-[#efe6d8] px-6 pt-8 pb-5">
-          <div className="flex items-end justify-center">
-            <div className="z-0 mb-1 flex aspect-4/5 w-[68px] -rotate-6 flex-col justify-between rounded-[3px] bg-[#f3d6d0] p-2 shadow-[0_10px_24px_rgba(40,24,16,0.12)]">
-              <span className="font-serif text-[18px] leading-none text-[#6b2430]">01</span>
-              <span className="h-px w-7 bg-[#6b2430]/50" />
-            </div>
-            <div className="z-10 -mx-3 flex aspect-4/5 w-[86px] flex-col justify-between rounded-[3px] bg-[#171513] p-2.5 text-[#f6f1e8] shadow-[0_16px_30px_rgba(40,24,16,0.22)]">
-              <span className="text-[9px] tracking-[0.18em] uppercase opacity-60">Slide</span>
-              <div>
-                <p className="font-serif text-[17px] leading-none">Hold</p>
-                <span className="mt-2 block h-px w-8 bg-[#f3d6d0]" />
-              </div>
-            </div>
-            <div className="z-0 mb-1 flex aspect-4/5 w-[68px] rotate-6 flex-col justify-between rounded-[3px] border border-[#171513]/10 bg-[#fbf7f1] p-2 shadow-[0_10px_24px_rgba(40,24,16,0.1)]">
-              <span className="size-2 bg-[#6b2430]" />
-              <span className="font-serif text-[18px] leading-none text-[#171513]">02</span>
-            </div>
+      <DialogContent
+        showCloseButton={false}
+        className="gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[360px]"
+      >
+        <div className="relative flex items-center justify-between gap-4 bg-muted px-5 py-5">
+          <DialogClose asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="absolute top-2 right-2 rounded-full text-foreground hover:bg-foreground/10"
+            >
+              <X />
+              <span className="sr-only">Close</span>
+            </Button>
+          </DialogClose>
+
+          <DialogHeader className="gap-1 pr-6 text-left p-4">
+            <p className="text-[13px] font-medium text-muted-foreground">You have a question?</p>
+            <DialogTitle className="text-lg font-semibold tracking-tight">Help</DialogTitle>
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
+              One slide at a time. The strip under the canvas is the carousel.
+            </p>
+          </DialogHeader>
+          <div className="flex justify-center mr-4">
+            <PhoneMock />
           </div>
         </div>
-        <div className="px-4 py-3.5">
-          <DialogHeader className="gap-1 text-left">
-            <DialogTitle className="text-[13px] font-medium">Help</DialogTitle>
-          </DialogHeader>
-          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-            One slide at a time. The strip under the canvas is the carousel.
-          </p>
-          <ul className="mt-3 space-y-1.5 text-[13px] leading-relaxed text-foreground">
-            {NOTES.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
-        </div>
+
+        <ul className="space-y-2 px-5 py-4 text-[13px] leading-relaxed text-muted-foreground">
+          {NOTES.map((note) => (
+            <li key={note} className="flex gap-2.5">
+              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-foreground/40" />
+              {note}
+            </li>
+          ))}
+        </ul>
       </DialogContent>
     </Dialog>
   );
